@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getAllUserMedals } from '@/lib/queries'
@@ -11,7 +12,14 @@ export const metadata: Metadata = {
 }
 
 const MEDAL_ORDER: Record<string, number> = { gold: 0, silver: 1, bronze: 2 }
-const MEDAL_EMOJI: Record<string, string>  = { gold: '🥇', silver: '🥈', bronze: '🥉' }
+
+function MedalImage({ type }: { type: string }) {
+  const src =
+    type === 'gold'   ? '/medals/gold.png'   :
+    type === 'silver' ? '/medals/silver.png' :
+                        '/medals/bronze.png'
+  return <Image src={src} alt={type} width={20} height={20} />
+}
 
 export default async function MyMedalsPage() {
   const session = await getServerSession(authOptions)
@@ -47,7 +55,9 @@ export default async function MyMedalsPage() {
 
         {medals.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-amber-100">
-            <div className="text-5xl mb-4">🏅</div>
+            <div className="mb-4 flex justify-center">
+              <Image src="/medals/gold.png" alt="medals" width={56} height={56} />
+            </div>
             <h2 className="text-xl font-bold text-gray-700 mb-2">No medals yet</h2>
             <p className="text-gray-400 text-sm mb-6">
               Browse a category and award your first Gold medal.
@@ -89,7 +99,9 @@ export default async function MyMedalsPage() {
                   <div className="divide-y divide-amber-50">
                     {sorted.map(m => (
                       <div key={m.id} className="flex items-center gap-3 px-4 py-2.5">
-                        <span className="text-lg w-6 text-center">{MEDAL_EMOJI[m.medalType]}</span>
+                        <span className="w-6 flex justify-center">
+                          <MedalImage type={m.medalType} />
+                        </span>
                         <Link
                           href={`/restaurants/${m.restaurant.slug}`}
                           className="text-sm font-medium text-gray-700 hover:text-yellow-700 transition-colors flex-1"

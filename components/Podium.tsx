@@ -3,13 +3,14 @@
 import { motion, useInView, animate } from 'framer-motion'
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { LeaderboardRow } from '@/lib/queries'
 
 // ─── Medal config ────────────────────────────────────────────────────────────
 
 const MEDAL_CONFIG = {
   1: {
-    emoji:       '🥇',
+    src:         '/medals/gold.png',
     label:       '1st Place',
     blockHeight: 176,
     gradient:    'linear-gradient(160deg, #FFE566 0%, #FFD700 45%, #B8860B 100%)',
@@ -20,7 +21,7 @@ const MEDAL_CONFIG = {
     ringColor:   'ring-yellow-500',
   },
   2: {
-    emoji:       '🥈',
+    src:         '/medals/silver.png',
     label:       '2nd Place',
     blockHeight: 128,
     gradient:    'linear-gradient(160deg, #E8E8E8 0%, #C0C0C0 45%, #808080 100%)',
@@ -31,7 +32,7 @@ const MEDAL_CONFIG = {
     ringColor:   'ring-gray-400',
   },
   3: {
-    emoji:       '🥉',
+    src:         '/medals/bronze.png',
     label:       '3rd Place',
     blockHeight: 96,
     gradient:    'linear-gradient(160deg, #E8A060 0%, #CD7F32 45%, #7B4010 100%)',
@@ -84,11 +85,11 @@ function PodiumColumn({ row, place, delay }: BlockProps) {
         transition={{ delay: delay + 0.35, duration: 0.5, ease: 'easeOut' }}
         className="text-center mb-3 px-1 w-24 sm:w-32"
       >
-        {/* medal emoji */}
+        {/* medal image */}
         <div
-          className={`mx-auto w-10 h-10 sm:w-12 sm:h-12 rounded-full ${cfg.badgeBg} ring-2 ${cfg.ringColor} flex items-center justify-center text-xl sm:text-2xl shadow-md mb-2`}
+          className={`mx-auto w-10 h-10 sm:w-12 sm:h-12 rounded-full ${cfg.badgeBg} ring-2 ${cfg.ringColor} flex items-center justify-center shadow-md mb-2`}
         >
-          {cfg.emoji}
+          <Image src={cfg.src} alt={cfg.label} width={28} height={28} />
         </div>
 
         {/* restaurant name */}
@@ -106,9 +107,21 @@ function PodiumColumn({ row, place, delay }: BlockProps) {
 
         {/* medal breakdown pills */}
         <div className="flex justify-center gap-0.5 mt-1 flex-wrap">
-          {row.goldCount   > 0 && <span className="text-[10px] bg-yellow-100 rounded px-1">🥇{row.goldCount}</span>}
-          {row.silverCount > 0 && <span className="text-[10px] bg-gray-100  rounded px-1">🥈{row.silverCount}</span>}
-          {row.bronzeCount > 0 && <span className="text-[10px] bg-orange-50 rounded px-1">🥉{row.bronzeCount}</span>}
+          {row.goldCount   > 0 && (
+            <span className="text-[10px] bg-yellow-100 rounded px-1 inline-flex items-center gap-0.5">
+              <Image src="/medals/gold.png" alt="" width={10} height={10} />{row.goldCount}
+            </span>
+          )}
+          {row.silverCount > 0 && (
+            <span className="text-[10px] bg-gray-100 rounded px-1 inline-flex items-center gap-0.5">
+              <Image src="/medals/silver.png" alt="" width={10} height={10} />{row.silverCount}
+            </span>
+          )}
+          {row.bronzeCount > 0 && (
+            <span className="text-[10px] bg-orange-50 rounded px-1 inline-flex items-center gap-0.5">
+              <Image src="/medals/bronze.png" alt="" width={10} height={10} />{row.bronzeCount}
+            </span>
+          )}
         </div>
       </motion.div>
 
@@ -147,8 +160,8 @@ function EmptySlot({ place }: { place: 1 | 2 | 3 }) {
   return (
     <div className="flex flex-col items-center opacity-30">
       <div className="w-24 sm:w-32 text-center mb-3">
-        <div className={`mx-auto w-10 h-10 rounded-full ${cfg.badgeBg} ring-2 ${cfg.ringColor} flex items-center justify-center text-xl shadow-md mb-2`}>
-          {cfg.emoji}
+        <div className={`mx-auto w-10 h-10 rounded-full ${cfg.badgeBg} ring-2 ${cfg.ringColor} flex items-center justify-center shadow-md mb-2`}>
+          <Image src={cfg.src} alt={cfg.label} width={24} height={24} />
         </div>
         <p className="text-xs text-gray-400">—</p>
       </div>

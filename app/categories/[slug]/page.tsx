@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getCategoryBySlug, getLeaderboard } from '@/lib/queries'
 import { Podium } from '@/components/Podium'
 import { prisma } from '@/lib/prisma'
@@ -138,9 +139,15 @@ export default async function CategoryLeaderboardPage({
                 <tr className="bg-amber-50 border-b border-amber-100">
                   <th className="text-left px-4 py-3 text-gray-500 font-semibold w-10">#</th>
                   <th className="text-left px-4 py-3 text-gray-500 font-semibold">Restaurant</th>
-                  <th className="text-center px-2 py-3 text-gray-500 font-semibold">🥇</th>
-                  <th className="text-center px-2 py-3 text-gray-500 font-semibold">🥈</th>
-                  <th className="text-center px-2 py-3 text-gray-500 font-semibold">🥉</th>
+                  <th className="text-center px-2 py-3 text-gray-500 font-semibold">
+                    <Image src="/medals/gold.png" alt="Gold" width={16} height={16} className="mx-auto" />
+                  </th>
+                  <th className="text-center px-2 py-3 text-gray-500 font-semibold">
+                    <Image src="/medals/silver.png" alt="Silver" width={16} height={16} className="mx-auto" />
+                  </th>
+                  <th className="text-center px-2 py-3 text-gray-500 font-semibold">
+                    <Image src="/medals/bronze.png" alt="Bronze" width={16} height={16} className="mx-auto" />
+                  </th>
                   <th className="text-right px-4 py-3 text-gray-500 font-semibold">Score</th>
                 </tr>
               </thead>
@@ -151,7 +158,15 @@ export default async function CategoryLeaderboardPage({
                     className={`hover:bg-amber-50 transition-colors ${i < 3 ? 'font-medium' : ''}`}
                   >
                     <td className="px-4 py-3 text-gray-400">
-                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                      {i === 0 ? (
+                        <Image src="/medals/gold.png" alt="1st" width={16} height={16} />
+                      ) : i === 1 ? (
+                        <Image src="/medals/silver.png" alt="2nd" width={16} height={16} />
+                      ) : i === 2 ? (
+                        <Image src="/medals/bronze.png" alt="3rd" width={16} height={16} />
+                      ) : (
+                        i + 1
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Link
@@ -176,7 +191,9 @@ export default async function CategoryLeaderboardPage({
       {/* ── CTA ─────────────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-b from-amber-50 to-white border-t border-amber-100">
         <div className="max-w-3xl mx-auto px-4 py-12 text-center">
-          <div className="text-4xl mb-3">🏅</div>
+          <div className="mb-3 flex justify-center">
+            <Image src="/medals/gold.png" alt="medal" width={48} height={48} />
+          </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">
             Have a favorite {category.name}?
           </h2>

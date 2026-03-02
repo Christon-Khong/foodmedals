@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { getAllActiveCategories } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 
@@ -12,10 +13,16 @@ export default async function HomePage() {
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <section className="bg-gradient-to-b from-white to-amber-50 border-b border-amber-100">
         <div className="max-w-4xl mx-auto px-4 py-16 sm:py-24 text-center">
-          <div className="flex justify-center gap-3 text-5xl sm:text-6xl mb-6">
-            <span className="animate-bounce" style={{ animationDelay: '0ms'   }}>🥇</span>
-            <span className="animate-bounce" style={{ animationDelay: '120ms' }}>🥈</span>
-            <span className="animate-bounce" style={{ animationDelay: '240ms' }}>🥉</span>
+          <div className="flex justify-center gap-3 mb-6">
+            <span className="animate-bounce inline-block" style={{ animationDelay: '0ms' }}>
+              <Image src="/medals/gold.png" alt="gold medal" width={64} height={64} />
+            </span>
+            <span className="animate-bounce inline-block" style={{ animationDelay: '120ms' }}>
+              <Image src="/medals/silver.png" alt="silver medal" width={64} height={64} />
+            </span>
+            <span className="animate-bounce inline-block" style={{ animationDelay: '240ms' }}>
+              <Image src="/medals/bronze.png" alt="bronze medal" width={64} height={64} />
+            </span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight mb-4">
             Award Medals to Utah's<br className="hidden sm:inline" /> Best Food
@@ -46,13 +53,13 @@ export default async function HomePage() {
           <h2 className="text-center text-2xl font-bold text-gray-900 mb-10">How it works</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { emoji: '🍔', step: '1', title: 'Browse Categories', desc: 'Cheeseburgers, tacos, pizza, wings — 15 categories of Utah eats.' },
-              { emoji: '🏅', step: '2', title: 'Award Your Medals', desc: 'Give Gold, Silver & Bronze to the three restaurants you love most.' },
-              { emoji: '🏆', step: '3', title: 'See the Rankings', desc: 'Community votes aggregate into leaderboards that reset every year.' },
+              { icon: '🍔', step: '1', title: 'Browse Categories', desc: 'Cheeseburgers, tacos, pizza, wings — 15 categories of Utah eats.' },
+              { icon: <Image src="/medals/gold.png" alt="medal" width={36} height={36} />, step: '2', title: 'Award Your Medals', desc: 'Give Gold, Silver & Bronze to the three restaurants you love most.' },
+              { icon: '🏆', step: '3', title: 'See the Rankings', desc: 'Community votes aggregate into leaderboards that reset every year.' },
             ].map(item => (
               <div key={item.step} className="text-center">
                 <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm border border-amber-100">
-                  {item.emoji}
+                  {item.icon}
                 </div>
                 <div className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-1">Step {item.step}</div>
                 <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
@@ -111,7 +118,10 @@ export default async function HomePage() {
       {/* ── Footer ───────────────────────────────────────────────────────── */}
       <footer className="border-t border-amber-100 bg-white">
         <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-400">
-          <span>🏅 FoodMedals · Utah Community Food Rankings</span>
+          <span className="flex items-center gap-1.5">
+            <Image src="/medals/gold.png" alt="" width={16} height={16} />
+            FoodMedals · Utah Community Food Rankings
+          </span>
           <div className="flex gap-4">
             <Link href="/categories"   className="hover:text-gray-600 transition-colors">Categories</Link>
             <Link href="/hall-of-fame" className="hover:text-gray-600 transition-colors">Hall of Fame</Link>

@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 function SignInForm() {
   const router = useRouter()
@@ -80,7 +81,9 @@ export default function SignInPage() {
     <div className="min-h-screen flex items-center justify-center bg-amber-50 px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8">
         <div className="text-center mb-8">
-          <div className="text-4xl mb-2">🏅</div>
+          <div className="mb-2 flex justify-center">
+            <Image src="/medals/gold.png" alt="FoodMedals" width={48} height={48} />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900">Sign in</h1>
           <p className="text-sm text-gray-600 mt-1">to FoodMedals</p>
         </div>

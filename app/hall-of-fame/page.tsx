@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getHallOfFame } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 
@@ -77,7 +78,7 @@ export default async function HallOfFamePage() {
 
                       {/* Winner */}
                       <div className="px-4 py-3 flex items-center gap-3">
-                        <span className="text-2xl">🥇</span>
+                        <Image src="/medals/gold.png" alt="gold medal" width={28} height={28} className="shrink-0" />
                         <div className="min-w-0 flex-1">
                           <Link
                             href={`/restaurants/${row.restaurantSlug}`}

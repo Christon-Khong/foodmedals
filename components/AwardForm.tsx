@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Confetti } from './Confetti'
 
 type MedalType = 'gold' | 'silver' | 'bronze'
@@ -25,10 +26,10 @@ type AwardFormProps = {
   year:          number
 }
 
-const MEDAL_META: Record<MedalType, { emoji: string; label: string; color: string; bg: string }> = {
-  gold:   { emoji: '🥇', label: 'Gold',   color: 'text-yellow-700', bg: 'bg-yellow-100 border-yellow-300' },
-  silver: { emoji: '🥈', label: 'Silver', color: 'text-gray-600',   bg: 'bg-gray-100   border-gray-300'   },
-  bronze: { emoji: '🥉', label: 'Bronze', color: 'text-amber-700',  bg: 'bg-amber-100  border-amber-300'  },
+const MEDAL_META: Record<MedalType, { src: string; label: string; color: string; bg: string }> = {
+  gold:   { src: '/medals/gold.png',   label: 'Gold',   color: 'text-yellow-700', bg: 'bg-yellow-100 border-yellow-300' },
+  silver: { src: '/medals/silver.png', label: 'Silver', color: 'text-gray-600',   bg: 'bg-gray-100   border-gray-300'   },
+  bronze: { src: '/medals/bronze.png', label: 'Bronze', color: 'text-amber-700',  bg: 'bg-amber-100  border-amber-300'  },
 }
 
 const MEDAL_TYPES: MedalType[] = ['gold', 'silver', 'bronze']
@@ -98,7 +99,9 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
           const restaurant = restaurants.find(r => r.id === assignedId)
           return (
             <div key={mt} className={`rounded-2xl border-2 p-3 text-center transition-all ${meta.bg}`}>
-              <div className="text-2xl mb-1">{meta.emoji}</div>
+              <div className="mb-1 flex justify-center">
+                <Image src={meta.src} alt={meta.label} width={32} height={32} />
+              </div>
               <div className={`text-xs font-bold uppercase tracking-wide ${meta.color} mb-1`}>{meta.label}</div>
               {restaurant ? (
                 <p className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2">
@@ -151,13 +154,13 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
                       onClick={() => handleAward(r.id, mt)}
                       disabled={saving !== null}
                       title={`Award ${MEDAL_META[mt].label}`}
-                      className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all border ${
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all border ${
                         isActive
                           ? 'scale-110 border-transparent shadow-md ' + MEDAL_META[mt].bg
                           : 'border-gray-100 hover:border-yellow-200 hover:bg-amber-50 opacity-60 hover:opacity-100'
                       } ${isSaving ? 'animate-pulse' : ''}`}
                     >
-                      {MEDAL_META[mt].emoji}
+                      <Image src={MEDAL_META[mt].src} alt={MEDAL_META[mt].label} width={22} height={22} />
                     </button>
                   )
                 })}

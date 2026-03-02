@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getAdminSession } from '@/lib/adminAuth'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -12,7 +13,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <aside className="w-56 shrink-0 border-r border-gray-800 flex flex-col">
         <div className="h-14 flex items-center px-5 border-b border-gray-800">
           <Link href="/" className="flex items-center gap-2 text-sm font-bold text-white">
-            <span className="text-xl">🏅</span>
+            <Image src="/medals/gold.png" alt="medal" width={20} height={20} />
             <span className="text-gray-300">FoodMedals</span>
             <span className="ml-1 text-[10px] bg-yellow-500 text-gray-900 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Admin</span>
           </Link>

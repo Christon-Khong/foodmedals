@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import Image from 'next/image'
 
 async function getStats() {
   const year = new Date().getFullYear()
@@ -31,13 +32,13 @@ async function getStats() {
 export default async function AdminDashboard() {
   const stats = await getStats()
 
-  const statCards = [
-    { label: 'Active Restaurants', value: stats.activeRestaurants,    icon: '🍽️',  href: '/admin/restaurants/all' },
-    { label: 'Pending Review',     value: stats.pendingRestaurants,    icon: '⏳',  href: '/admin/restaurants',    alert: stats.pendingRestaurants > 0 },
-    { label: 'Registered Users',   value: stats.totalUsers,            icon: '👥',  href: '/admin/users' },
-    { label: `${stats.year} Medals`, value: stats.totalMedalsThisYear, icon: '🏅',  href: null },
-    { label: 'Food Categories',    value: stats.totalCategories,       icon: '📂',  href: '/admin/categories' },
-    { label: 'Total Restaurants',  value: stats.totalRestaurants,      icon: '📍',  href: '/admin/restaurants/all' },
+  const statCards: { label: string; value: number; icon: React.ReactNode; href: string | null; alert?: boolean }[] = [
+    { label: 'Active Restaurants', value: stats.activeRestaurants,    icon: '🍽️', href: '/admin/restaurants/all' },
+    { label: 'Pending Review',     value: stats.pendingRestaurants,    icon: '⏳', href: '/admin/restaurants',    alert: stats.pendingRestaurants > 0 },
+    { label: 'Registered Users',   value: stats.totalUsers,            icon: '👥', href: '/admin/users' },
+    { label: `${stats.year} Medals`, value: stats.totalMedalsThisYear, icon: <Image src="/medals/gold.png" alt="medals" width={24} height={24} />, href: null },
+    { label: 'Food Categories',    value: stats.totalCategories,       icon: '📂', href: '/admin/categories' },
+    { label: 'Total Restaurants',  value: stats.totalRestaurants,      icon: '📍', href: '/admin/restaurants/all' },
   ]
 
   return (
@@ -118,7 +119,7 @@ export default async function AdminDashboard() {
 function StatCard({
   label, value, icon, href, alert,
 }: {
-  label: string; value: number; icon: string; href: string | null; alert?: boolean
+  label: string; value: number; icon: React.ReactNode; href: string | null; alert?: boolean
 }) {
   const inner = (
     <div className={`bg-gray-900 border rounded-2xl p-5 transition-colors ${

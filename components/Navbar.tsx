@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import { useState } from 'react'
 
@@ -13,7 +14,7 @@ export function Navbar() {
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-1.5 font-bold text-gray-900 text-lg">
-          <span className="text-2xl">🏅</span>
+          <Image src="/medals/gold.png" alt="medal" width={24} height={24} />
           <span className="hidden sm:inline">FoodMedals</span>
         </Link>
 

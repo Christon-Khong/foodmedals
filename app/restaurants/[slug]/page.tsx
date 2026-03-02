@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getRestaurantBySlug, getRestaurantTrophies } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { prisma } from '@/lib/prisma'
@@ -26,8 +27,6 @@ export async function generateMetadata({
     alternates: { canonical: `https://foodmedals.com/restaurants/${slug}` },
   }
 }
-
-const MEDAL_EMOJI: Record<string, string> = { gold: '🥇', silver: '🥈', bronze: '🥉' }
 
 export default async function RestaurantPage({
   params,
@@ -133,9 +132,21 @@ export default async function RestaurantPage({
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-800 text-sm truncate">{t.categoryName}</p>
                     <div className="flex gap-2 mt-1">
-                      {t.goldCount   > 0 && <span className="text-xs">🥇 {t.goldCount}</span>}
-                      {t.silverCount > 0 && <span className="text-xs">🥈 {t.silverCount}</span>}
-                      {t.bronzeCount > 0 && <span className="text-xs">🥉 {t.bronzeCount}</span>}
+                      {t.goldCount   > 0 && (
+                        <span className="text-xs flex items-center gap-0.5">
+                          <Image src="/medals/gold.png" alt="gold" width={14} height={14} /> {t.goldCount}
+                        </span>
+                      )}
+                      {t.silverCount > 0 && (
+                        <span className="text-xs flex items-center gap-0.5">
+                          <Image src="/medals/silver.png" alt="silver" width={14} height={14} /> {t.silverCount}
+                        </span>
+                      )}
+                      {t.bronzeCount > 0 && (
+                        <span className="text-xs flex items-center gap-0.5">
+                          <Image src="/medals/bronze.png" alt="bronze" width={14} height={14} /> {t.bronzeCount}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">
@@ -160,9 +171,15 @@ export default async function RestaurantPage({
                   <tr className="bg-amber-50 border-b border-amber-100">
                     <th className="text-left px-4 py-3 text-gray-500 font-semibold">Year</th>
                     <th className="text-left px-4 py-3 text-gray-500 font-semibold">Category</th>
-                    <th className="text-center px-2 py-3 text-gray-500 font-semibold">🥇</th>
-                    <th className="text-center px-2 py-3 text-gray-500 font-semibold">🥈</th>
-                    <th className="text-center px-2 py-3 text-gray-500 font-semibold">🥉</th>
+                    <th className="text-center px-2 py-3 text-gray-500 font-semibold">
+                      <Image src="/medals/gold.png" alt="Gold" width={16} height={16} className="mx-auto" />
+                    </th>
+                    <th className="text-center px-2 py-3 text-gray-500 font-semibold">
+                      <Image src="/medals/silver.png" alt="Silver" width={16} height={16} className="mx-auto" />
+                    </th>
+                    <th className="text-center px-2 py-3 text-gray-500 font-semibold">
+                      <Image src="/medals/bronze.png" alt="Bronze" width={16} height={16} className="mx-auto" />
+                    </th>
                     <th className="text-right px-4 py-3 text-gray-500 font-semibold">Score</th>
                   </tr>
                 </thead>
