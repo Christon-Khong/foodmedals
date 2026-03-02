@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String   @map("display_name")
+  avatarUrl    String?  @map("avatar_url")
+  city         String?
+  state        String?  @default("UT")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  medals               Medal[]
+  submittedRestaurants Restaurant[]         @relation("SubmittedRestaurants")
+  submittedLinks       RestaurantCategory[] @relation("SubmittedLinks")
+
+  @@map("users")
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  address     String
+  city        String
+  state       String   @default("UT")
+  zip         String
+  lat         Float?
+  lng         Float?
+  description String?
+  websiteUrl  String?  @map("website_url")
+  imageUrl    String?  @map("image_url")
+  status      String   @default("active") // active | pending_review | inactive
+  submittedBy String?  @map("submitted_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  submitter  User?                @relation("SubmittedRestaurants", fields: [submittedBy], references: [id])
+  categories RestaurantCategory[]
+  medals     Medal[]
+
+  @@map("restaurants")
+}
+
+model FoodCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  iconEmoji   String   @map("icon_emoji")
+  description String?
+  parentId    String?  @map("parent_id")
+  sortOrder   Int      @default(0) @map("sort_order")
+  status      String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  parent      FoodCategory?        @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    FoodCategory[]       @relation("CategoryHierarchy")
+  restaurants RestaurantCategory[]
+  medals      Medal[]
+
+  @@map("food_categories")
+}
+
+model RestaurantCategory {
+  id             String   @id @default(cuid())
+  restaurantId   String   @map("restaurant_id")
+  foodCategoryId String   @map("food_category_id")
+  submittedBy    String?  @map("submitted_by")
+  verified       Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id])
+  foodCategory FoodCategory @relation(fields: [foodCategoryId], references: [id])
+  submitter    User?        @relation("SubmittedLinks", fields: [submittedBy], references: [id])
+
+  @@unique([restaurantId, foodCategoryId])
+  @@map("restaurant_categories")
+}
+
+model Medal {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  foodCategoryId String   @map("food_category_id")
+  restaurantId   String   @map("restaurant_id")
+  medalType      String   @map("medal_type") // gold | silver | bronze
+  year           Int
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id])
+  foodCategory FoodCategory @relation(fields: [foodCategoryId], references: [id])
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id])
+
+  @@unique([userId, foodCategoryId, medalType, year])
+  @@index([foodCategoryId, year])
+  @@index([restaurantId, year])
+  @@map("medals")
+}

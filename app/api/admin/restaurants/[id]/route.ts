@@ -1,0 +1,28 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getAdminSession } from '@/lib/adminAuth'
+import { prisma } from '@/lib/prisma'
+
+const VALID_STATUSES = ['active', 'pending_review', 'inactive'] as const
+type ValidStatus = typeof VALID_STATUSES[number]
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await getAdminSession()
+  if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { id } = await params
+  const { status } = await req.json()
+
+  if (!VALID_STATUSES.includes(status as ValidStatus)) {
+    return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+  }
+
+  const restaurant = await prisma.restaurant.update({
+    where: { id },
+    data:  { status },
+  })
+
+  return NextResponse.json(restaurant)
+}
