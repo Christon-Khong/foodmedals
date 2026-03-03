@@ -57,7 +57,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
             display: 'flex',
           }}
         >
-          Utah Rankings · FoodMedals
+          Community Rankings · FoodMedals
         </div>
 
         {/* Medal row */}

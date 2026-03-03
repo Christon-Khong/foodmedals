@@ -23,7 +23,7 @@ export async function generateMetadata({
   if (!r) return {}
   return {
     title: `${r.name} — Medals & Rankings | FoodMedals`,
-    description: `See all medals ${r.name} in ${r.city}, UT has earned across food categories on FoodMedals.`,
+    description: `See all medals ${r.name} in ${r.city}, ${r.state} has earned across food categories on FoodMedals.`,
     alternates: { canonical: `https://foodmedals.com/restaurants/${slug}` },
   }
 }
@@ -52,7 +52,7 @@ export default async function RestaurantPage({
       '@type':         'PostalAddress',
       streetAddress:   restaurant.address,
       addressLocality: restaurant.city,
-      addressRegion:   'UT',
+      addressRegion:   restaurant.state,
       postalCode:      restaurant.zip,
       addressCountry:  'US',
     },
@@ -75,7 +75,7 @@ export default async function RestaurantPage({
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">{restaurant.name}</h1>
           <p className="text-gray-500 mt-1">
-            {restaurant.address}, {restaurant.city}, UT {restaurant.zip}
+            {restaurant.address}, {restaurant.city}, {restaurant.state} {restaurant.zip}
           </p>
           {restaurant.description && (
             <p className="text-sm text-gray-600 mt-3 max-w-xl">{restaurant.description}</p>

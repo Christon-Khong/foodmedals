@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { name, address, city, zip, websiteUrl, description } = await req.json()
+  const { name, address, city, state, zip, websiteUrl, description } = await req.json()
 
-  if (!name || !address || !city || !zip) {
+  if (!name || !address || !city || !state || !zip) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       slug,
       address:     address.trim(),
       city:        city.trim(),
-      state:       'UT',
+      state:       state.trim(),
       zip:         zip.trim(),
       websiteUrl:  websiteUrl?.trim() || null,
       description: description?.trim() || null,

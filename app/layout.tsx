@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://foodmedals.com'),
-  title: 'FoodMedals — Community Food Rankings for Utah Restaurants',
+  title: 'FoodMedals — Community Food Rankings',
   description:
-    'Vote for the best cheeseburgers, tacos, fries, and more. Award Gold, Silver & Bronze medals to your favorite restaurants.',
+    'Community-powered restaurant rankings. Award Gold, Silver & Bronze medals to the best food in your city.',
   openGraph: {
     title: 'FoodMedals — Community Food Rankings',
     type: 'website',

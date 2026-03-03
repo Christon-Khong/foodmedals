@@ -25,7 +25,7 @@ export default async function HomePage() {
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight mb-4">
-            Award Medals to Utah's<br className="hidden sm:inline" /> Best Food
+            Award Medals to<br className="hidden sm:inline" /> the Best Food Near You
           </h1>
           <p className="text-lg sm:text-xl text-gray-500 max-w-xl mx-auto mb-8">
             Community-powered rankings. Pick your Gold, Silver &amp; Bronze for each food category — new year, new picks.
@@ -53,7 +53,7 @@ export default async function HomePage() {
           <h2 className="text-center text-2xl font-bold text-gray-900 mb-10">How it works</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { icon: '🍔', step: '1', title: 'Browse Categories', desc: 'Cheeseburgers, tacos, pizza, wings — 15 categories of Utah eats.' },
+              { icon: '🍔', step: '1', title: 'Browse Categories', desc: 'Cheeseburgers, tacos, pizza, wings — dozens of food categories.' },
               { icon: <Image src="/medals/gold.png" alt="medal" width={36} height={36} />, step: '2', title: 'Award Your Medals', desc: 'Give Gold, Silver & Bronze to the three restaurants you love most.' },
               { icon: '🏆', step: '3', title: 'See the Rankings', desc: 'Community votes aggregate into leaderboards that reset every year.' },
             ].map(item => (
@@ -104,7 +104,7 @@ export default async function HomePage() {
             Your opinion matters
           </h2>
           <p className="text-gray-800 mb-6 text-sm sm:text-base">
-            Join the community ranking Utah&apos;s best restaurants. One Gold, one Silver, one Bronze per category — make yours count.
+            Join the community ranking the best restaurants in your city. One Gold, one Silver, one Bronze per category — make yours count.
           </p>
           <Link
             href="/auth/signup"
@@ -120,7 +120,7 @@ export default async function HomePage() {
         <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-400">
           <span className="flex items-center gap-1.5">
             <Image src="/medals/gold.png" alt="" width={16} height={16} />
-            FoodMedals · Utah Community Food Rankings
+            FoodMedals · Community Food Rankings
           </span>
           <div className="flex gap-4">
             <Link href="/categories"   className="hover:text-gray-600 transition-colors">Categories</Link>

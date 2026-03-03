@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { Prisma } from '@prisma/client'
 
 // ─── Categories ───────────────────────────────────────────────────────────────
 
@@ -31,7 +32,13 @@ export type LeaderboardRow = {
 export async function getLeaderboard(
   foodCategoryId: string,
   year: number,
+  city?: string,
+  state?: string,
 ): Promise<LeaderboardRow[]> {
+  const cityClause = city && state
+    ? Prisma.sql`AND r.city = ${city} AND r.state = ${state}`
+    : Prisma.empty
+
   const rows = await prisma.$queryRaw<
     Array<{
       restaurant_id:   string
@@ -57,6 +64,7 @@ export async function getLeaderboard(
     JOIN restaurants r ON r.id = m.restaurant_id
     WHERE m.food_category_id = ${foodCategoryId}
       AND m.year = ${year}
+      ${cityClause}
     GROUP BY m.restaurant_id, r.name, r.slug
     ORDER BY total_score DESC, gold_count DESC
   `
@@ -87,13 +95,52 @@ export async function getRestaurantBySlug(slug: string) {
   })
 }
 
-export async function getRestaurantsForCategory(foodCategoryId: string) {
+export async function getRestaurantsForCategory(
+  foodCategoryId: string,
+  city?: string,
+  state?: string,
+) {
   const links = await prisma.restaurantCategory.findMany({
-    where:   { foodCategoryId, verified: true, restaurant: { status: 'active' } },
+    where: {
+      foodCategoryId,
+      verified: true,
+      restaurant: {
+        status: 'active',
+        ...(city && state ? { city, state } : {}),
+      },
+    },
     include: { restaurant: true },
     orderBy: { restaurant: { name: 'asc' } },
   })
   return links.map(l => l.restaurant)
+}
+
+// ─── Cities ───────────────────────────────────────────────────────────────────
+
+export type CityOption = {
+  city:  string
+  state: string
+  count: number
+}
+
+export async function getCitiesForCategory(foodCategoryId: string): Promise<CityOption[]> {
+  const rows = await prisma.$queryRaw<
+    Array<{ city: string; state: string; count: bigint }>
+  >`
+    SELECT r.city, r.state, COUNT(DISTINCT r.id) AS count
+    FROM restaurant_categories rc
+    JOIN restaurants r ON r.id = rc.restaurant_id
+    WHERE rc.food_category_id = ${foodCategoryId}
+      AND rc.verified = true
+      AND r.status = 'active'
+    GROUP BY r.city, r.state
+    ORDER BY r.state, r.city
+  `
+  return rows.map(row => ({
+    city:  row.city,
+    state: row.state,
+    count: Number(row.count),
+  }))
 }
 
 export type TrophyRow = {
@@ -178,32 +225,36 @@ export async function getAllUserMedals(userId: string, year: number) {
 // ─── Hall of Fame ─────────────────────────────────────────────────────────────
 
 export type HallOfFameRow = {
-  categoryId:     string
-  categoryName:   string
-  categorySlug:   string
-  iconEmoji:      string
-  year:           number
-  restaurantId:   string
-  restaurantName: string
-  restaurantSlug: string
-  goldCount:      number
-  totalScore:     number
+  categoryId:      string
+  categoryName:    string
+  categorySlug:    string
+  iconEmoji:       string
+  year:            number
+  restaurantId:    string
+  restaurantName:  string
+  restaurantSlug:  string
+  restaurantCity:  string
+  restaurantState: string
+  goldCount:       number
+  totalScore:      number
 }
 
 export async function getHallOfFame(maxYear: number): Promise<HallOfFameRow[]> {
   // Gold winner per category per year (past years only)
   const rows = await prisma.$queryRaw<
     Array<{
-      category_id:     string
-      category_name:   string
-      category_slug:   string
-      icon_emoji:      string
-      year:            number
-      restaurant_id:   string
-      restaurant_name: string
-      restaurant_slug: string
-      gold_count:      bigint
-      total_score:     bigint
+      category_id:      string
+      category_name:    string
+      category_slug:    string
+      icon_emoji:       string
+      year:             number
+      restaurant_id:    string
+      restaurant_name:  string
+      restaurant_slug:  string
+      restaurant_city:  string
+      restaurant_state: string
+      gold_count:       bigint
+      total_score:      bigint
     }>
   >`
     WITH ranked AS (
@@ -216,6 +267,8 @@ export async function getHallOfFame(maxYear: number): Promise<HallOfFameRow[]> {
         m.restaurant_id,
         r.name             AS restaurant_name,
         r.slug             AS restaurant_slug,
+        r.city             AS restaurant_city,
+        r.state            AS restaurant_state,
         COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
         (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
          COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
@@ -232,23 +285,25 @@ export async function getHallOfFame(maxYear: number): Promise<HallOfFameRow[]> {
       JOIN food_categories fc ON fc.id = m.food_category_id
       JOIN restaurants      r  ON r.id  = m.restaurant_id
       WHERE m.year < ${maxYear}
-      GROUP BY m.food_category_id, fc.name, fc.slug, fc.icon_emoji, m.year, m.restaurant_id, r.name, r.slug
+      GROUP BY m.food_category_id, fc.name, fc.slug, fc.icon_emoji, m.year, m.restaurant_id, r.name, r.slug, r.city, r.state
     )
     SELECT * FROM ranked WHERE rn = 1
     ORDER BY year DESC, category_name ASC
   `
 
   return rows.map(r => ({
-    categoryId:     r.category_id,
-    categoryName:   r.category_name,
-    categorySlug:   r.category_slug,
-    iconEmoji:      r.icon_emoji,
-    year:           r.year,
-    restaurantId:   r.restaurant_id,
-    restaurantName: r.restaurant_name,
-    restaurantSlug: r.restaurant_slug,
-    goldCount:      Number(r.gold_count),
-    totalScore:     Number(r.total_score),
+    categoryId:      r.category_id,
+    categoryName:    r.category_name,
+    categorySlug:    r.category_slug,
+    iconEmoji:       r.icon_emoji,
+    year:            r.year,
+    restaurantId:    r.restaurant_id,
+    restaurantName:  r.restaurant_name,
+    restaurantSlug:  r.restaurant_slug,
+    restaurantCity:  r.restaurant_city,
+    restaurantState: r.restaurant_state,
+    goldCount:       Number(r.gold_count),
+    totalScore:      Number(r.total_score),
   }))
 }
 

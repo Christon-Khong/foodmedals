@@ -24,7 +24,6 @@ export async function POST(req: NextRequest) {
       passwordHash,
       displayName:  displayName.trim(),
       city:         city?.trim() || null,
-      state:        'UT',
     },
   })
 

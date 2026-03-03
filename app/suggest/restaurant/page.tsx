@@ -1,16 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 
 export default function SuggestRestaurantPage() {
-  const router = useRouter()
   const [form, setForm] = useState({
     name:        '',
     address:     '',
     city:        '',
+    state:       '',
     zip:         '',
     websiteUrl:  '',
     description: '',
@@ -59,7 +58,7 @@ export default function SuggestRestaurantPage() {
               Browse categories
             </Link>
             <button
-              onClick={() => { setDone(false); setForm({ name: '', address: '', city: '', zip: '', websiteUrl: '', description: '' }) }}
+              onClick={() => { setDone(false); setForm({ name: '', address: '', city: '', state: '', zip: '', websiteUrl: '', description: '' }) }}
               className="px-5 py-2.5 border border-gray-200 hover:border-yellow-300 text-gray-700 font-semibold rounded-full text-sm transition-colors"
             >
               Suggest another
@@ -89,7 +88,8 @@ export default function SuggestRestaurantPage() {
           {[
             { label: 'Restaurant name',    field: 'name',        type: 'text',  required: true,  placeholder: 'e.g. Crown Burgers' },
             { label: 'Street address',     field: 'address',     type: 'text',  required: true,  placeholder: '123 Main St' },
-            { label: 'City',               field: 'city',        type: 'text',  required: true,  placeholder: 'Salt Lake City' },
+            { label: 'City',               field: 'city',        type: 'text',  required: true,  placeholder: 'e.g. Austin' },
+            { label: 'State / Province',   field: 'state',       type: 'text',  required: true,  placeholder: 'e.g. TX' },
             { label: 'ZIP code',           field: 'zip',         type: 'text',  required: true,  placeholder: '84101' },
             { label: 'Website (optional)', field: 'websiteUrl',  type: 'url',   required: false, placeholder: 'https://...' },
           ].map(({ label, field, type, required, placeholder }) => (

@@ -8,7 +8,7 @@ export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: 'Hall of Fame — FoodMedals',
-  description: 'See every past Gold Medal winner per food category. The definitive archive of Utah\'s best restaurants.',
+  description: 'See every past Gold Medal winner per food category. The definitive archive of community food rankings.',
   alternates: { canonical: 'https://foodmedals.com/hall-of-fame' },
 }
 
@@ -87,7 +87,7 @@ export default async function HallOfFamePage() {
                             {row.restaurantName}
                           </Link>
                           <p className="text-xs text-gray-400 mt-0.5">
-                            {row.goldCount} gold vote{row.goldCount !== 1 ? 's' : ''} · {row.totalScore} pts
+                            {row.restaurantCity}, {row.restaurantState} · {row.goldCount} gold vote{row.goldCount !== 1 ? 's' : ''}
                           </p>
                         </div>
                       </div>
