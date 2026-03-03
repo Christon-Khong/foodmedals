@@ -183,6 +183,27 @@ async function main() {
     { name: 'The Kathmandu',                  slug: 'the-kathmandu',                  address: '3142 S Highland Dr',      city: 'Salt Lake City', zip: '84106' },
     { name: 'Bhansa Ghar',                    slug: 'bhansa-ghar',                    address: '138 W 300 S',             city: 'Salt Lake City', zip: '84101' },
     { name: 'Star of India',                  slug: 'star-of-india',                  address: '177 E 200 S',             city: 'Salt Lake City', zip: '84111' },
+    // ─── Ogden ──────────────────────────────────────────────────────────────────
+    { name: "Roosters Brewing Co.",           slug: 'roosters-brewing-ogden',         address: '253 25th St',             city: 'Ogden',          zip: '84401' },
+    { name: 'Slackwater Pub (Ogden)',         slug: 'slackwater-ogden',               address: '1895 Washington Blvd',    city: 'Ogden',          zip: '84401' },
+    { name: 'Lucky Slice Pizza (Ogden)',      slug: 'lucky-slice-ogden',              address: '226 25th St',             city: 'Ogden',          zip: '84401' },
+    { name: 'Tona Sushi & Grill',            slug: 'tona-sushi-ogden',               address: '210 25th St',             city: 'Ogden',          zip: '84401' },
+    { name: 'Farr Better Ice Cream',          slug: 'farr-better-ice-cream',          address: '286 21st St',             city: 'Ogden',          zip: '84401' },
+    { name: 'Thai Pho Kitchen',               slug: 'thai-pho-kitchen-ogden',         address: '3900 Washington Blvd',    city: 'Ogden',          zip: '84403' },
+    { name: 'Daylight Donuts (Ogden)',        slug: 'daylight-donuts-ogden',          address: '444 25th St',             city: 'Ogden',          zip: '84401' },
+    { name: "Rancherito's",                   slug: 'rancheritos-ogden',              address: '555 E 12th St',           city: 'Ogden',          zip: '84404' },
+    // ─── Provo / Orem ────────────────────────────────────────────────────────────
+    { name: "Cubby's (Provo)",               slug: 'cubbys-provo',                   address: '801 N University Ave',    city: 'Provo',          zip: '84604' },
+    { name: "Marley's Gourmet Sliders",       slug: 'marleys-gourmet-sliders',        address: '161 W Center St',         city: 'Provo',          zip: '84601' },
+    { name: 'Pizzeria 712',                   slug: 'pizzeria-712',                   address: '320 S State St',          city: 'Orem',           zip: '84058' },
+    { name: 'Nicolitalia Pizzeria',           slug: 'nicolitalia-pizzeria',           address: '48 E Center St',          city: 'Provo',          zip: '84601' },
+    { name: 'Brick Oven Restaurant',          slug: 'brick-oven-provo',               address: '111 E 800 N',             city: 'Provo',          zip: '84606' },
+    { name: 'Five Sushi Brothers',            slug: 'five-sushi-brothers',            address: '194 W Center St',         city: 'Provo',          zip: '84601' },
+    { name: 'Asa Ramen',                      slug: 'asa-ramen',                      address: '55 N University Ave',     city: 'Provo',          zip: '84601' },
+    { name: 'Black Sheep Cafe',               slug: 'black-sheep-cafe',               address: '19 N University Ave',     city: 'Provo',          zip: '84601' },
+    { name: 'Café Sabor (Provo)',             slug: 'cafe-sabor-provo',               address: '240 W Center St',         city: 'Provo',          zip: '84601' },
+    { name: 'Chip Cookies (Provo)',           slug: 'chip-cookies-provo',             address: '95 N University Ave',     city: 'Provo',          zip: '84601' },
+    { name: 'Hires Big H (Orem)',             slug: 'hires-big-h-orem',               address: '900 N State St',          city: 'Orem',           zip: '84057' },
   ]
 
   const restaurants: Record<string, string> = {}
@@ -367,6 +388,37 @@ async function main() {
     ['the-kathmandu',               'indian-curry'],
     ['bhansa-ghar',                 'indian-curry'],
     ['star-of-india',               'indian-curry'],
+    // ─── Ogden ──────────────────────────────────────────────────────────────────
+    ['roosters-brewing-ogden',      'cheeseburgers'],
+    ['roosters-brewing-ogden',      'chicken-wings'],
+    ['slackwater-ogden',            'cheeseburgers'],
+    ['slackwater-ogden',            'pizza'],
+    ['lucky-slice-ogden',           'pizza'],
+    ['tona-sushi-ogden',            'sushi'],
+    ['farr-better-ice-cream',       'ice-cream'],
+    ['farr-better-ice-cream',       'milkshakes'],
+    ['thai-pho-kitchen-ogden',      'pad-thai'],
+    ['thai-pho-kitchen-ogden',      'pho'],
+    ['daylight-donuts-ogden',       'donuts'],
+    ['rancheritos-ogden',           'tacos'],
+    ['rancheritos-ogden',           'burritos'],
+    // ─── Provo / Orem ────────────────────────────────────────────────────────────
+    ['cubbys-provo',                'cheeseburgers'],
+    ['cubbys-provo',                'fried-chicken-sandwich'],
+    ['marleys-gourmet-sliders',     'cheeseburgers'],
+    ['pizzeria-712',                'pizza'],
+    ['nicolitalia-pizzeria',        'pizza'],
+    ['brick-oven-provo',            'pizza'],
+    ['five-sushi-brothers',         'sushi'],
+    ['asa-ramen',                   'ramen'],
+    ['black-sheep-cafe',            'tacos'],
+    ['black-sheep-cafe',            'burritos'],
+    ['cafe-sabor-provo',            'tacos'],
+    ['cafe-sabor-provo',            'burritos'],
+    ['chip-cookies-provo',          'cookies'],
+    ['hires-big-h-orem',            'cheeseburgers'],
+    ['hires-big-h-orem',            'french-fries'],
+    ['hires-big-h-orem',            'milkshakes'],
   ]
 
   for (const [rSlug, cSlug] of links) {
@@ -575,6 +627,42 @@ async function main() {
     { userEmail: 'taylor@demo.com', categorySlug: 'indian-curry',        restaurantSlug: 'saffron-valley',           medalType: 'gold'   },
     { userEmail: 'taylor@demo.com', categorySlug: 'indian-curry',        restaurantSlug: 'star-of-india',            medalType: 'silver' },
     { userEmail: 'taylor@demo.com', categorySlug: 'indian-curry',        restaurantSlug: 'bhansa-ghar',              medalType: 'bronze' },
+
+    // ── Ogden + Provo/Orem additions ─────────────────────────────────────────────
+    //   Cheeseburgers: Taylor is the only user with open slots
+    { userEmail: 'taylor@demo.com', categorySlug: 'cheeseburgers',       restaurantSlug: 'roosters-brewing-ogden',   medalType: 'gold'   },
+    { userEmail: 'taylor@demo.com', categorySlug: 'cheeseburgers',       restaurantSlug: 'slackwater-ogden',         medalType: 'silver' },
+    { userEmail: 'taylor@demo.com', categorySlug: 'cheeseburgers',       restaurantSlug: 'cubbys-provo',             medalType: 'bronze' },
+
+    //   Pizza: Jordan and Riley both have open slots — Pizzeria 712 earns 2G, Nicolitalia 1S+1B
+    { userEmail: 'jordan@demo.com', categorySlug: 'pizza',               restaurantSlug: 'pizzeria-712',             medalType: 'gold'   },
+    { userEmail: 'jordan@demo.com', categorySlug: 'pizza',               restaurantSlug: 'nicolitalia-pizzeria',     medalType: 'silver' },
+    { userEmail: 'jordan@demo.com', categorySlug: 'pizza',               restaurantSlug: 'brick-oven-provo',         medalType: 'bronze' },
+    { userEmail: 'riley@demo.com',  categorySlug: 'pizza',               restaurantSlug: 'pizzeria-712',             medalType: 'gold'   },
+    { userEmail: 'riley@demo.com',  categorySlug: 'pizza',               restaurantSlug: 'slackwater-ogden',         medalType: 'silver' },
+    { userEmail: 'riley@demo.com',  categorySlug: 'pizza',               restaurantSlug: 'nicolitalia-pizzeria',     medalType: 'bronze' },
+
+    //   Sushi: Jordan and Sam both have open slots — Five Sushi Brothers earns 2G
+    { userEmail: 'jordan@demo.com', categorySlug: 'sushi',               restaurantSlug: 'five-sushi-brothers',      medalType: 'gold'   },
+    { userEmail: 'jordan@demo.com', categorySlug: 'sushi',               restaurantSlug: 'tona-sushi-ogden',         medalType: 'silver' },
+    { userEmail: 'jordan@demo.com', categorySlug: 'sushi',               restaurantSlug: 'itto-sushi',               medalType: 'bronze' },
+    { userEmail: 'sam@demo.com',    categorySlug: 'sushi',               restaurantSlug: 'five-sushi-brothers',      medalType: 'gold'   },
+    { userEmail: 'sam@demo.com',    categorySlug: 'sushi',               restaurantSlug: 'tona-sushi-ogden',         medalType: 'silver' },
+    { userEmail: 'sam@demo.com',    categorySlug: 'sushi',               restaurantSlug: 'itto-sushi',               medalType: 'bronze' },
+
+    //   Ramen: Jordan and Taylor both have open slots — Asa Ramen earns 1G + 1B
+    { userEmail: 'jordan@demo.com', categorySlug: 'ramen',               restaurantSlug: 'asa-ramen',                medalType: 'gold'   },
+    { userEmail: 'jordan@demo.com', categorySlug: 'ramen',               restaurantSlug: 'ramen-haus',               medalType: 'silver' },
+    { userEmail: 'jordan@demo.com', categorySlug: 'ramen',               restaurantSlug: 'ramen-ichizu',             medalType: 'bronze' },
+    { userEmail: 'taylor@demo.com', categorySlug: 'ramen',               restaurantSlug: 'ramen-haus',               medalType: 'gold'   },
+    { userEmail: 'taylor@demo.com', categorySlug: 'ramen',               restaurantSlug: 'jinya-ramen-bar',          medalType: 'silver' },
+    { userEmail: 'taylor@demo.com', categorySlug: 'ramen',               restaurantSlug: 'asa-ramen',                medalType: 'bronze' },
+
+    //   Ice Cream: Alex and Jordan both have open slots — Farr Better earns 1G + 1S
+    { userEmail: 'alex@demo.com',   categorySlug: 'ice-cream',           restaurantSlug: 'farr-better-ice-cream',    medalType: 'gold'   },
+    { userEmail: 'alex@demo.com',   categorySlug: 'ice-cream',           restaurantSlug: 'nielsens-frozen-custard',  medalType: 'silver' },
+    { userEmail: 'jordan@demo.com', categorySlug: 'ice-cream',           restaurantSlug: 'nielsens-frozen-custard',  medalType: 'gold'   },
+    { userEmail: 'jordan@demo.com', categorySlug: 'ice-cream',           restaurantSlug: 'farr-better-ice-cream',    medalType: 'silver' },
   ]
 
   for (const m of medalData) {
