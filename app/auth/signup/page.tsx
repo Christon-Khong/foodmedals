@@ -58,6 +58,8 @@ export default function SignUpPage() {
             <label className="block text-sm font-medium text-gray-800 mb-1">Display name</label>
             <input
               type="text"
+              name="name"
+              autoComplete="name"
               value={form.displayName}
               onChange={update('displayName')}
               required
@@ -69,6 +71,8 @@ export default function SignUpPage() {
             <label className="block text-sm font-medium text-gray-800 mb-1">Email</label>
             <input
               type="email"
+              name="email"
+              autoComplete="email"
               value={form.email}
               onChange={update('email')}
               required
@@ -80,6 +84,8 @@ export default function SignUpPage() {
             <label className="block text-sm font-medium text-gray-800 mb-1">Password</label>
             <input
               type="password"
+              name="new-password"
+              autoComplete="new-password"
               value={form.password}
               onChange={update('password')}
               required
