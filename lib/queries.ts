@@ -27,6 +27,7 @@ export type LeaderboardRow = {
   silverCount:    number
   bronzeCount:    number
   totalScore:     number
+  distanceMiles?: number
 }
 
 export async function getLeaderboard(
@@ -81,6 +82,73 @@ export async function getLeaderboard(
     silverCount:    Number(row.silver_count),
     bronzeCount:    Number(row.bronze_count),
     totalScore:     Number(row.total_score),
+  }))
+}
+
+export async function getLeaderboardNearMe(
+  foodCategoryId: string,
+  year: number,
+  lat: number,
+  lng: number,
+  radius: number,
+): Promise<LeaderboardRow[]> {
+  const rows = await prisma.$queryRaw<
+    Array<{
+      restaurant_id:   string
+      restaurant_name: string
+      restaurant_slug: string
+      gold_count:      bigint
+      silver_count:    bigint
+      bronze_count:    bigint
+      total_score:     bigint
+      distance_miles:  number
+    }>
+  >`
+    WITH nearby AS (
+      SELECT r.id, r.name, r.slug, r.lat, r.lng, r.city,
+        (3959 * acos(
+          LEAST(1.0,
+            cos(radians(${lat})) * cos(radians(r.lat)) *
+            cos(radians(r.lng) - radians(${lng})) +
+            sin(radians(${lat})) * sin(radians(r.lat))
+          )
+        )) AS distance_miles
+      FROM restaurants r
+      WHERE r.lat BETWEEN ${lat} - ${radius}/69.0 AND ${lat} + ${radius}/69.0
+        AND r.lng BETWEEN ${lng} - ${radius}/(69.0 * cos(radians(${lat}))) AND ${lng} + ${radius}/(69.0 * cos(radians(${lat})))
+        AND r.lat IS NOT NULL AND r.lng IS NOT NULL
+        AND r.status = 'active'
+    )
+    SELECT
+      n.id   AS restaurant_id,
+      n.name AS restaurant_name,
+      n.slug AS restaurant_slug,
+      ROUND(n.distance_miles::numeric, 1)                                AS distance_miles,
+      COUNT(*) FILTER (WHERE m.medal_type = 'gold')                     AS gold_count,
+      COUNT(*) FILTER (WHERE m.medal_type = 'silver')                   AS silver_count,
+      COUNT(*) FILTER (WHERE m.medal_type = 'bronze')                   AS bronze_count,
+      (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
+       COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
+       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1)             AS total_score
+    FROM nearby n
+    JOIN restaurant_categories rc ON rc.restaurant_id = n.id AND rc.food_category_id = ${foodCategoryId} AND rc.verified = true
+    LEFT JOIN medals m ON m.restaurant_id = n.id
+                      AND m.food_category_id = ${foodCategoryId}
+                      AND m.year = ${year}
+    WHERE n.distance_miles <= ${radius}
+    GROUP BY n.id, n.name, n.slug, n.distance_miles
+    ORDER BY total_score DESC, gold_count DESC, n.distance_miles ASC
+  `
+
+  return rows.map(row => ({
+    restaurantId:   row.restaurant_id,
+    restaurantName: row.restaurant_name,
+    restaurantSlug: row.restaurant_slug,
+    goldCount:      Number(row.gold_count),
+    silverCount:    Number(row.silver_count),
+    bronzeCount:    Number(row.bronze_count),
+    totalScore:     Number(row.total_score),
+    distanceMiles:  Number(row.distance_miles),
   }))
 }
 
