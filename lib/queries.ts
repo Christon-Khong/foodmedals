@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import { Prisma } from '../app/generated/prisma'
+import { Prisma } from '@/app/generated/prisma/client'
 
 // ─── Categories ───────────────────────────────────────────────────────────────
 
