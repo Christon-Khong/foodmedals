@@ -2,9 +2,9 @@ import { PrismaClient } from '@/app/generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
-// Cap connections so that 4 build workers × 3 = 12,
-// safely under the Supabase Session Pooler's 15-connection limit.
-const POOL_MAX = 3
+// Cap connections to 1 per worker so that N build workers × 1 = N total,
+// safely under Neon's session-mode PgBouncer pool_size limit.
+const POOL_MAX = 1
 
 const globalForPrisma = globalThis as unknown as {
   pool:   Pool | undefined
