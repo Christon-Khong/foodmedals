@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getRestaurantBySlug, getRestaurantTrophies } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
+import { HeroImage } from '@/components/HeroImage'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -66,6 +67,7 @@ export default async function RestaurantPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Navbar />
+      <HeroImage />
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-amber-100">

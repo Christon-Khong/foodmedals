@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getHallOfFame } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
+import { HeroImage } from '@/components/HeroImage'
 
 export const revalidate = 3600
 
@@ -30,6 +31,7 @@ export default async function HallOfFamePage() {
   return (
     <div className="min-h-screen bg-amber-50">
       <Navbar />
+      <HeroImage />
 
       {/* Header */}
       <div className="bg-white border-b border-amber-100">

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
+import { HeroImage } from '@/components/HeroImage'
 
 export default function SuggestRestaurantPage() {
   const [form, setForm] = useState({
@@ -47,6 +48,7 @@ export default function SuggestRestaurantPage() {
     return (
       <div className="min-h-screen bg-amber-50">
         <Navbar />
+        <HeroImage />
         <div className="max-w-md mx-auto px-4 py-24 text-center">
           <div className="text-5xl mb-4">🎉</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Thanks for the suggestion!</h1>
@@ -72,6 +74,7 @@ export default function SuggestRestaurantPage() {
   return (
     <div className="min-h-screen bg-amber-50">
       <Navbar />
+      <HeroImage />
 
       <div className="max-w-lg mx-auto px-4 py-10">
         <div className="mb-8">

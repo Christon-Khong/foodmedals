@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getAllActiveCategories } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
+import { HeroImage } from '@/components/HeroImage'
 
 export default async function HomePage() {
   const categories = await getAllActiveCategories()
@@ -9,6 +10,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-amber-50">
       <Navbar />
+      <HeroImage />
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <section className="bg-gradient-to-b from-white to-amber-50 border-b border-amber-100">

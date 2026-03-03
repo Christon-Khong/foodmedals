@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { getCategoryBySlug, getRestaurantsForCategory, getUserMedalsForCategory } from '@/lib/queries'
 import { AwardForm } from '@/components/AwardForm'
 import { Navbar } from '@/components/Navbar'
+import { HeroImage } from '@/components/HeroImage'
 
 export default async function AwardPage({
   params,
@@ -44,6 +45,7 @@ export default async function AwardPage({
   return (
     <div className="min-h-screen bg-amber-50">
       <Navbar />
+      <HeroImage />
 
       {/* Header */}
       <div className="bg-white border-b border-amber-100">

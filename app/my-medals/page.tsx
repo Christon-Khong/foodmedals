@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getAllUserMedals } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
+import { HeroImage } from '@/components/HeroImage'
 
 export const metadata: Metadata = {
   title: 'My Medals — FoodMedals',
@@ -44,6 +45,7 @@ export default async function MyMedalsPage() {
   return (
     <div className="min-h-screen bg-amber-50">
       <Navbar />
+      <HeroImage />
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="mb-8">

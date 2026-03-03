@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getCategoryBySlug, getLeaderboard, getCitiesForCategory } from '@/lib/queries'
 import { Podium } from '@/components/Podium'
+import { HeroImage } from '@/components/HeroImage'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -134,6 +135,8 @@ export default async function CategoryLeaderboardPage({
           )}
         </div>
       </div>
+
+      <HeroImage />
 
       {/* ── Hero header ─────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-amber-100">

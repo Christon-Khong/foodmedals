@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getAllActiveCategories } from '@/lib/queries'
+import { HeroImage } from '@/components/HeroImage'
 
 export const metadata: Metadata = {
   title: 'Food Categories — FoodMedals',
@@ -13,6 +14,7 @@ export default async function CategoriesPage() {
 
   return (
     <main className="min-h-screen bg-amber-50">
+      <HeroImage />
       {/* Header */}
       <div className="bg-white border-b border-amber-100">
         <div className="max-w-4xl mx-auto px-4 py-8">
