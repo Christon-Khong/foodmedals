@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   title: 'FoodMedals — Community Food Rankings',
   description:
     'Community-powered restaurant rankings. Award Gold, Silver & Bronze medals to the best food in your city.',
+  manifest: '/site.webmanifest',
   openGraph: {
     title: 'FoodMedals — Community Food Rankings',
     type: 'website',
