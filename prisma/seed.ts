@@ -230,6 +230,22 @@ async function main() {
     { name: 'Pica Rica BBQ',                  slug: 'pica-rica-bbq',                  address: '1440 S Bluff St',         city: 'St. George',     zip: '84770' },
     { name: 'Bonrue Bakery',                  slug: 'bonrue-bakery',                  address: '143 N 100 W',             city: 'St. George',     zip: '84770' },
     { name: "George's Corner",                slug: 'georges-corner',                 address: '2 W St. George Blvd',     city: 'St. George',     zip: '84770' },
+    // ─── Lehi / Draper / Sandy ───────────────────────────────────────────────────
+    { name: "Cubby's",                        slug: 'cubbys-lehi',                    address: '1044 E Main St',          city: 'Lehi',           zip: '84043' },
+    { name: 'Hamachi Sushi Bar',              slug: 'hamachi-sushi',                  address: '3626 Outlet Pkwy',        city: 'Lehi',           zip: '84043' },
+    { name: 'Tsunami',                        slug: 'tsunami-sandy',                  address: '11461 S State St',        city: 'Sandy',          zip: '84070' },
+    { name: 'Sobo Sushi and Ramen',           slug: 'sobo-sushi-ramen',               address: '3566 Outlet Pkwy',        city: 'Lehi',           zip: '84043' },
+    { name: 'Baan Thai',                      slug: 'baan-thai',                      address: '1541 S State St',         city: 'Lehi',           zip: '84043' },
+    { name: 'Montauk Bistro',                 slug: 'montauk-bistro',                 address: '13862 Bangerter Pkwy',    city: 'Draper',         zip: '84020' },
+    { name: 'Dog Haus',                       slug: 'dog-haus-sandy',                 address: '10261 S State St',        city: 'Sandy',          zip: '84070' },
+    // ─── Logan ───────────────────────────────────────────────────────────────────
+    { name: "Morty's",                        slug: 'mortys-logan',                   address: '1177 N Main St',          city: 'Logan',          zip: '84341' },
+    { name: 'Center Street Pizza',            slug: 'center-street-pizza',            address: '71 W Center St',          city: 'Logan',          zip: '84321' },
+    { name: 'Firehouse Pizza',                slug: 'firehouse-pizza',                address: '95 W Center St',          city: 'Logan',          zip: '84321' },
+    { name: 'Cafe Sabor',                     slug: 'cafe-sabor-logan',               address: '600 W Center St',         city: 'Logan',          zip: '84321' },
+    { name: 'Aggie Ice Cream',                slug: 'aggie-ice-cream',                address: '750 N 1200 E',            city: 'Logan',          zip: '84322' },
+    { name: 'Akita Ramen Poke and Boba',      slug: 'akita-ramen',                    address: '35 W Center St',          city: 'Logan',          zip: '84321' },
+    { name: 'Himalayan Flavor',               slug: 'himalayan-flavor',               address: '58 W Center St',          city: 'Logan',          zip: '84321' },
   ]
 
   const restaurants: Record<string, string> = {}
@@ -475,6 +491,25 @@ async function main() {
     ['pica-rica-bbq',               'pulled-pork'],
     ['bonrue-bakery',               'donuts'],
     ['georges-corner',              'breakfast-burritos'],
+    // ─── Lehi / Draper / Sandy ───────────────────────────────────────────────────
+    ['cubbys-lehi',                 'cheeseburgers'],
+    ['hamachi-sushi',               'sushi'],
+    ['tsunami-sandy',               'sushi'],
+    ['sobo-sushi-ramen',            'ramen'],
+    ['baan-thai',                   'pad-thai'],
+    ['montauk-bistro',              'pho'],
+    ['montauk-bistro',              'pad-thai'],
+    ['dog-haus-sandy',              'fried-chicken-sandwich'],
+    ['dog-haus-sandy',              'breakfast-burritos'],
+    // ─── Logan ───────────────────────────────────────────────────────────────────
+    ['mortys-logan',                'cheeseburgers'],
+    ['center-street-pizza',         'pizza'],
+    ['firehouse-pizza',             'pizza'],
+    ['cafe-sabor-logan',            'tacos'],
+    ['cafe-sabor-logan',            'burritos'],
+    ['aggie-ice-cream',             'ice-cream'],
+    ['akita-ramen',                 'ramen'],
+    ['himalayan-flavor',            'indian-curry'],
   ]
 
   for (const [rSlug, cSlug] of links) {
@@ -739,6 +774,22 @@ async function main() {
     { userEmail: 'riley@demo.com',  categorySlug: 'indian-curry',        restaurantSlug: 'red-fort-cuisine',         medalType: 'bronze' },
     { userEmail: 'alex@demo.com',   categorySlug: 'cheeseburgers',       restaurantSlug: 'mortys-st-george',         medalType: 'silver' },
     { userEmail: 'jordan@demo.com', categorySlug: 'cheeseburgers',       restaurantSlug: 'burger-theory',            medalType: 'bronze' },
+
+    // ── Lehi / Draper / Sandy + Logan additions ───────────────────────────────────
+    { userEmail: 'alex@demo.com',   categorySlug: 'pizza',               restaurantSlug: 'firehouse-pizza',          medalType: 'gold'   },
+    { userEmail: 'jordan@demo.com', categorySlug: 'pizza',               restaurantSlug: 'firehouse-pizza',          medalType: 'silver' },
+    { userEmail: 'sam@demo.com',    categorySlug: 'pizza',               restaurantSlug: 'center-street-pizza',      medalType: 'silver' },
+    { userEmail: 'riley@demo.com',  categorySlug: 'pizza',               restaurantSlug: 'center-street-pizza',      medalType: 'bronze' },
+    { userEmail: 'alex@demo.com',   categorySlug: 'ice-cream',           restaurantSlug: 'aggie-ice-cream',          medalType: 'gold'   },
+    { userEmail: 'jordan@demo.com', categorySlug: 'ice-cream',           restaurantSlug: 'aggie-ice-cream',          medalType: 'gold'   },
+    { userEmail: 'sam@demo.com',    categorySlug: 'ice-cream',           restaurantSlug: 'aggie-ice-cream',          medalType: 'gold'   },
+    { userEmail: 'riley@demo.com',  categorySlug: 'ice-cream',           restaurantSlug: 'aggie-ice-cream',          medalType: 'silver' },
+    { userEmail: 'alex@demo.com',   categorySlug: 'sushi',               restaurantSlug: 'hamachi-sushi',            medalType: 'gold'   },
+    { userEmail: 'jordan@demo.com', categorySlug: 'sushi',               restaurantSlug: 'hamachi-sushi',            medalType: 'silver' },
+    { userEmail: 'alex@demo.com',   categorySlug: 'ramen',               restaurantSlug: 'sobo-sushi-ramen',         medalType: 'gold'   },
+    { userEmail: 'sam@demo.com',    categorySlug: 'ramen',               restaurantSlug: 'sobo-sushi-ramen',         medalType: 'bronze' },
+    { userEmail: 'alex@demo.com',   categorySlug: 'indian-curry',        restaurantSlug: 'himalayan-flavor',         medalType: 'gold'   },
+    { userEmail: 'jordan@demo.com', categorySlug: 'indian-curry',        restaurantSlug: 'himalayan-flavor',         medalType: 'silver' },
   ]
 
   for (const m of medalData) {
