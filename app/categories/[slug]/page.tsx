@@ -69,7 +69,9 @@ export default async function CategoryLeaderboardPage({
   // Only fetch leaderboard when city is selected
   const rows = showCityPicker ? [] : await getLeaderboard(category.id, year, city, state)
 
-  const top3 = rows.slice(0, 3)
+  // Only medalled restaurants appear on the podium; all restaurants show in the table
+  const medalled = rows.filter(r => r.totalScore > 0)
+  const top3 = medalled.slice(0, 3)
   const rest = rows.slice(3)
 
   // Build year-tab hrefs preserving city selection

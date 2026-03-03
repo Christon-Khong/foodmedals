@@ -51,7 +51,7 @@ export async function getLeaderboard(
     }>
   >`
     SELECT
-      m.restaurant_id,
+      r.id   AS restaurant_id,
       r.name AS restaurant_name,
       r.slug AS restaurant_slug,
       COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
@@ -60,13 +60,17 @@ export async function getLeaderboard(
       (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
        COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
        COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) AS total_score
-    FROM medals m
-    JOIN restaurants r ON r.id = m.restaurant_id
-    WHERE m.food_category_id = ${foodCategoryId}
-      AND m.year = ${year}
+    FROM restaurant_categories rc
+    JOIN  restaurants r ON r.id = rc.restaurant_id
+    LEFT JOIN medals  m ON m.restaurant_id    = r.id
+                       AND m.food_category_id = ${foodCategoryId}
+                       AND m.year             = ${year}
+    WHERE rc.food_category_id = ${foodCategoryId}
+      AND rc.verified = true
+      AND r.status    = 'active'
       ${cityClause}
-    GROUP BY m.restaurant_id, r.name, r.slug
-    ORDER BY total_score DESC, gold_count DESC
+    GROUP BY r.id, r.name, r.slug
+    ORDER BY total_score DESC, gold_count DESC, r.name ASC
   `
 
   return rows.map(row => ({
