@@ -10,6 +10,40 @@ function toSlug(name: string, city: string) {
     .replace(/^-|-$/g, '')
 }
 
+async function geocode(
+  address: string,
+  city: string,
+  state: string,
+  zip: string,
+): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const params = new URLSearchParams({
+      street:       address,
+      city,
+      state,
+      postalcode:   zip,
+      countrycodes: 'us',
+      format:       'json',
+      limit:        '1',
+    })
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?${params}`,
+      {
+        headers: {
+          'User-Agent':      'FoodMedals/1.0 (foodmedals.com)',
+          'Accept-Language': 'en',
+        },
+      },
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    if (!Array.isArray(data) || data.length === 0) return null
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+  } catch {
+    return null
+  }
+}
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
@@ -27,6 +61,9 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.restaurant.findUnique({ where: { slug } })
   if (existing) slug = `${slug}-${Date.now()}`
 
+  // Geocode the address via OpenStreetMap Nominatim (best-effort — won't block creation if it fails)
+  const coords = await geocode(address.trim(), city.trim(), state.trim(), zip.trim())
+
   const restaurant = await prisma.restaurant.create({
     data: {
       name:        name.trim(),
@@ -39,6 +76,8 @@ export async function POST(req: NextRequest) {
       description: description?.trim() || null,
       status:      'pending_review',
       submittedBy: session.user.id,
+      lat:         coords?.lat ?? null,
+      lng:         coords?.lng ?? null,
     },
   })
 
