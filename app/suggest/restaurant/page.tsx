@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
+
+type Category = { id: string; name: string; iconEmoji: string }
 
 export default function SuggestRestaurantPage() {
   const [form, setForm] = useState({
@@ -15,9 +17,18 @@ export default function SuggestRestaurantPage() {
     websiteUrl:  '',
     description: '',
   })
+  const [categoryIds,  setCategoryIds]  = useState<string[]>([])
+  const [categories,   setCategories]   = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
   const [done,    setDone]    = useState(false)
+
+  useEffect(() => {
+    fetch('/api/categories/list')
+      .then(r => r.json())
+      .then(setCategories)
+      .catch(() => {})
+  }, [])
 
   function update(field: string) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -29,10 +40,16 @@ export default function SuggestRestaurantPage() {
     setLoading(true)
     setError('')
 
+    if (categoryIds.length === 0) {
+      setError('Please select at least one category.')
+      setLoading(false)
+      return
+    }
+
     const res = await fetch('/api/restaurants/suggest', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(form),
+      body:    JSON.stringify({ ...form, categoryIds }),
     })
 
     if (!res.ok) {
@@ -42,6 +59,12 @@ export default function SuggestRestaurantPage() {
     } else {
       setDone(true)
     }
+  }
+
+  function toggleCategory(id: string) {
+    setCategoryIds(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    )
   }
 
   if (done) {
@@ -56,11 +79,11 @@ export default function SuggestRestaurantPage() {
             We&apos;ll review <strong>{form.name}</strong> and add it to the right categories soon.
           </p>
           <div className="flex gap-3 justify-center">
-            <Link href="/categories" className="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-full text-sm transition-colors">
-              Browse categories
+            <Link href="/suggest/vote" className="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-full text-sm transition-colors">
+              View Community Picks
             </Link>
             <button
-              onClick={() => { setDone(false); setForm({ name: '', address: '', city: '', state: '', zip: '', websiteUrl: '', description: '' }) }}
+              onClick={() => { setDone(false); setForm({ name: '', address: '', city: '', state: '', zip: '', websiteUrl: '', description: '' }); setCategoryIds([]) }}
               className="px-5 py-2.5 border border-gray-200 hover:border-yellow-300 text-gray-700 font-semibold rounded-full text-sm transition-colors"
             >
               Suggest another
@@ -122,6 +145,35 @@ export default function SuggestRestaurantPage() {
               placeholder="What makes this place special?"
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
             />
+          </div>
+
+          {/* Category multi-select */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Categories <span className="text-red-400">*</span>
+            </label>
+            <p className="text-xs text-gray-400 mb-2">Select all food categories this restaurant is known for.</p>
+            {categories.length === 0 ? (
+              <p className="text-xs text-gray-400">Loading categories…</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto border border-gray-200 rounded-xl p-3">
+                {categories.map(cat => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => toggleCategory(cat.id)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
+                      categoryIds.includes(cat.id)
+                        ? 'bg-yellow-400 text-gray-900'
+                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>{cat.iconEmoji}</span>
+                    <span className="truncate">{cat.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {error && (

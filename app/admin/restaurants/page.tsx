@@ -9,7 +9,9 @@ async function getPendingRestaurants() {
     where:   { status: 'pending_review' },
     orderBy: { createdAt: 'asc' },
     include: {
-      submitter: { select: { id: true, displayName: true, email: true } },
+      submitter:  { select: { id: true, displayName: true, email: true } },
+      categories: { include: { foodCategory: { select: { name: true, iconEmoji: true } } } },
+      _count:     { select: { suggestionVotes: true } },
     },
   })
 }
@@ -55,11 +57,26 @@ export default async function ModerationQueuePage() {
                     <span className="text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 px-2 py-0.5 rounded-full">
                       Pending
                     </span>
+                    {r._count.suggestionVotes > 0 && (
+                      <span className="text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full">
+                        ▲ {r._count.suggestionVotes} vote{r._count.suggestionVotes !== 1 ? 's' : ''}
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-gray-400 text-sm mt-1">
                     {r.address}, {r.city}, {r.state} {r.zip}
                   </p>
+
+                  {r.categories.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {r.categories.map(c => (
+                        <span key={c.foodCategory.name} className="text-xs bg-gray-800 text-gray-300 border border-gray-700 px-2 py-0.5 rounded-full">
+                          {c.foodCategory.iconEmoji} {c.foodCategory.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   {r.description && (
                     <p className="text-gray-500 text-xs mt-2 line-clamp-2">{r.description}</p>

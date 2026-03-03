@@ -25,6 +25,7 @@ model User {
   medals               Medal[]
   submittedRestaurants Restaurant[]         @relation("SubmittedRestaurants")
   submittedLinks       RestaurantCategory[] @relation("SubmittedLinks")
+  suggestionVotes      SuggestionVote[]
 
   @@map("users")
 }
@@ -67,9 +68,10 @@ model Restaurant {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  submitter  User?                @relation("SubmittedRestaurants", fields: [submittedBy], references: [id])
-  categories RestaurantCategory[]
-  medals     Medal[]
+  submitter       User?                @relation("SubmittedRestaurants", fields: [submittedBy], references: [id])
+  categories      RestaurantCategory[]
+  medals          Medal[]
+  suggestionVotes SuggestionVote[]
 
   @@map("restaurants")
 }
@@ -127,4 +129,17 @@ model Medal {
   @@index([foodCategoryId, year])
   @@index([restaurantId, year])
   @@map("medals")
+}
+
+model SuggestionVote {
+  id           String   @id @default(cuid())
+  restaurantId String   @map("restaurant_id")
+  userId       String   @map("user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, userId])
+  @@map("suggestion_votes")
 }

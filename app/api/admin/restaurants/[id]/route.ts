@@ -24,5 +24,13 @@ export async function PATCH(
     data:  { status },
   })
 
+  // Auto-verify category links when approving
+  if (status === 'active') {
+    await prisma.restaurantCategory.updateMany({
+      where: { restaurantId: id },
+      data:  { verified: true },
+    })
+  }
+
   return NextResponse.json(restaurant)
 }

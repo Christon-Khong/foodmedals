@@ -50,10 +50,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { name, address, city, state, zip, websiteUrl, description } = await req.json()
+  const { name, address, city, state, zip, websiteUrl, description, categoryIds } = await req.json()
 
   if (!name || !address || !city || !state || !zip) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
+
+  if (!Array.isArray(categoryIds) || categoryIds.length === 0) {
+    return NextResponse.json({ error: 'Select at least one category' }, { status: 400 })
   }
 
   // Generate a unique slug
@@ -80,6 +84,19 @@ export async function POST(req: NextRequest) {
       lng:         coords?.lng ?? null,
     },
   })
+
+  // Create unverified category links
+  if (categoryIds.length > 0) {
+    await prisma.restaurantCategory.createMany({
+      data: categoryIds.map((foodCategoryId: string) => ({
+        restaurantId:   restaurant.id,
+        foodCategoryId,
+        submittedBy:    session.user.id,
+        verified:       false,
+      })),
+      skipDuplicates: true,
+    })
+  }
 
   return NextResponse.json({ id: restaurant.id, slug: restaurant.slug }, { status: 201 })
 }
