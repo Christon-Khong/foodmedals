@@ -48,7 +48,7 @@ function foodMedalsAdapter(): Adapter {
       return user ? toAdapterUser(user) : null
     },
 
-    async getUserByAccount({ provider, providerAccountId }) {
+    async getUserByAccount({ provider, providerAccountId }: Pick<AdapterAccount, 'provider' | 'providerAccountId'>) {
       const account = await prisma.account.findUnique({
         where: { provider_providerAccountId: { provider, providerAccountId } },
         include: { user: true },
@@ -86,7 +86,7 @@ function foodMedalsAdapter(): Adapter {
       })
     },
 
-    async unlinkAccount({ provider, providerAccountId }) {
+    async unlinkAccount({ provider, providerAccountId }: Pick<AdapterAccount, 'provider' | 'providerAccountId'>) {
       await prisma.account.delete({
         where: { provider_providerAccountId: { provider, providerAccountId } },
       })
