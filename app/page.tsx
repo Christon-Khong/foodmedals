@@ -4,7 +4,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getAllActiveCategories, getTopRestaurantsPerCategory } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
-import { HeroImage } from '@/components/HeroImage'
 import { TrendingCarousel } from '@/components/TrendingCarousel'
 
 export default async function HomePage() {
@@ -19,11 +18,21 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-amber-50">
       <Navbar />
-      <HeroImage />
 
-      {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-b from-white to-amber-50 border-b border-amber-100">
-        <div className="max-w-4xl mx-auto px-4 py-16 sm:py-24 text-center">
+      {/* ── Hero with background image ────────────────────────────────────── */}
+      <section className="relative border-b border-amber-100 overflow-hidden">
+        {/* Background image */}
+        <Image
+          src="/images/hero.png"
+          alt="A spread of delicious food dishes"
+          fill
+          className="object-cover"
+          priority
+        />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/50" />
+
+        <div className="relative max-w-4xl mx-auto px-4 py-20 sm:py-28 text-center">
           <div className="flex justify-center gap-3 mb-6">
             <span className="animate-bounce inline-block" style={{ animationDelay: '0ms' }}>
               <Image src="/medals/gold.png" alt="gold medal" width={64} height={64} />
@@ -35,10 +44,10 @@ export default async function HomePage() {
               <Image src="/medals/bronze.png" alt="bronze medal" width={64} height={64} />
             </span>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight mb-4">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight mb-4 drop-shadow-lg">
             Award Medals to<br className="hidden sm:inline" /> the Best Food Near You
           </h1>
-          <p className="text-lg sm:text-xl text-gray-500 max-w-xl mx-auto mb-8">
+          <p className="text-lg sm:text-xl text-gray-200 max-w-xl mx-auto mb-8">
             Community-powered rankings. Pick your Gold, Silver &amp; Bronze for each food category — new year, new picks.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -51,7 +60,7 @@ export default async function HomePage() {
             {!isLoggedIn && (
               <Link
                 href="/auth/signup"
-                className="w-full sm:w-auto px-8 py-3.5 bg-white hover:bg-amber-50 text-gray-700 font-semibold rounded-full text-base border border-gray-200 hover:border-yellow-300 transition-colors"
+                className="w-full sm:w-auto px-8 py-3.5 bg-white/90 hover:bg-white text-gray-700 font-semibold rounded-full text-base border border-gray-200 hover:border-yellow-300 transition-colors"
               >
                 Sign up — it&apos;s free
               </Link>
