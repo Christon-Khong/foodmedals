@@ -71,7 +71,7 @@ export function CategoryNominations({ suggestions, isLoggedIn }: Props) {
                   />
                 </div>
                 <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
-                  {s.voteCount}/50 to auto-approve
+                  {s.voteCount}/50 to activate
                 </span>
               </div>
 

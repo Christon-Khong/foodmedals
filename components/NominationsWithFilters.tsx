@@ -280,7 +280,7 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
                     />
                   </div>
                   <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
-                    {s.voteCount}/10 to auto-approve
+                    {s.voteCount}/10 to activate
                   </span>
                 </div>
 
