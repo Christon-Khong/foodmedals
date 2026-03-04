@@ -195,9 +195,13 @@ function isUserPickForRow(userMedals: UserMedals, restaurantId: string): boolean
   return Object.values(userMedals).includes(restaurantId)
 }
 
-export function Podium({ rows, userMedals = { gold: null, silver: null, bronze: null } }: { rows: LeaderboardRow[]; userMedals?: UserMedals }) {
-  const [first, second, third] = rows
+type PodiumProps = {
+  rows: LeaderboardRow[]
+  ranks?: number[]
+  userMedals?: UserMedals
+}
 
+export function Podium({ rows, ranks, userMedals = { gold: null, silver: null, bronze: null } }: PodiumProps) {
   if (rows.length === 0) {
     return (
       <div className="text-center py-20 text-gray-400">
@@ -208,25 +212,48 @@ export function Podium({ rows, userMedals = { gold: null, silver: null, bronze: 
     )
   }
 
+  // Group rows by rank (1, 2, 3)
+  const groups: { place: 1 | 2 | 3; items: LeaderboardRow[] }[] = []
+  for (let i = 0; i < rows.length; i++) {
+    const rank = (ranks?.[i] ?? i + 1) as 1 | 2 | 3
+    if (rank > 3) break
+    const existing = groups.find(g => g.place === rank)
+    if (existing) {
+      existing.items.push(rows[i])
+    } else {
+      groups.push({ place: rank, items: [rows[i]] })
+    }
+  }
+
+  const placeMap = new Map(groups.map(g => [g.place, g.items]))
+  const gold   = placeMap.get(1) ?? []
+  const silver = placeMap.get(2) ?? []
+  const bronze = placeMap.get(3) ?? []
+
+  const DELAY: Record<number, number> = { 1: 0, 2: 0.15, 3: 0.3 }
+
+  function renderGroup(items: LeaderboardRow[], place: 1 | 2 | 3) {
+    if (items.length === 0) return <EmptySlot place={place} />
+    return (
+      <div className="flex items-end gap-1 sm:gap-2">
+        {items.map((row, idx) => (
+          <PodiumColumn
+            key={row.restaurantId}
+            row={row}
+            place={place}
+            delay={DELAY[place] + idx * 0.08}
+            isUserPick={isUserPickForRow(userMedals, row.restaurantId)}
+          />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-end justify-center gap-3 sm:gap-6 py-8 px-4">
-      {/* Silver — left */}
-      {second
-        ? <PodiumColumn row={second} place={2} delay={0.15} isUserPick={isUserPickForRow(userMedals, second.restaurantId)} />
-        : <EmptySlot place={2} />
-      }
-
-      {/* Gold — centre (tallest) */}
-      {first
-        ? <PodiumColumn row={first} place={1} delay={0} isUserPick={isUserPickForRow(userMedals, first.restaurantId)} />
-        : <EmptySlot place={1} />
-      }
-
-      {/* Bronze — right */}
-      {third
-        ? <PodiumColumn row={third} place={3} delay={0.3} isUserPick={isUserPickForRow(userMedals, third.restaurantId)} />
-        : <EmptySlot place={3} />
-      }
+      {renderGroup(silver, 2)}
+      {renderGroup(gold, 1)}
+      {renderGroup(bronze, 3)}
     </div>
   )
 }

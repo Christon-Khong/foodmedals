@@ -114,6 +114,30 @@ function MedalButtons({
   )
 }
 
+/** Compute standard competition ranking (1,1,3 not 1,1,2) based on score+goldCount */
+function computeRanks(rows: LeaderboardRow[]): number[] {
+  const ranks: number[] = []
+  for (let i = 0; i < rows.length; i++) {
+    if (i === 0) {
+      ranks.push(1)
+    } else if (
+      rows[i].totalScore === rows[i - 1].totalScore &&
+      rows[i].goldCount === rows[i - 1].goldCount
+    ) {
+      ranks.push(ranks[i - 1])
+    } else {
+      ranks.push(i + 1)
+    }
+  }
+  return ranks
+}
+
+const RANK_MEDAL_IMG: Record<number, { src: string; alt: string }> = {
+  1: { src: '/medals/gold.png', alt: '1st' },
+  2: { src: '/medals/silver.png', alt: '2nd' },
+  3: { src: '/medals/bronze.png', alt: '3rd' },
+}
+
 export function LeaderboardResults({
   rows,
   year,
@@ -127,7 +151,13 @@ export function LeaderboardResults({
   if (loading) return <Skeleton />
 
   const medalled = rows.filter(r => r.totalScore > 0)
-  const top3     = medalled.slice(0, 3)
+  const ranks = computeRanks(medalled)
+
+  // Podium: all rows with rank 1, 2, or 3 (includes ties)
+  const podiumRows = medalled.filter((_, i) => ranks[i] <= 3)
+
+  // Full ranks for all rows (including zero-score ones)
+  const fullRanks = computeRanks(rows)
 
   return (
     <>
@@ -136,8 +166,8 @@ export function LeaderboardResults({
         <h2 className="text-center text-xs font-bold text-gray-500 pt-6 pb-2 tracking-wide uppercase">
           {year} Community Favorites{nearMe ? ' — Near You' : ''}
         </h2>
-        <LeaderboardMap rows={top3} />
-        <Podium rows={top3} userMedals={userMedals} />
+        <LeaderboardMap rows={podiumRows.slice(0, 5)} />
+        <Podium rows={podiumRows} ranks={ranks} userMedals={userMedals} />
       </div>
 
       {/* Full standings table */}
@@ -167,22 +197,20 @@ export function LeaderboardResults({
               </thead>
               <tbody className="divide-y divide-amber-50">
                 {rows.map((row, i) => {
+                  const rank = fullRanks[i]
+                  const medalInfo = RANK_MEDAL_IMG[rank]
                   const userMedal = getUserMedalForRestaurant(userMedals, row.restaurantId)
                   const rowHighlight = userMedal ? ROW_HIGHLIGHT[userMedal] : ''
                   return (
                     <tr
                       key={row.restaurantId}
-                      className={`hover:bg-amber-50 transition-colors ${i < 3 ? 'font-medium' : ''} ${rowHighlight}`}
+                      className={`hover:bg-amber-50 transition-colors ${rank <= 3 ? 'font-medium' : ''} ${rowHighlight}`}
                     >
                       <td className="px-4 py-3 text-gray-400">
-                        {i === 0 ? (
-                          <Image src="/medals/gold.png" alt="1st" width={16} height={16} />
-                        ) : i === 1 ? (
-                          <Image src="/medals/silver.png" alt="2nd" width={16} height={16} />
-                        ) : i === 2 ? (
-                          <Image src="/medals/bronze.png" alt="3rd" width={16} height={16} />
+                        {medalInfo ? (
+                          <Image src={medalInfo.src} alt={medalInfo.alt} width={16} height={16} />
                         ) : (
-                          i + 1
+                          rank
                         )}
                       </td>
                       <td className="px-4 py-3">
