@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import { useState } from 'react'
+import { NavbarSearch } from '@/components/NavbarSearch'
 
 export function Navbar() {
   const { data: session } = useSession()
@@ -17,6 +18,9 @@ export function Navbar() {
           <Image src="/medals/gold.png" alt="medal" width={24} height={24} />
           <span className="hidden sm:inline">FoodMedals</span>
         </Link>
+
+        {/* Search (responsive: input on desktop, icon on mobile) */}
+        <NavbarSearch />
 
         {/* Desktop links */}
         <div className="hidden sm:flex items-center gap-1">
