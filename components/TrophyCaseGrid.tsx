@@ -193,7 +193,7 @@ export function TrophyCaseGrid({ byCategory, year, isOwner }: Props) {
     })
   }, [byCategory, search])
 
-  // Collect all map pins from medals with coordinates
+  // Collect map pins from filtered categories
   const mapPins = useMemo(() => {
     const pins: {
       id: string
@@ -209,7 +209,7 @@ export function TrophyCaseGrid({ byCategory, year, isOwner }: Props) {
       lng: number
     }[] = []
 
-    for (const catMedals of Object.values(byCategory)) {
+    for (const [, catMedals] of filteredCategories) {
       for (const m of catMedals) {
         if (m.restaurant.lat != null && m.restaurant.lng != null) {
           pins.push({
@@ -229,7 +229,7 @@ export function TrophyCaseGrid({ byCategory, year, isOwner }: Props) {
       }
     }
     return pins
-  }, [byCategory])
+  }, [filteredCategories])
 
   const hasMapPins = mapPins.length > 0
 
