@@ -2,15 +2,21 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { StatusBadge } from '../StatusBadge'
 import { BulkStatusSelect } from '../BulkStatusSelect'
+import { RestaurantSearch } from './RestaurantSearch'
 
 export const dynamic = 'force-dynamic'
 
 const STATUS_FILTERS = ['all', 'active', 'pending_review', 'inactive'] as const
 type StatusFilter = typeof STATUS_FILTERS[number]
 
-async function getRestaurants(status: StatusFilter) {
+async function getRestaurants(status: StatusFilter, query?: string) {
+  const where: Record<string, unknown> = {}
+  if (status !== 'all') where.status = status
+  if (query) {
+    where.name = { contains: query, mode: 'insensitive' }
+  }
   return prisma.restaurant.findMany({
-    where:   status === 'all' ? {} : { status },
+    where,
     orderBy: [{ status: 'asc' }, { name: 'asc' }],
     include: {
       _count:    { select: { medals: true, categories: true } },
@@ -22,13 +28,14 @@ async function getRestaurants(status: StatusFilter) {
 export default async function AllRestaurantsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>
+  searchParams: Promise<{ status?: string; q?: string }>
 }) {
-  const { status: rawStatus } = await searchParams
+  const { status: rawStatus, q } = await searchParams
   const status: StatusFilter =
     STATUS_FILTERS.includes(rawStatus as StatusFilter) ? (rawStatus as StatusFilter) : 'all'
+  const query = typeof q === 'string' ? q.trim() : ''
 
-  const restaurants = await getRestaurants(status)
+  const restaurants = await getRestaurants(status, query || undefined)
 
   return (
     <div className="max-w-6xl">
@@ -43,7 +50,10 @@ export default async function AllRestaurantsPage({
           {STATUS_FILTERS.map(s => (
             <Link
               key={s}
-              href={`/admin/restaurants/all${s !== 'all' ? `?status=${s}` : ''}`}
+              href={`/admin/restaurants/all?${new URLSearchParams({
+                ...(s !== 'all' ? { status: s } : {}),
+                ...(query ? { q: query } : {}),
+              }).toString()}`}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 s === status
                   ? 'bg-gray-700 text-white'
@@ -54,6 +64,11 @@ export default async function AllRestaurantsPage({
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* Search */}
+      <div className="mb-4">
+        <RestaurantSearch defaultValue={query} status={status} />
       </div>
 
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
