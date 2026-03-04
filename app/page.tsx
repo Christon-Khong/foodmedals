@@ -8,6 +8,7 @@ import { Navbar } from '@/components/Navbar'
 import { TrendingCarousel } from '@/components/TrendingCarousel'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { HeroSearch } from '@/components/HeroSearch'
+import { Footer } from '@/components/Footer'
 
 export const metadata: Metadata = {
   title: 'FoodMedals — Community Food Rankings for Utah Restaurants',
@@ -171,19 +172,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────────────────────────── */}
-      <footer className="border-t border-amber-100 bg-white">
-        <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-400">
-          <span className="flex items-center gap-1.5">
-            <Image src="/medals/gold.png" alt="" width={16} height={16} />
-            FoodMedals · Community Food Rankings
-          </span>
-          <div className="flex gap-4">
-            <Link href="/categories"   className="hover:text-gray-600 transition-colors">Categories</Link>
-            {!isLoggedIn && <Link href="/auth/signup" className="hover:text-gray-600 transition-colors">Sign up</Link>}
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

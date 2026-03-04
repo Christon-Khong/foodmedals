@@ -160,7 +160,14 @@ export default function SignUpPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-xs text-gray-400 mt-4">
+          By creating an account, you agree to our{' '}
+          <Link href="/terms" className="text-yellow-600 hover:underline">Terms</Link>
+          {' '}and{' '}
+          <Link href="/privacy" className="text-yellow-600 hover:underline">Privacy Policy</Link>.
+        </p>
+
+        <p className="text-center text-sm text-gray-600 mt-4">
           Already have an account?{' '}
           <Link href="/auth/signin" className="text-yellow-600 font-medium hover:underline">
             Sign in

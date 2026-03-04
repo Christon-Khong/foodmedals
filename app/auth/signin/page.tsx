@@ -160,6 +160,11 @@ export default function SignInPage() {
             Create one
           </Link>
         </p>
+        <p className="text-center text-xs text-gray-400 mt-3">
+          <Link href="/privacy" className="hover:underline">Privacy</Link>
+          {' '}&middot;{' '}
+          <Link href="/terms" className="hover:underline">Terms</Link>
+        </p>
       </div>
     </div>
   )
