@@ -1,11 +1,17 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { getAllActiveCategories } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 
 export default async function HomePage() {
-  const categories = await getAllActiveCategories()
+  const [categories, session] = await Promise.all([
+    getAllActiveCategories(),
+    getServerSession(authOptions),
+  ])
+  const isLoggedIn = !!session?.user
 
   return (
     <div className="min-h-screen bg-amber-50">
@@ -39,12 +45,14 @@ export default async function HomePage() {
             >
               Browse Categories
             </Link>
-            <Link
-              href="/auth/signup"
-              className="w-full sm:w-auto px-8 py-3.5 bg-white hover:bg-amber-50 text-gray-700 font-semibold rounded-full text-base border border-gray-200 hover:border-yellow-300 transition-colors"
-            >
-              Sign up — it&apos;s free
-            </Link>
+            {!isLoggedIn && (
+              <Link
+                href="/auth/signup"
+                className="w-full sm:w-auto px-8 py-3.5 bg-white hover:bg-amber-50 text-gray-700 font-semibold rounded-full text-base border border-gray-200 hover:border-yellow-300 transition-colors"
+              >
+                Sign up — it&apos;s free
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -109,7 +117,7 @@ export default async function HomePage() {
             Join the community ranking the best restaurants in your city. One Gold, one Silver, one Bronze per category — make yours count.
           </p>
           <Link
-            href="/auth/signup"
+            href={isLoggedIn ? '/categories' : '/auth/signup'}
             className="inline-block bg-white hover:bg-amber-50 text-gray-900 font-bold px-8 py-3 rounded-full transition-colors shadow-sm"
           >
             Start awarding medals
@@ -127,7 +135,7 @@ export default async function HomePage() {
           <div className="flex gap-4">
             <Link href="/categories"   className="hover:text-gray-600 transition-colors">Categories</Link>
             <Link href="/hall-of-fame" className="hover:text-gray-600 transition-colors">Hall of Fame</Link>
-            <Link href="/auth/signup"  className="hover:text-gray-600 transition-colors">Sign up</Link>
+            {!isLoggedIn && <Link href="/auth/signup" className="hover:text-gray-600 transition-colors">Sign up</Link>}
           </div>
         </div>
       </footer>
