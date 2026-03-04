@@ -286,7 +286,7 @@ function SuggestCategoryCard() {
   return (
     <div className="mt-6">
       <Link
-        href="/suggest/restaurant"
+        href="/suggest/category"
         className="flex items-center gap-3 p-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-yellow-300 bg-gray-50/50 hover:bg-yellow-50/50 transition-colors group"
       >
         <div className="w-10 h-10 rounded-full bg-gray-100 group-hover:bg-yellow-100 flex items-center justify-center flex-shrink-0 transition-colors">
@@ -294,7 +294,7 @@ function SuggestCategoryCard() {
         </div>
         <div>
           <p className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">Missing a category?</p>
-          <p className="text-xs text-gray-400">Suggest a new restaurant or food category</p>
+          <p className="text-xs text-gray-400">Suggest a new food category for the community to vote on</p>
         </div>
       </Link>
     </div>

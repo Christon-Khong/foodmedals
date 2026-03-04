@@ -30,6 +30,8 @@ model User {
   submittedLinks       RestaurantCategory[] @relation("SubmittedLinks")
   suggestionVotes      SuggestionVote[]
   categorySuggVotes    CategorySuggestionVote[]
+  newCategorySuggestions     NewCategorySuggestion[]      @relation("NewCategorySuggestions")
+  newCategorySuggestionVotes NewCategorySuggestionVote[]
 
   @@map("users")
 }
@@ -164,4 +166,32 @@ model CategorySuggestionVote {
 
   @@unique([restaurantId, foodCategoryId, userId])
   @@map("category_suggestion_votes")
+}
+
+model NewCategorySuggestion {
+  id          String   @id @default(cuid())
+  name        String
+  iconEmoji   String   @map("icon_emoji")
+  description String?
+  submittedBy String   @map("submitted_by")
+  status      String   @default("pending") // pending | approved | rejected
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  submitter User                       @relation("NewCategorySuggestions", fields: [submittedBy], references: [id], onDelete: Cascade)
+  votes     NewCategorySuggestionVote[]
+
+  @@map("new_category_suggestions")
+}
+
+model NewCategorySuggestionVote {
+  id           String   @id @default(cuid())
+  suggestionId String   @map("suggestion_id")
+  userId       String   @map("user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  suggestion NewCategorySuggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([suggestionId, userId])
+  @@map("new_category_suggestion_votes")
 }

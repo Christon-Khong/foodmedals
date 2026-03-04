@@ -5,12 +5,13 @@ import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { NominationsWithFilters } from '@/components/NominationsWithFilters'
+import { CategoryNominations } from '@/components/CategoryNominations'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Community Nominations — FoodMedals',
-  description: 'Upvote restaurant suggestions you\'d like to see added.',
+  description: 'Upvote restaurant and category suggestions you\'d like to see added.',
 }
 
 async function getPendingSuggestions(userId?: string) {
@@ -55,9 +56,43 @@ async function getPendingSuggestions(userId?: string) {
   }))
 }
 
+async function getPendingCategorySuggestions(userId?: string) {
+  const suggestions = await prisma.newCategorySuggestion.findMany({
+    where:   { status: 'pending' },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      submitter: { select: { displayName: true } },
+      _count:    { select: { votes: true } },
+    },
+  })
+
+  let votedIds: Set<string> = new Set()
+  if (userId) {
+    const votes = await prisma.newCategorySuggestionVote.findMany({
+      where:  { userId, suggestionId: { in: suggestions.map(s => s.id) } },
+      select: { suggestionId: true },
+    })
+    votedIds = new Set(votes.map(v => v.suggestionId))
+  }
+
+  return suggestions.map(s => ({
+    id:          s.id,
+    name:        s.name,
+    iconEmoji:   s.iconEmoji,
+    description: s.description,
+    submitter:   s.submitter?.displayName ?? 'Anonymous',
+    createdAt:   s.createdAt.toISOString(),
+    voteCount:   s._count.votes,
+    voted:       votedIds.has(s.id),
+  }))
+}
+
 export default async function CommunityNominationsPage() {
   const session = await getServerSession(authOptions)
-  const suggestions = await getPendingSuggestions(session?.user?.id)
+  const [suggestions, categorySuggestions] = await Promise.all([
+    getPendingSuggestions(session?.user?.id),
+    getPendingCategorySuggestions(session?.user?.id),
+  ])
 
   return (
     <div className="min-h-screen bg-amber-50">
@@ -68,21 +103,39 @@ export default async function CommunityNominationsPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Community Nominations</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Upvote restaurant suggestions you&apos;d like to see added.
+            Upvote restaurants and categories you&apos;d like to see added.
           </p>
         </div>
 
+        {/* Category Suggestions */}
+        {categorySuggestions.length > 0 && (
+          <CategoryNominations
+            suggestions={categorySuggestions}
+            isLoggedIn={!!session}
+          />
+        )}
+
+        {/* Restaurant Suggestions */}
+        <h2 className="text-lg font-bold text-gray-900 mb-4">
+          Restaurant Nominations
+        </h2>
         <NominationsWithFilters
           suggestions={suggestions}
           isLoggedIn={!!session}
         />
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
             href="/suggest/restaurant"
             className="inline-block px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-full text-sm transition-colors"
           >
             Suggest a restaurant
+          </Link>
+          <Link
+            href="/suggest/category"
+            className="inline-block px-5 py-2.5 border border-yellow-400 hover:bg-yellow-50 text-gray-900 font-semibold rounded-full text-sm transition-colors"
+          >
+            Suggest a category
           </Link>
         </div>
       </div>
