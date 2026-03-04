@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { CrownJewelSelector } from '@/components/CrownJewelSelector'
+import { Star } from 'lucide-react'
 
 type MedalData = {
   id: string
@@ -97,6 +98,10 @@ export function CrownJewelCard({ medals, crownJewelMedalId, isOwner }: Props) {
           </span>
         </div>
       </Link>
+      <p className="flex items-center gap-1.5 mt-2.5 text-[11px] text-blue-500 font-medium">
+        <Star className="w-3 h-3 flex-shrink-0" />
+        Your Crown Jewel pick earns this restaurant a bonus point on the leaderboard.
+      </p>
     </div>
   )
 }

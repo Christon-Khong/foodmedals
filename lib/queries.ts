@@ -77,12 +77,14 @@ export async function getLeaderboard(
       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') AS bronze_count,
       (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
        COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
-       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) AS total_score
+       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
+       COUNT(*) FILTER (WHERE m.id = u.crown_jewel_medal_id)) AS total_score
     FROM restaurant_categories rc
     JOIN  restaurants r ON r.id = rc.restaurant_id
     LEFT JOIN medals  m ON m.restaurant_id    = r.id
                        AND m.food_category_id = ${foodCategoryId}
                        AND m.year             = ${year}
+    LEFT JOIN users   u ON u.id = m.user_id
     WHERE rc.food_category_id = ${foodCategoryId}
       AND rc.verified = true
       AND r.status    = 'active'
@@ -157,12 +159,14 @@ export async function getLeaderboardNearMe(
       COUNT(*) FILTER (WHERE m.medal_type = 'bronze')                   AS bronze_count,
       (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
        COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
-       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1)             AS total_score
+       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
+       COUNT(*) FILTER (WHERE m.id = u.crown_jewel_medal_id))           AS total_score
     FROM nearby n
     JOIN restaurant_categories rc ON rc.restaurant_id = n.id AND rc.food_category_id = ${foodCategoryId} AND rc.verified = true
     LEFT JOIN medals m ON m.restaurant_id = n.id
                       AND m.food_category_id = ${foodCategoryId}
                       AND m.year = ${year}
+    LEFT JOIN users  u ON u.id = m.user_id
     WHERE n.distance_miles <= ${radius}
     GROUP BY n.id, n.name, n.slug, n.distance_miles, n.address, n.city, n.state
     ORDER BY total_score DESC, gold_count DESC, n.distance_miles ASC
@@ -312,9 +316,11 @@ export async function getRestaurantTrophies(restaurantId: string): Promise<Troph
       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') AS bronze_count,
       (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
        COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
-       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) AS total_score
+       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
+       COUNT(*) FILTER (WHERE m.id = u.crown_jewel_medal_id)) AS total_score
     FROM medals m
     JOIN food_categories fc ON fc.id = m.food_category_id
+    LEFT JOIN users u ON u.id = m.user_id
     WHERE m.restaurant_id = ${restaurantId}
     GROUP BY m.food_category_id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, m.year
     ORDER BY m.year DESC, total_score DESC
@@ -408,18 +414,21 @@ export async function getHallOfFame(maxYear: number): Promise<HallOfFameRow[]> {
         COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
         (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
          COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
-         COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) AS total_score,
+         COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
+         COUNT(*) FILTER (WHERE m.id = u.crown_jewel_medal_id)) AS total_score,
         ROW_NUMBER() OVER (
           PARTITION BY m.food_category_id, m.year
           ORDER BY
             (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
              COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
-             COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) DESC,
+             COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
+             COUNT(*) FILTER (WHERE m.id = u.crown_jewel_medal_id)) DESC,
             COUNT(*) FILTER (WHERE m.medal_type = 'gold') DESC
         ) AS rn
       FROM medals m
       JOIN food_categories fc ON fc.id = m.food_category_id
       JOIN restaurants      r  ON r.id  = m.restaurant_id
+      LEFT JOIN users       u  ON u.id  = m.user_id
       WHERE m.year < ${maxYear}
       GROUP BY m.food_category_id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, m.year, m.restaurant_id, r.name, r.slug, r.city, r.state
     )
@@ -494,18 +503,21 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
         COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
         (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
          COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
-         COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) AS total_score
+         COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
+         COUNT(*) FILTER (WHERE m.id = u.crown_jewel_medal_id)) AS total_score
       FROM food_categories fc
       JOIN restaurant_categories rc ON rc.food_category_id = fc.id AND rc.verified = true
       JOIN restaurants r            ON r.id = rc.restaurant_id     AND r.status = 'active'
       LEFT JOIN medals m            ON m.restaurant_id = r.id
                                    AND m.food_category_id = fc.id
                                    AND m.year = ${year}
+      LEFT JOIN users  u            ON u.id = m.user_id
       WHERE fc.status = 'active'
       GROUP BY fc.id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, fc.sort_order, r.name, r.slug, r.city, r.state
       HAVING (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
               COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
-              COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) > 0
+              COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
+              COUNT(*) FILTER (WHERE m.id = u.crown_jewel_medal_id)) > 0
     ),
     ranked AS (
       SELECT *,
@@ -602,19 +614,22 @@ export async function getTopRestaurantsPerCategoryNearMe(
         COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
         (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
          COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
-         COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) AS total_score
+         COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
+         COUNT(*) FILTER (WHERE m.id = u.crown_jewel_medal_id)) AS total_score
       FROM food_categories fc
       JOIN restaurant_categories rc ON rc.food_category_id = fc.id AND rc.verified = true
       JOIN nearby n ON n.id = rc.restaurant_id
       LEFT JOIN medals m ON m.restaurant_id = n.id
                         AND m.food_category_id = fc.id
                         AND m.year = ${year}
+      LEFT JOIN users  u ON u.id = m.user_id
       WHERE fc.status = 'active'
         AND n.distance_miles <= ${radiusMiles}
       GROUP BY fc.id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, fc.sort_order, n.name, n.slug, n.city, n.state
       HAVING (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
               COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
-              COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) > 0
+              COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
+              COUNT(*) FILTER (WHERE m.id = u.crown_jewel_medal_id)) > 0
     ),
     ranked AS (
       SELECT *,
