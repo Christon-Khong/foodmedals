@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+const ACTIVATION_THRESHOLD = 10
+
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -30,15 +32,31 @@ export async function POST(
 
   if (existing) {
     await prisma.suggestionVote.delete({ where: { id: existing.id } })
-    const count = await prisma.suggestionVote.count({ where: { restaurantId: id } })
-    return NextResponse.json({ voted: false, count })
   } else {
     await prisma.suggestionVote.create({
       data: { restaurantId: id, userId: session.user.id },
     })
-    const count = await prisma.suggestionVote.count({ where: { restaurantId: id } })
-    return NextResponse.json({ voted: true, count })
   }
+
+  const count = await prisma.suggestionVote.count({ where: { restaurantId: id } })
+
+  // Auto-activate at threshold
+  let activated = false
+  if (count >= ACTIVATION_THRESHOLD) {
+    await prisma.$transaction([
+      prisma.restaurant.update({
+        where: { id },
+        data: { status: 'active' },
+      }),
+      prisma.restaurantCategory.updateMany({
+        where: { restaurantId: id },
+        data: { verified: true },
+      }),
+    ])
+    activated = true
+  }
+
+  return NextResponse.json({ voted: !existing, count, activated, threshold: ACTIVATION_THRESHOLD })
 }
 
 export async function GET(
@@ -57,5 +75,5 @@ export async function GET(
     voted = !!existing
   }
 
-  return NextResponse.json({ voted, count })
+  return NextResponse.json({ voted, count, threshold: ACTIVATION_THRESHOLD })
 }

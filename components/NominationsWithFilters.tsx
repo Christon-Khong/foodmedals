@@ -271,7 +271,20 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
                   </div>
                 )}
 
-                <p className="text-xs text-gray-400 mt-2">
+                {/* Progress toward auto-approval */}
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(100, Math.round((s.voteCount / 10) * 100))}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+                    {s.voteCount}/10 to auto-approve
+                  </span>
+                </div>
+
+                <p className="text-xs text-gray-400 mt-1.5">
                   Suggested by {s.submitter} · {new Date(s.createdAt).toLocaleDateString()}
                 </p>
               </div>
