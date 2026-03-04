@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getAllActiveCategories } from '@/lib/queries'
+import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default async function CategoriesPage() {
 
   return (
     <main className="min-h-screen bg-amber-50">
+      <Navbar />
       <HeroImage />
       {/* Header */}
       <div className="bg-white border-b border-amber-100">
