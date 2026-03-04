@@ -8,6 +8,8 @@ const CUSTOM_ICONS: Record<string, string> = {
   'chicken-wings': '/images/categories/chicken-wings.png',
   'pad-thai':      '/images/categories/pad-thai.png',
   'mac-and-cheese':'/images/categories/mac-and-cheese.png',
+  'pho':           '/images/categories/pho.png',
+  'fried-chicken-sandwich': '/images/categories/fried-chicken-sandwich.png',
 }
 
 type CategoryIconProps = {

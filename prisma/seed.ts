@@ -32,9 +32,7 @@ async function main() {
     { name: 'Cookies',                slug: 'cookies',               iconEmoji: '🍪', sortOrder: 17, description: 'Warm, gooey, stuffed, and freshly baked' },
     { name: 'Pad Thai',               slug: 'pad-thai',              iconEmoji: '🍜', sortOrder: 18, description: 'Stir-fried rice noodles with the perfect sweet-tangy balance' },
     { name: 'Pho',                    slug: 'pho',                   iconEmoji: '🍲', sortOrder: 19, description: 'Vietnamese noodle soup with aromatic broth' },
-    { name: 'Birria Tacos',           slug: 'birria-tacos',          iconEmoji: '🌮', sortOrder: 20, description: 'Consommé-dipped, crispy, cheesy — the viral taco trend' },
-    { name: 'Breakfast Burritos',     slug: 'breakfast-burritos',    iconEmoji: '🌅', sortOrder: 21, description: 'Eggs, cheese, meat, green chile — a Utah morning staple' },
-    { name: 'Fish Tacos',             slug: 'fish-tacos',            iconEmoji: '🐟', sortOrder: 22, description: 'Battered or grilled with fresh slaw and crema' },
+    { name: 'Breakfast Burritos',     slug: 'breakfast-burritos',    iconEmoji: '🌅', sortOrder: 20, description: 'Eggs, cheese, meat, green chile — a Utah morning staple' },
     { name: 'Pulled Pork',            slug: 'pulled-pork',           iconEmoji: '🐷', sortOrder: 23, description: 'Low-and-slow smoked pork, sauced or naked' },
     { name: 'Acai Bowls',             slug: 'acai-bowls',            iconEmoji: '🫐', sortOrder: 24, description: 'Blended açaí topped with granola, fruit, and honey' },
     { name: 'Indian Curry',           slug: 'indian-curry',          iconEmoji: '🍛', sortOrder: 25, description: 'Butter chicken, tikka masala, vindaloo — rich and aromatic' },
@@ -156,7 +154,6 @@ async function main() {
     { name: 'Pho 33',                         slug: "pho-33",                         address: '150 S State St',          city: 'Salt Lake City', zip: '84111', lat: 40.7585, lng: -111.8916 },
     { name: 'SOMI Vietnamese Bistro',         slug: "somi-vietnamese-bistro",         address: '151 S Main St',           city: 'Salt Lake City', zip: '84111', lat: 40.7585, lng: -111.891 },
     { name: 'Oh Mai',                         slug: "oh-mai",                         address: '3425 S State St',         city: 'Salt Lake City', zip: '84115', lat: 40.7074, lng: -111.8916 },
-    // Birria Tacos
     { name: 'Santo Taco',                     slug: "santo-taco",                     address: '1465 S State St',         city: 'Salt Lake City', zip: '84115', lat: 40.738, lng: -111.8917 },
     { name: 'Los Tapatios Taco Grill',        slug: "los-tapatios-taco-grill",        address: '248 W 200 S',             city: 'Salt Lake City', zip: '84101', lat: 40.7577, lng: -111.896 },
     { name: 'La Casa Del Tamal',              slug: "la-casa-del-tamal",              address: '1518 S State St',         city: 'Salt Lake City', zip: '84115', lat: 40.7371, lng: -111.8916 },
@@ -167,7 +164,6 @@ async function main() {
     { name: 'Bad-Ass Breakfast Burritos',     slug: "bad-ass-breakfast-burritos",     address: '764 S 200 W',             city: 'Salt Lake City', zip: '84101', lat: 40.7489, lng: -111.8951 },
     { name: 'Skillets',                       slug: "skillets",                       address: '67 W 1700 S',             city: 'Salt Lake City', zip: '84115', lat: 40.7343, lng: -111.8924 },
     { name: "Floriberto's",                   slug: "floribertos",                    address: '2150 S State St',         city: 'Salt Lake City', zip: '84115', lat: 40.7273, lng: -111.8916 },
-    // Fish Tacos
     { name: 'Flanker Kitchen',                slug: "flanker-kitchen",                address: '6 N Rio Grande St',       city: 'Salt Lake City', zip: '84101', lat: 40.7612, lng: -111.8981 },
     // Pulled Pork
     { name: "Benji's",                        slug: "benjis",                         address: '820 S State St',          city: 'Salt Lake City', zip: '84111', lat: 40.748, lng: -111.8916 },
@@ -264,7 +260,7 @@ async function main() {
   //     lucky-13                  → cheeseburgers, french-fries
   //     pretty-bird-hot-chicken   → cheeseburgers, fried-chicken-sandwich, chicken-tenders
   //     red-iguana                → tacos, burritos, nachos
-  //     lone-star-taqueria        → tacos, burritos, fish-tacos
+  //     lone-star-taqueria        → tacos, burritos
   //     emilianos-taco-shop       → tacos, burritos
   //     r-and-r-bbq               → mac-and-cheese, bbq-ribs, pulled-pork
   //     pats-barbecue             → bbq-ribs, pulled-pork
@@ -274,9 +270,9 @@ async function main() {
   //     nielsens-frozen-custard   → ice-cream, milkshakes
   //     slackwater-pizzeria       → pizza, nachos
   //     albertos                  → burritos, breakfast-burritos
-  //     roctaco                   → birria-tacos, fish-tacos
-  //     taqueria-27               → birria-tacos, fish-tacos
-  //     santo-taco                → birria-tacos, fish-tacos
+  //     roctaco                   → tacos
+  //     taqueria-27               → tacos
+  //     santo-taco                → tacos
   //     hallpass                  → chicken-tenders, fried-chicken-sandwich
   const links: Array<[string, string]> = [
     // Cheeseburgers
@@ -394,24 +390,19 @@ async function main() {
     ['pho-33',                      'pho'],
     ['somi-vietnamese-bistro',      'pho'],
     ['oh-mai',                      'pho'],
-    // Birria Tacos
-    ['santo-taco',                  'birria-tacos'],
-    ['los-tapatios-taco-grill',     'birria-tacos'],
-    ['la-casa-del-tamal',           'birria-tacos'],
-    ['roctaco',                     'birria-tacos'],
-    ['taqueria-27',                 'birria-tacos'],
+    ['santo-taco',                  'tacos'],
+    ['los-tapatios-taco-grill',     'tacos'],
+    ['la-casa-del-tamal',           'tacos'],
+    ['roctaco',                     'tacos'],
+    ['taqueria-27',                 'tacos'],
     // Breakfast Burritos
     ['betos-mexican-food',          'breakfast-burritos'],
     ['bad-ass-breakfast-burritos',  'breakfast-burritos'],
     ['albertos',                    'breakfast-burritos'],
     ['skillets',                    'breakfast-burritos'],
     ['floribertos',                 'breakfast-burritos'],
-    // Fish Tacos
-    ['lone-star-taqueria',          'fish-tacos'],
-    ['roctaco',                     'fish-tacos'],
-    ['taqueria-27',                 'fish-tacos'],
-    ['santo-taco',                  'fish-tacos'],
-    ['flanker-kitchen',             'fish-tacos'],
+    ['lone-star-taqueria',          'tacos'],
+    ['flanker-kitchen',             'tacos'],
     // Pulled Pork
     ['pats-barbecue',               'pulled-pork'],
     ['r-and-r-bbq',                 'pulled-pork'],
@@ -464,7 +455,7 @@ async function main() {
     // ─── Park City ───────────────────────────────────────────────────────────────
     ['no-name-saloon',              'cheeseburgers'],
     ['hearth-and-hill',             'cheeseburgers'],
-    ['hearth-and-hill',             'birria-tacos'],
+    ['hearth-and-hill',             'tacos'],
     ['boneyard-saloon',             'pizza'],
     ['yuki-yama-sushi',             'sushi'],
     ['shabu',                       'sushi'],
@@ -599,7 +590,7 @@ async function main() {
     { userEmail: 'alex@demo.com', categorySlug: 'fried-chicken-sandwich',restaurantSlug: 'daves-hot-chicken',        medalType: 'silver' },
     { userEmail: 'alex@demo.com', categorySlug: 'fried-chicken-sandwich',restaurantSlug: 'houston-tx-hot-chicken',   medalType: 'bronze' },
 
-    // ── Jordan: cheeseburgers, tacos, fried-chicken-sandwich, mac-and-cheese, birria-tacos, milkshakes, indian-curry ──
+    // ── Jordan: cheeseburgers, tacos, fried-chicken-sandwich, mac-and-cheese, milkshakes, indian-curry ──
     { userEmail: 'jordan@demo.com', categorySlug: 'cheeseburgers',       restaurantSlug: 'lucky-13',                 medalType: 'gold'   },
     { userEmail: 'jordan@demo.com', categorySlug: 'cheeseburgers',       restaurantSlug: 'copper-onion',             medalType: 'silver' },
     { userEmail: 'jordan@demo.com', categorySlug: 'cheeseburgers',       restaurantSlug: 'doms-burgers',             medalType: 'bronze' },
@@ -615,10 +606,6 @@ async function main() {
     { userEmail: 'jordan@demo.com', categorySlug: 'mac-and-cheese',      restaurantSlug: 'ruths-diner',              medalType: 'gold'   },
     { userEmail: 'jordan@demo.com', categorySlug: 'mac-and-cheese',      restaurantSlug: 'squatters-pub',            medalType: 'silver' },
     { userEmail: 'jordan@demo.com', categorySlug: 'mac-and-cheese',      restaurantSlug: 'r-and-r-bbq',             medalType: 'bronze' },
-
-    { userEmail: 'jordan@demo.com', categorySlug: 'birria-tacos',        restaurantSlug: 'santo-taco',               medalType: 'gold'   },
-    { userEmail: 'jordan@demo.com', categorySlug: 'birria-tacos',        restaurantSlug: 'roctaco',                  medalType: 'silver' },
-    { userEmail: 'jordan@demo.com', categorySlug: 'birria-tacos',        restaurantSlug: 'taqueria-27',              medalType: 'bronze' },
 
     { userEmail: 'jordan@demo.com', categorySlug: 'milkshakes',          restaurantSlug: 'iceberg-drive-inn',        medalType: 'gold'   },
     { userEmail: 'jordan@demo.com', categorySlug: 'milkshakes',          restaurantSlug: 'woodys-drive-in',          medalType: 'silver' },
