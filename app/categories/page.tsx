@@ -4,6 +4,7 @@ import { getAllActiveCategories } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { CategoryIcon } from '@/components/CategoryIcon'
+import { Lightbulb } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Food Categories — FoodMedals',
@@ -69,6 +70,22 @@ export default async function CategoriesPage() {
               </span>
             </Link>
           ))}
+        </div>
+
+        {/* Suggest a category CTA */}
+        <div className="mt-8">
+          <Link
+            href="/suggest/category"
+            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-yellow-300 bg-gray-50/50 hover:bg-yellow-50/50 transition-colors group"
+          >
+            <div className="w-10 h-10 rounded-full bg-gray-100 group-hover:bg-yellow-100 flex items-center justify-center flex-shrink-0 transition-colors">
+              <Lightbulb className="w-5 h-5 text-gray-400 group-hover:text-yellow-600 transition-colors" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">Missing a category?</p>
+              <p className="text-xs text-gray-400">Suggest a new food category for the community to vote on</p>
+            </div>
+          </Link>
         </div>
       </div>
     </main>
