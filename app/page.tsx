@@ -7,6 +7,7 @@ import { getAllActiveCategories, getTopRestaurantsPerCategory } from '@/lib/quer
 import { Navbar } from '@/components/Navbar'
 import { TrendingCarousel } from '@/components/TrendingCarousel'
 import { CategoryIcon } from '@/components/CategoryIcon'
+import { HeroSearch } from '@/components/HeroSearch'
 
 export const metadata: Metadata = {
   title: 'FoodMedals — Community Food Rankings for Utah Restaurants',
@@ -76,17 +77,18 @@ export default async function HomePage() {
           <p className="text-lg sm:text-xl text-gray-200 max-w-xl mx-auto mb-8">
             Community-powered rankings. Pick your Gold, Silver &amp; Bronze for each food category — new year, new picks.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <HeroSearch />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
             <Link
               href="/categories"
-              className="w-full sm:w-auto px-8 py-3.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded-full text-base transition-colors shadow-sm"
+              className="text-sm font-semibold text-white/80 hover:text-white transition-colors underline underline-offset-2"
             >
-              Browse Categories
+              Browse all categories
             </Link>
             {!isLoggedIn && (
               <Link
                 href="/auth/signup"
-                className="w-full sm:w-auto px-8 py-3.5 bg-white/90 hover:bg-white text-gray-700 font-semibold rounded-full text-base border border-gray-200 hover:border-yellow-300 transition-colors"
+                className="px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded-full text-sm transition-colors shadow-sm"
               >
                 Sign up — it&apos;s free
               </Link>
