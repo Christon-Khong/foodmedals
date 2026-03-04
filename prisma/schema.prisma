@@ -18,6 +18,7 @@ model User {
   avatarUrl    String?  @map("avatar_url")
   city         String?
   state        String?  @default("UT")
+  isAdmin      Boolean  @default(false) @map("is_admin")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
