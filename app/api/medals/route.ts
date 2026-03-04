@@ -51,3 +51,31 @@ export async function PUT(req: NextRequest) {
 
   return NextResponse.json(medal)
 }
+
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { foodCategoryId, medalType, year } = await req.json()
+
+  if (!foodCategoryId || !medalType || !year) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
+
+  if (!['gold', 'silver', 'bronze'].includes(medalType)) {
+    return NextResponse.json({ error: 'Invalid medal type' }, { status: 400 })
+  }
+
+  await prisma.medal.deleteMany({
+    where: {
+      userId: session.user.id,
+      foodCategoryId,
+      medalType,
+      year,
+    },
+  })
+
+  return NextResponse.json({ ok: true })
+}

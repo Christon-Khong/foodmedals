@@ -1,15 +1,19 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { NearMeToggle } from '@/components/NearMeToggle'
 import { CityFilter } from '@/components/CityFilter'
 import { LeaderboardResults } from '@/components/LeaderboardResults'
+import { Confetti } from '@/components/Confetti'
 import type { LeaderboardRow, CityOption } from '@/lib/queries'
 
 type Mode = 'all' | 'nearme' | 'city'
+type MedalType = 'gold' | 'silver' | 'bronze'
+type UserMedals = Record<MedalType, string | null>
 
 type Props = {
   categorySlug: string
+  categoryId: string
   year: number
   initialRows: LeaderboardRow[]
   cities: CityOption[]
@@ -19,6 +23,7 @@ type Props = {
 
 export function LeaderboardWithLocation({
   categorySlug,
+  categoryId,
   year,
   initialRows,
   cities,
@@ -30,6 +35,31 @@ export function LeaderboardWithLocation({
   const [loading, setLoading]   = useState(false)
   const [selectedCity, setSelectedCity]   = useState<string | null>(initialCity ?? null)
   const [selectedState, setSelectedState] = useState<string | null>(initialState ?? null)
+
+  // Medal state
+  const [userMedals, setUserMedals] = useState<UserMedals>({ gold: null, silver: null, bronze: null })
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [goldConfetti, setGoldConfetti] = useState(false)
+
+  // Fetch user's medals on mount
+  useEffect(() => {
+    fetch(`/api/categories/${categorySlug}/my-medals?year=${year}`)
+      .then(res => {
+        if (res.status === 401) return null
+        if (!res.ok) return null
+        return res.json()
+      })
+      .then(data => {
+        if (!data) return
+        setIsLoggedIn(true)
+        const m: UserMedals = { gold: null, silver: null, bronze: null }
+        for (const medal of data.medals) {
+          m[medal.medalType as MedalType] = medal.restaurantId
+        }
+        setUserMedals(m)
+      })
+      .catch(() => {})
+  }, [categorySlug, year])
 
   async function fetchLeaderboard(params: Record<string, string>) {
     setLoading(true)
@@ -44,6 +74,54 @@ export function LeaderboardWithLocation({
       setLoading(false)
     }
   }
+
+  const handleMedalChange = useCallback(async (restaurantId: string, medalType: MedalType) => {
+    if (!isLoggedIn) return
+
+    const isToggleOff = userMedals[medalType] === restaurantId
+    const prevMedals = { ...userMedals }
+
+    // Optimistic update
+    const newMedals = { ...userMedals }
+    if (isToggleOff) {
+      newMedals[medalType] = null
+    } else {
+      // Clear this restaurant from any other medal slot
+      for (const mt of ['gold', 'silver', 'bronze'] as MedalType[]) {
+        if (mt !== medalType && newMedals[mt] === restaurantId) {
+          newMedals[mt] = null
+        }
+      }
+      newMedals[medalType] = restaurantId
+    }
+    setUserMedals(newMedals)
+
+    // Gold confetti
+    if (!isToggleOff && medalType === 'gold') {
+      setGoldConfetti(false)
+      requestAnimationFrame(() => setGoldConfetti(true))
+    }
+
+    try {
+      if (isToggleOff) {
+        const res = await fetch('/api/medals', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ foodCategoryId: categoryId, medalType, year }),
+        })
+        if (!res.ok) setUserMedals(prevMedals)
+      } else {
+        const res = await fetch('/api/medals', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ foodCategoryId: categoryId, restaurantId, medalType, year }),
+        })
+        if (!res.ok) setUserMedals(prevMedals)
+      }
+    } catch {
+      setUserMedals(prevMedals)
+    }
+  }, [userMedals, isLoggedIn, categoryId, year])
 
   const handleLocationChange = useCallback((lat: number, lng: number, radius: number) => {
     setMode('nearme')
@@ -74,6 +152,8 @@ export function LeaderboardWithLocation({
 
   return (
     <div className="max-w-3xl mx-auto px-4">
+      <Confetti trigger={goldConfetti} />
+
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3 py-5">
         <NearMeToggle
@@ -101,6 +181,10 @@ export function LeaderboardWithLocation({
         year={year}
         loading={loading}
         nearMe={mode === 'nearme'}
+        userMedals={userMedals}
+        isLoggedIn={isLoggedIn}
+        onMedalChange={handleMedalChange}
+        categorySlug={categorySlug}
       />
     </div>
   )

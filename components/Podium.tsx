@@ -67,13 +67,17 @@ function CountUp({ target, delay = 0 }: { target: number; delay?: number }) {
 
 // ─── Single podium column ─────────────────────────────────────────────────────
 
+type MedalType = 'gold' | 'silver' | 'bronze'
+type UserMedals = Record<MedalType, string | null>
+
 type BlockProps = {
   row:   LeaderboardRow
   place: 1 | 2 | 3
   delay: number
+  isUserPick?: boolean
 }
 
-function PodiumColumn({ row, place, delay }: BlockProps) {
+function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
   const cfg = MEDAL_CONFIG[place]
 
   return (
@@ -123,6 +127,18 @@ function PodiumColumn({ row, place, delay }: BlockProps) {
             </span>
           )}
         </div>
+
+        {/* Your Pick badge */}
+        {isUserPick && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: delay + 0.9, duration: 0.3, ease: 'easeOut' }}
+            className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-400 text-[10px] font-bold text-gray-900 shadow-sm"
+          >
+            <span>★</span> Your Pick
+          </motion.div>
+        )}
       </motion.div>
 
       {/* ── The podium block itself ── */}
@@ -175,7 +191,11 @@ function EmptySlot({ place }: { place: 1 | 2 | 3 }) {
 
 // ─── Main Podium export ───────────────────────────────────────────────────────
 
-export function Podium({ rows }: { rows: LeaderboardRow[] }) {
+function isUserPickForRow(userMedals: UserMedals, restaurantId: string): boolean {
+  return Object.values(userMedals).includes(restaurantId)
+}
+
+export function Podium({ rows, userMedals = { gold: null, silver: null, bronze: null } }: { rows: LeaderboardRow[]; userMedals?: UserMedals }) {
   const [first, second, third] = rows
 
   if (rows.length === 0) {
@@ -192,19 +212,19 @@ export function Podium({ rows }: { rows: LeaderboardRow[] }) {
     <div className="flex items-end justify-center gap-3 sm:gap-6 py-8 px-4">
       {/* Silver — left */}
       {second
-        ? <PodiumColumn row={second} place={2} delay={0.15} />
+        ? <PodiumColumn row={second} place={2} delay={0.15} isUserPick={isUserPickForRow(userMedals, second.restaurantId)} />
         : <EmptySlot place={2} />
       }
 
       {/* Gold — centre (tallest) */}
       {first
-        ? <PodiumColumn row={first} place={1} delay={0} />
+        ? <PodiumColumn row={first} place={1} delay={0} isUserPick={isUserPickForRow(userMedals, first.restaurantId)} />
         : <EmptySlot place={1} />
       }
 
       {/* Bronze — right */}
       {third
-        ? <PodiumColumn row={third} place={3} delay={0.3} />
+        ? <PodiumColumn row={third} place={3} delay={0.3} isUserPick={isUserPickForRow(userMedals, third.restaurantId)} />
         : <EmptySlot place={3} />
       }
     </div>

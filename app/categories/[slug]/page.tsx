@@ -191,6 +191,7 @@ export default async function CategoryLeaderboardPage({
       {/* ── Leaderboard with Near Me + City filter ──────────────────────── */}
       <LeaderboardWithLocation
         categorySlug={slug}
+        categoryId={category.id}
         year={year}
         initialRows={initialRows}
         cities={cities}
