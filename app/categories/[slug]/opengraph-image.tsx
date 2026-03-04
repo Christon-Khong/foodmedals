@@ -18,6 +18,7 @@ const CUSTOM_ICONS: Record<string, string> = {
   'fried-chicken-sandwich': 'fried-chicken-sandwich.png',
   'nachos':        'nachos.png',
   'chicken-tenders':'chicken-tenders.png',
+  'acai-bowls':    'acai-bowls.png',
 }
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
