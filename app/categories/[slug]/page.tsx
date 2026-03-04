@@ -8,7 +8,6 @@ import { isAdminEmail } from '@/lib/adminAuth'
 import { getCategoryBySlug, getLeaderboard, getCitiesForCategory, getStatesForCategory } from '@/lib/queries'
 import { HeroImage } from '@/components/HeroImage'
 import { LeaderboardWithLocation } from '@/components/LeaderboardWithLocation'
-import { NominationsSection } from './NominationsSection'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -199,14 +198,9 @@ export default async function CategoryLeaderboardPage({
         states={states}
         initialCity={city ?? null}
         initialState={state ?? null}
-      />
-
-      {/* ── Community Nominations ────────────────────────────────────── */}
-      <NominationsSection
         nominations={nominations}
         isAdmin={isAdmin}
         isLoggedIn={isLoggedIn}
-        categorySlug={slug}
       />
 
       {/* ── CTA ─────────────────────────────────────────────────────────── */}

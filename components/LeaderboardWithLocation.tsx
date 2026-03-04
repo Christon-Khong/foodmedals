@@ -6,11 +6,24 @@ import { StateFilter } from '@/components/StateFilter'
 import { CityFilter } from '@/components/CityFilter'
 import { LeaderboardResults } from '@/components/LeaderboardResults'
 import { Confetti } from '@/components/Confetti'
+import { NominationsSection } from '@/app/categories/[slug]/NominationsSection'
 import type { LeaderboardRow, CityOption, StateOption } from '@/lib/queries'
 
 type Mode = 'all' | 'nearme' | 'city'
 type MedalType = 'gold' | 'silver' | 'bronze'
 type UserMedals = Record<MedalType, string | null>
+
+type Nomination = {
+  id: string
+  name: string
+  city: string
+  state: string
+  description: string | null
+  submitter: string
+  createdAt: string
+  voteCount: number
+  voted: boolean
+}
 
 type Props = {
   categorySlug: string
@@ -21,6 +34,9 @@ type Props = {
   states: StateOption[]
   initialCity?: string | null
   initialState?: string | null
+  nominations: Nomination[]
+  isAdmin: boolean
+  isLoggedIn: boolean
 }
 
 export function LeaderboardWithLocation({
@@ -32,6 +48,9 @@ export function LeaderboardWithLocation({
   states,
   initialCity,
   initialState,
+  nominations,
+  isAdmin,
+  isLoggedIn: isLoggedInProp,
 }: Props) {
   const [mode, setMode]         = useState<Mode>(initialCity && initialState ? 'city' : 'all')
   const [rows, setRows]         = useState<LeaderboardRow[]>(initialRows)
@@ -46,9 +65,15 @@ export function LeaderboardWithLocation({
     [cities, stateFilter],
   )
 
+  // Filter nominations by state
+  const filteredNominations = useMemo(
+    () => stateFilter ? nominations.filter(n => n.state === stateFilter) : nominations,
+    [nominations, stateFilter],
+  )
+
   // Medal state
   const [userMedals, setUserMedals] = useState<UserMedals>({ gold: null, silver: null, bronze: null })
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(isLoggedInProp)
   const [goldConfetti, setGoldConfetti] = useState(false)
 
   // Fetch user's medals on mount
@@ -281,6 +306,14 @@ export function LeaderboardWithLocation({
         userMedals={userMedals}
         isLoggedIn={isLoggedIn}
         onMedalChange={handleMedalChange}
+        categorySlug={categorySlug}
+      />
+
+      {/* Nominations — filtered by state */}
+      <NominationsSection
+        nominations={filteredNominations}
+        isAdmin={isAdmin}
+        isLoggedIn={isLoggedIn}
         categorySlug={categorySlug}
       />
     </div>
