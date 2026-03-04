@@ -78,15 +78,25 @@ export function LeaderboardWithLocation({
   const handleMedalChange = useCallback(async (restaurantId: string, medalType: MedalType) => {
     if (!isLoggedIn) return
 
+    const WEIGHT: Record<MedalType, number> = { gold: 3, silver: 2, bronze: 1 }
+    const COUNT_KEY: Record<MedalType, 'goldCount' | 'silverCount' | 'bronzeCount'> = {
+      gold: 'goldCount', silver: 'silverCount', bronze: 'bronzeCount',
+    }
+
     const isToggleOff = userMedals[medalType] === restaurantId
     const prevMedals = { ...userMedals }
+    const prevRows = rows
 
-    // Optimistic update
+    // Optimistic medal state update
     const newMedals = { ...userMedals }
+    // Find what medal this restaurant currently has from the user
+    const prevMedalOnRestaurant = (['gold', 'silver', 'bronze'] as MedalType[]).find(mt => userMedals[mt] === restaurantId) ?? null
+    // Find what restaurant currently holds this medal type
+    const prevHolderOfMedalType = userMedals[medalType]
+
     if (isToggleOff) {
       newMedals[medalType] = null
     } else {
-      // Clear this restaurant from any other medal slot
       for (const mt of ['gold', 'silver', 'bronze'] as MedalType[]) {
         if (mt !== medalType && newMedals[mt] === restaurantId) {
           newMedals[mt] = null
@@ -95,6 +105,47 @@ export function LeaderboardWithLocation({
       newMedals[medalType] = restaurantId
     }
     setUserMedals(newMedals)
+
+    // Optimistic row counts update
+    setRows(current => {
+      const updated = current.map(r => ({ ...r }))
+
+      if (isToggleOff) {
+        // Remove medal: decrement this restaurant's count
+        const row = updated.find(r => r.restaurantId === restaurantId)
+        if (row) {
+          row[COUNT_KEY[medalType]] = Math.max(0, row[COUNT_KEY[medalType]] - 1)
+          row.totalScore = Math.max(0, row.totalScore - WEIGHT[medalType])
+        }
+      } else {
+        // If another restaurant had this medal type, decrement it
+        if (prevHolderOfMedalType && prevHolderOfMedalType !== restaurantId) {
+          const oldRow = updated.find(r => r.restaurantId === prevHolderOfMedalType)
+          if (oldRow) {
+            oldRow[COUNT_KEY[medalType]] = Math.max(0, oldRow[COUNT_KEY[medalType]] - 1)
+            oldRow.totalScore = Math.max(0, oldRow.totalScore - WEIGHT[medalType])
+          }
+        }
+        // If this restaurant had a different medal from user, decrement that
+        if (prevMedalOnRestaurant && prevMedalOnRestaurant !== medalType) {
+          const row = updated.find(r => r.restaurantId === restaurantId)
+          if (row) {
+            row[COUNT_KEY[prevMedalOnRestaurant]] = Math.max(0, row[COUNT_KEY[prevMedalOnRestaurant]] - 1)
+            row.totalScore = Math.max(0, row.totalScore - WEIGHT[prevMedalOnRestaurant])
+          }
+        }
+        // Increment new medal on target restaurant
+        const row = updated.find(r => r.restaurantId === restaurantId)
+        if (row) {
+          row[COUNT_KEY[medalType]] += 1
+          row.totalScore += WEIGHT[medalType]
+        }
+      }
+
+      // Re-sort by totalScore desc, then goldCount desc
+      updated.sort((a, b) => b.totalScore - a.totalScore || b.goldCount - a.goldCount)
+      return updated
+    })
 
     // Gold confetti
     if (!isToggleOff && medalType === 'gold') {
@@ -109,19 +160,20 @@ export function LeaderboardWithLocation({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ foodCategoryId: categoryId, medalType, year }),
         })
-        if (!res.ok) setUserMedals(prevMedals)
+        if (!res.ok) { setUserMedals(prevMedals); setRows(prevRows) }
       } else {
         const res = await fetch('/api/medals', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ foodCategoryId: categoryId, restaurantId, medalType, year }),
         })
-        if (!res.ok) setUserMedals(prevMedals)
+        if (!res.ok) { setUserMedals(prevMedals); setRows(prevRows) }
       }
     } catch {
       setUserMedals(prevMedals)
+      setRows(prevRows)
     }
-  }, [userMedals, isLoggedIn, categoryId, year])
+  }, [userMedals, rows, isLoggedIn, categoryId, year])
 
   const handleLocationChange = useCallback((lat: number, lng: number, radius: number) => {
     setMode('nearme')
