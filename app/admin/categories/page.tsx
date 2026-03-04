@@ -14,9 +14,17 @@ export default async function AdminCategoriesPage() {
 
   return (
     <div className="max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Categories</h1>
-        <p className="text-gray-400 text-sm mt-1">{categories.length} food categories</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Categories</h1>
+          <p className="text-gray-400 text-sm mt-1">{categories.length} food categories</p>
+        </div>
+        <Link
+          href="/admin/categories/new"
+          className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold rounded-xl text-sm transition-colors"
+        >
+          + Add Category
+        </Link>
       </div>
 
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
@@ -55,13 +63,21 @@ export default async function AdminCategoriesPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <Link
-                    href={`/categories/${cat.slug}`}
-                    target="_blank"
-                    className="text-xs text-gray-500 hover:text-yellow-400 transition-colors"
-                  >
-                    View ↗
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/categories/${cat.id}/edit`}
+                      className="text-xs text-gray-500 hover:text-yellow-400 transition-colors"
+                    >
+                      Edit
+                    </Link>
+                    <Link
+                      href={`/categories/${cat.slug}`}
+                      target="_blank"
+                      className="text-xs text-gray-500 hover:text-yellow-400 transition-colors"
+                    >
+                      View ↗
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

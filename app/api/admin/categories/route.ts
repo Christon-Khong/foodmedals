@@ -108,3 +108,43 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
+
+export async function POST(req: NextRequest) {
+  const session = await getAdminSession()
+  if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const body = await req.json()
+  const { name, slug, iconEmoji, description, sortOrder } = body
+
+  if (!name || !slug || !iconEmoji) {
+    return NextResponse.json({ error: 'Name, slug, and icon emoji are required' }, { status: 400 })
+  }
+  if (typeof name !== 'string' || name.length > 100) {
+    return NextResponse.json({ error: 'Invalid name' }, { status: 400 })
+  }
+  if (typeof slug !== 'string' || slug.length > 100) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
+  }
+
+  // Check uniqueness
+  const existing = await prisma.foodCategory.findFirst({
+    where: { OR: [{ name }, { slug }] },
+  })
+  if (existing) {
+    return NextResponse.json({
+      error: existing.name === name ? 'A category with that name already exists' : 'A category with that slug already exists',
+    }, { status: 409 })
+  }
+
+  const category = await prisma.foodCategory.create({
+    data: {
+      name: name.trim(),
+      slug: slug.trim().toLowerCase(),
+      iconEmoji: iconEmoji.trim(),
+      description: description?.trim() || null,
+      sortOrder: typeof sortOrder === 'number' ? sortOrder : 0,
+    },
+  })
+
+  return NextResponse.json({ ok: true, category }, { status: 201 })
+}
