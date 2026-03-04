@@ -129,7 +129,7 @@ export default function SuggestRestaurantPage() {
                 onChange={update(field)}
                 required={required}
                 placeholder={placeholder}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
           ))}
@@ -143,7 +143,7 @@ export default function SuggestRestaurantPage() {
               onChange={update('description')}
               rows={3}
               placeholder="What makes this place special?"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
             />
           </div>
 
