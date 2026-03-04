@@ -139,7 +139,7 @@ export default async function HomePage() {
             <Link
               key={cat.id}
               href={`/categories/${cat.slug}`}
-              className="group bg-white rounded-2xl p-3 sm:p-4 shadow-sm hover:shadow-md border border-amber-100 hover:border-yellow-300 transition-all duration-200 flex flex-col items-center text-center"
+              className="group bg-white rounded-2xl p-3 sm:p-4 shadow-sm hover:shadow-lg hover:-translate-y-1 border border-amber-100 hover:border-yellow-300 transition-all duration-200 flex flex-col items-center text-center"
             >
               <span className="text-3xl sm:text-4xl mb-2 group-hover:scale-110 transition-transform duration-200 inline-block">
                 <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} />
