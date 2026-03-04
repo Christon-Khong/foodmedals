@@ -94,26 +94,31 @@ export default async function RestaurantPage({
             ← Categories
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">{restaurant.name}</h1>
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${restaurant.name}, ${restaurant.address}, ${restaurant.city}, ${restaurant.state} ${restaurant.zip}`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-500 mt-1 hover:text-yellow-700 transition-colors inline-block"
-          >
-            {restaurant.address}, {restaurant.city}, {restaurant.state} {restaurant.zip}
-          </a>
-          {restaurant.description && (
-            <p className="text-sm text-gray-600 mt-3 max-w-xl">{restaurant.description}</p>
-          )}
-          {restaurant.websiteUrl && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
             <a
-              href={restaurant.websiteUrl}
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${restaurant.name}, ${restaurant.address}, ${restaurant.city}, ${restaurant.state} ${restaurant.zip}`)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-yellow-700 hover:underline mt-2 inline-block"
+              className="text-gray-500 hover:text-yellow-700 transition-colors"
             >
-              Visit website →
+              {restaurant.address}, {restaurant.city}, {restaurant.state} {restaurant.zip}
             </a>
+            {restaurant.websiteUrl && (
+              <>
+                <span className="text-gray-300">·</span>
+                <a
+                  href={restaurant.websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-yellow-700 hover:underline"
+                >
+                  Visit website →
+                </a>
+              </>
+            )}
+          </div>
+          {restaurant.description && (
+            <p className="text-sm text-gray-600 mt-3 max-w-xl">{restaurant.description}</p>
           )}
 
           {/* Category chips */}
