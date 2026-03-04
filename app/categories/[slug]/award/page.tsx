@@ -6,6 +6,7 @@ import { getCategoryBySlug, getRestaurantsForCategory, getUserMedalsForCategory 
 import { AwardForm } from '@/components/AwardForm'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
+import { CategoryIcon } from '@/components/CategoryIcon'
 
 export default async function AwardPage({
   params,
@@ -58,7 +59,7 @@ export default async function AwardPage({
             <span className="text-gray-700">Award</span>
           </nav>
           <div className="flex items-center gap-3">
-            <span className="text-4xl">{category.iconEmoji}</span>
+            <span className="text-4xl"><CategoryIcon slug={category.slug} iconEmoji={category.iconEmoji} /></span>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{category.name}</h1>
               <p className="text-sm text-gray-500">

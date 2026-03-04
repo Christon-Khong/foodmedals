@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
+import { CategoryIcon } from '@/components/CategoryIcon'
 
-type Category = { id: string; name: string; iconEmoji: string }
+type Category = { id: string; name: string; iconEmoji: string; slug: string }
 
 export default function SuggestRestaurantPage() {
   const [form, setForm] = useState({
@@ -168,7 +169,7 @@ export default function SuggestRestaurantPage() {
                         : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                     }`}
                   >
-                    <span>{cat.iconEmoji}</span>
+                    <span><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} /></span>
                     <span className="truncate">{cat.name}</span>
                   </button>
                 ))}

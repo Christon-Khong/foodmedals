@@ -7,6 +7,7 @@ import { authOptions } from '@/lib/auth'
 import { getAllUserMedals } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
+import { CategoryIcon } from '@/components/CategoryIcon'
 
 export const metadata: Metadata = {
   title: 'My Medals — FoodMedals',
@@ -86,7 +87,7 @@ export default async function MyMedalsPage() {
                       href={`/categories/${cat.slug}`}
                       className="flex items-center gap-2 font-bold text-gray-800 hover:text-yellow-700 transition-colors"
                     >
-                      <span className="text-xl">{cat.iconEmoji}</span>
+                      <span className="text-xl"><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} /></span>
                       <span>{cat.name}</span>
                     </Link>
                     <Link

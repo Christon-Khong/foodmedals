@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   const categories = await prisma.foodCategory.findMany({
     where:   { status: 'active' },
-    select:  { id: true, name: true, iconEmoji: true },
+    select:  { id: true, name: true, iconEmoji: true, slug: true },
     orderBy: { sortOrder: 'asc' },
   })
 

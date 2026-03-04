@@ -1,8 +1,17 @@
 import { ImageResponse } from 'next/og'
+import { readFile } from 'fs/promises'
+import { join } from 'path'
 import { getCategoryBySlug } from '@/lib/queries'
 
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
+
+const CUSTOM_ICONS: Record<string, string> = {
+  'onion-rings':   'onion-rings.png',
+  'pulled-pork':   'pulled-pork.png',
+  'bbq-ribs':      'bbq-ribs.png',
+  'chicken-wings': 'chicken-wings.png',
+}
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -10,6 +19,14 @@ export default async function Image({ params }: { params: Promise<{ slug: string
 
   const name = category?.name ?? 'Food Rankings'
   const emoji = category?.iconEmoji ?? '🍽️'
+
+  let customIconSrc: string | null = null
+  if (slug && CUSTOM_ICONS[slug]) {
+    try {
+      const buf = await readFile(join(process.cwd(), 'public/images/categories', CUSTOM_ICONS[slug]))
+      customIconSrc = `data:image/png;base64,${buf.toString('base64')}`
+    } catch { /* fall back to emoji */ }
+  }
 
   return new ImageResponse(
     (
@@ -29,8 +46,13 @@ export default async function Image({ params }: { params: Promise<{ slug: string
         <div style={{ position: 'absolute', top: -80, right: -80, width: 360, height: 360, borderRadius: '50%', background: 'rgba(255,215,0,0.08)', display: 'flex' }} />
         <div style={{ position: 'absolute', bottom: -60, left: -60, width: 280, height: 280, borderRadius: '50%', background: 'rgba(255,215,0,0.06)', display: 'flex' }} />
 
-        {/* Category emoji */}
-        <div style={{ fontSize: 120, marginBottom: 24, display: 'flex' }}>{emoji}</div>
+        {/* Category icon */}
+        {customIconSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={customIconSrc} width={120} height={120} alt="" style={{ marginBottom: 24 }} />
+        ) : (
+          <div style={{ fontSize: 120, marginBottom: 24, display: 'flex' }}>{emoji}</div>
+        )}
 
         {/* Title */}
         <div

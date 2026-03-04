@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { getAllActiveCategories, getTopRestaurantsPerCategory } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { TrendingCarousel } from '@/components/TrendingCarousel'
+import { CategoryIcon } from '@/components/CategoryIcon'
 
 export default async function HomePage() {
   const currentYear = new Date().getFullYear()
@@ -113,7 +114,7 @@ export default async function HomePage() {
               className="group bg-white rounded-2xl p-3 sm:p-4 shadow-sm hover:shadow-md border border-amber-100 hover:border-yellow-300 transition-all duration-200 flex flex-col items-center text-center"
             >
               <span className="text-3xl sm:text-4xl mb-2 group-hover:scale-110 transition-transform duration-200 inline-block">
-                {cat.iconEmoji}
+                <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} />
               </span>
               <span className="text-xs font-semibold text-gray-700 leading-tight">
                 {cat.name}

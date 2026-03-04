@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { getRestaurantBySlug, getRestaurantTrophies } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
+import { CategoryIcon } from '@/components/CategoryIcon'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -107,7 +108,7 @@ export default async function RestaurantPage({
                   href={`/categories/${rc.foodCategory.slug}`}
                   className="flex items-center gap-1 text-xs bg-amber-50 border border-amber-200 rounded-full px-3 py-1 text-gray-700 hover:border-yellow-400 transition-colors"
                 >
-                  <span>{rc.foodCategory.iconEmoji}</span>
+                  <span><CategoryIcon slug={rc.foodCategory.slug} iconEmoji={rc.foodCategory.iconEmoji} /></span>
                   <span>{rc.foodCategory.name}</span>
                 </Link>
               ))}
@@ -135,7 +136,7 @@ export default async function RestaurantPage({
                   href={`/categories/${t.categorySlug}`}
                   className="bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 p-4 flex items-center gap-4 transition-all hover:shadow-sm"
                 >
-                  <div className="text-3xl">{t.iconEmoji}</div>
+                  <div className="text-3xl"><CategoryIcon slug={t.categorySlug} iconEmoji={t.iconEmoji} /></div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-800 text-sm truncate">{t.categoryName}</p>
                     <div className="flex gap-2 mt-1">
@@ -196,7 +197,7 @@ export default async function RestaurantPage({
                       <td className="px-4 py-2.5 font-medium text-gray-600">{t.year}</td>
                       <td className="px-4 py-2.5">
                         <Link href={`/categories/${t.categorySlug}`} className="flex items-center gap-1.5 hover:text-yellow-700 transition-colors text-gray-700">
-                          <span>{t.iconEmoji}</span>
+                          <span><CategoryIcon slug={t.categorySlug} iconEmoji={t.iconEmoji} /></span>
                           <span>{t.categoryName}</span>
                         </Link>
                       </td>

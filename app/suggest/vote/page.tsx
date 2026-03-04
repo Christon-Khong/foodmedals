@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
+import { CategoryIcon } from '@/components/CategoryIcon'
 import { VoteButton } from './VoteButton'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +20,7 @@ async function getPendingSuggestions(userId?: string) {
     orderBy: { createdAt: 'desc' },
     include: {
       submitter:  { select: { displayName: true } },
-      categories: { include: { foodCategory: { select: { name: true, iconEmoji: true } } } },
+      categories: { include: { foodCategory: { select: { name: true, iconEmoji: true, slug: true } } } },
       _count:     { select: { suggestionVotes: true } },
     },
   })
@@ -45,6 +46,7 @@ async function getPendingSuggestions(userId?: string) {
     categories:  r.categories.map(c => ({
       name:  c.foodCategory.name,
       emoji: c.foodCategory.iconEmoji,
+      slug:  c.foodCategory.slug,
     })),
     voteCount: r._count.suggestionVotes,
     voted:     votedIds.has(r.id),
@@ -123,7 +125,7 @@ export default async function CommunityNominationsPage() {
                           key={c.name}
                           className="text-xs bg-amber-50 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full"
                         >
-                          {c.emoji} {c.name}
+                          <CategoryIcon slug={c.slug} iconEmoji={c.emoji} /> {c.name}
                         </span>
                       ))}
                     </div>

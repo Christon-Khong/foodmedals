@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { TrendingCategory } from '@/lib/queries'
+import { CategoryIcon } from '@/components/CategoryIcon'
 
 const MEDAL_IMG = ['/medals/gold.png', '/medals/silver.png', '/medals/bronze.png']
 
@@ -19,7 +20,7 @@ function CategoryCard({ cat }: { cat: TrendingCategory }) {
       {/* Category header */}
       <div className="flex items-center gap-3 mb-4">
         <span className="text-3xl group-hover:scale-110 transition-transform duration-200 inline-block">
-          {cat.iconEmoji}
+          <CategoryIcon slug={cat.categorySlug} iconEmoji={cat.iconEmoji} />
         </span>
         <div className="min-w-0">
           <h3 className="font-bold text-gray-900 text-sm leading-tight truncate">
