@@ -4,6 +4,7 @@ const CUSTOM_ICONS: Record<string, string> = {
   'onion-rings':   '/images/categories/onion-rings.png',
   'pulled-pork':   '/images/categories/pulled-pork.png',
   'bbq-ribs':      '/images/categories/bbq-ribs.png',
+  'wings':         '/images/categories/chicken-wings.png',
   'chicken-wings': '/images/categories/chicken-wings.png',
 }
 
