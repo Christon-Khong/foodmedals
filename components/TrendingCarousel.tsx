@@ -20,7 +20,7 @@ function CategoryCard({ cat, nearMe }: { cat: TrendingCategory; nearMe: boolean 
     <Link
       href={href}
       data-card
-      className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 hover:shadow-lg hover:scale-[1.03] transition-all duration-200 p-5 flex flex-col group"
+      className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 hover:shadow-2xl hover:scale-150 hover:z-10 transition-all duration-300 p-5 flex flex-col group"
     >
       {/* Category header */}
       <div className="flex items-center gap-3 mb-4">
@@ -228,7 +228,7 @@ export function TrendingCarousel({ categories, year }: Props) {
   if (categories.length === 0) return null
 
   return (
-    <section className="py-12 border-b border-amber-100 bg-amber-50">
+    <section className="pt-12 border-b border-amber-100 bg-amber-50">
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-end justify-between mb-6">
           <div>
@@ -268,7 +268,7 @@ export function TrendingCarousel({ categories, year }: Props) {
       {/* Scrollable track — tripled for infinite loop */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto px-4 sm:px-[max(1rem,calc((100%-56rem)/2+1rem))] pb-2"
+        className="flex gap-4 overflow-x-auto px-4 sm:px-[max(1rem,calc((100%-56rem)/2+1rem))] py-20 -mt-8"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
       >
         {items.map((cat, i) => (
