@@ -4,14 +4,13 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
-import { CategoryIcon } from '@/components/CategoryIcon'
-import { VoteButton } from './VoteButton'
+import { NominationsWithFilters } from '@/components/NominationsWithFilters'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Community Nominations — FoodMedals',
-  description: 'Upvote restaurant suggestions to help them get approved.',
+  description: 'Upvote restaurant suggestions you\'d like to see added.',
 }
 
 async function getPendingSuggestions(userId?: string) {
@@ -39,6 +38,8 @@ async function getPendingSuggestions(userId?: string) {
     name:        r.name,
     city:        r.city,
     state:       r.state,
+    lat:         r.lat,
+    lng:         r.lng,
     description: r.description,
     websiteUrl:  r.websiteUrl,
     submitter:   r.submitter?.displayName ?? 'Anonymous',
@@ -71,75 +72,10 @@ export default async function CommunityNominationsPage() {
           </p>
         </div>
 
-        {suggestions.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-12 text-center">
-            <div className="text-5xl mb-4">🍽️</div>
-            <p className="text-lg font-semibold text-gray-700">No pending suggestions</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Know a great spot?{' '}
-              <Link href="/suggest/restaurant" className="text-yellow-700 hover:underline font-medium">
-                Suggest one!
-              </Link>
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {suggestions.map(s => (
-              <div
-                key={s.id}
-                className="bg-white border border-amber-100 rounded-2xl shadow-sm p-5 flex gap-4"
-              >
-                {/* Vote button */}
-                <div className="shrink-0 pt-1">
-                  {session ? (
-                    <VoteButton
-                      restaurantId={s.id}
-                      initialVoted={s.voted}
-                      initialCount={s.voteCount}
-                    />
-                  ) : (
-                    <Link
-                      href="/auth/signin?callbackUrl=/suggest/vote"
-                      className="flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl text-sm font-semibold bg-gray-100 text-gray-400 hover:bg-gray-200 transition-colors"
-                    >
-                      <span className="text-lg">△</span>
-                      <span>{s.voteCount}</span>
-                    </Link>
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900">{s.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    {s.city}, {s.state}
-                  </p>
-
-                  {s.description && (
-                    <p className="text-sm text-gray-600 mt-1.5 line-clamp-2">{s.description}</p>
-                  )}
-
-                  {s.categories.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {s.categories.map(c => (
-                        <span
-                          key={c.name}
-                          className="text-xs bg-amber-50 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full"
-                        >
-                          <CategoryIcon slug={c.slug} iconEmoji={c.emoji} iconUrl={c.iconUrl} /> {c.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <p className="text-xs text-gray-400 mt-2">
-                    Suggested by {s.submitter} · {new Date(s.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <NominationsWithFilters
+          suggestions={suggestions}
+          isLoggedIn={!!session}
+        />
 
         <div className="mt-8 text-center">
           <Link
