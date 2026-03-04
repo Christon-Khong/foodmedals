@@ -5,6 +5,14 @@ export function toSlug(name: string, city: string) {
     .replace(/^-|-$/g, '')
 }
 
+/** Strip suite/unit/apt numbers that confuse geocoders */
+function stripUnit(address: string): string {
+  return address
+    .replace(/\s*(suite|ste|unit|apt|#)\s*#?\s*\S+/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export async function geocode(
   address: string,
   city: string,
@@ -12,8 +20,9 @@ export async function geocode(
   zip: string,
 ): Promise<{ lat: number; lng: number } | null> {
   try {
+    const street = stripUnit(address)
     const params = new URLSearchParams({
-      street:       address,
+      street,
       city,
       state,
       postalcode:   zip,

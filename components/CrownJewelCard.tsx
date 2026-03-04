@@ -69,7 +69,7 @@ export function CrownJewelCard({ medals, crownJewelMedalId, isOwner }: Props) {
       </div>
       <Link
         href={`/restaurants/${crownJewel.restaurant.slug}`}
-        className="crown-jewel-card block bg-white rounded-2xl border border-yellow-300 shadow-sm p-5 hover:shadow-md transition-shadow"
+        className="crown-jewel-card block bg-white rounded-2xl border border-blue-200 shadow-sm p-5 hover:shadow-md transition-shadow"
       >
         <div className="flex items-center gap-4">
           <Image src="/medals/gold.png" alt="Gold" width={48} height={48} className="flex-shrink-0" />

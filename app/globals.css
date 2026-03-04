@@ -62,9 +62,9 @@ body {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(232, 163, 23, 0.15) 25%,
-    rgba(255, 208, 107, 0.5) 50%,
-    rgba(232, 163, 23, 0.15) 75%,
+    rgba(59, 130, 246, 0.15) 25%,
+    rgba(147, 197, 253, 0.5) 50%,
+    rgba(59, 130, 246, 0.15) 75%,
     transparent 100%
   );
   background-size: 200% 100%;
@@ -77,7 +77,7 @@ body {
   position: absolute;
   inset: 0;
   border-radius: 1.15rem;
-  box-shadow: 0 0 20px rgba(232, 163, 23, 0.2), 0 0 40px rgba(232, 163, 23, 0.1);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2), 0 0 40px rgba(59, 130, 246, 0.1);
   pointer-events: none;
 }
 
