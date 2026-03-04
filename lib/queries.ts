@@ -773,7 +773,7 @@ export async function getUserProfile(slug: string) {
         select: { id: true, name: true, slug: true, iconEmoji: true, iconUrl: true, sortOrder: true },
       },
       restaurant: {
-        select: { name: true, slug: true, city: true, state: true },
+        select: { name: true, slug: true, city: true, state: true, address: true, lat: true, lng: true },
       },
     },
     orderBy: [{ foodCategory: { sortOrder: 'asc' } }, { medalType: 'asc' }],

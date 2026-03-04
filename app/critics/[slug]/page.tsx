@@ -9,9 +9,8 @@ import { Navbar } from '@/components/Navbar'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { ShareProfileButton } from '@/components/ShareProfileButton'
 import { CrownJewelCard } from '@/components/CrownJewelCard'
-import { Trophy, LayoutGrid, Calendar } from 'lucide-react'
-
-const MEDAL_ORDER: Record<string, number> = { gold: 0, silver: 1, bronze: 2 }
+import { TrophyCaseGrid } from '@/components/TrophyCaseGrid'
+import { Trophy, LayoutGrid, Calendar, Award } from 'lucide-react'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -23,15 +22,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${profile.user.displayName} — Food Critic | FoodMedals`,
     description: `${profile.user.displayName}'s food rankings and medal picks on FoodMedals.`,
   }
-}
-
-function MedalImage({ type }: { type: string }) {
-  const size = type === 'gold' ? 36 : type === 'silver' ? 28 : 24
-  const src =
-    type === 'gold'   ? '/medals/gold.png'   :
-    type === 'silver' ? '/medals/silver.png' :
-                        '/medals/bronze.png'
-  return <Image src={src} alt={type} width={size} height={size} />
 }
 
 function Initials({ name }: { name: string }) {
@@ -46,6 +36,12 @@ function Initials({ name }: { name: string }) {
       {initials}
     </div>
   )
+}
+
+function getAchievementTier(categoryCount: number): { label: string; color: string } | null {
+  if (categoryCount >= 10) return { label: 'Local Legend', color: 'from-purple-100 to-violet-100 text-purple-800 border-purple-200' }
+  if (categoryCount >= 5)  return { label: 'Master Critic', color: 'from-yellow-100 to-amber-100 text-yellow-800 border-yellow-200' }
+  return null
 }
 
 export default async function CriticProfilePage({ params }: Props) {
@@ -78,6 +74,9 @@ export default async function CriticProfilePage({ params }: Props) {
     .filter(m => m.length === 3)
     .map(m => m[0].foodCategory.name)
 
+  // Achievement tier
+  const achievementTier = getAchievementTier(categoriesVoted)
+
   // Category list for pills
   const categoryList = Object.values(byCategory).map(m => m[0].foodCategory)
 
@@ -87,7 +86,7 @@ export default async function CriticProfilePage({ params }: Props) {
 
       {/* Profile header */}
       <div className="bg-white border-b border-amber-100">
-        <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto px-4 py-8">
           <div className="flex items-start gap-5">
             {user.avatarUrl ? (
               <Image
@@ -104,7 +103,15 @@ export default async function CriticProfilePage({ params }: Props) {
             )}
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">{user.displayName}</h1>
+                <div className="flex items-center gap-2.5">
+                  <h1 className="text-2xl font-bold text-gray-900">{user.displayName}</h1>
+                  {achievementTier && (
+                    <span className={`inline-flex items-center gap-1 text-[11px] font-bold bg-gradient-to-r ${achievementTier.color} px-2.5 py-0.5 rounded-full border`}>
+                      <Award className="w-3 h-3" />
+                      {achievementTier.label}
+                    </span>
+                  )}
+                </div>
                 <ShareProfileButton />
               </div>
               <p className="text-sm text-gray-500 mt-0.5">
@@ -145,7 +152,8 @@ export default async function CriticProfilePage({ params }: Props) {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      {/* Crown Jewel + Category Pills — narrower container */}
+      <div className="max-w-5xl mx-auto px-4 pt-8">
         {medals.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-amber-100">
             <div className="mb-4 flex justify-center">
@@ -167,13 +175,15 @@ export default async function CriticProfilePage({ params }: Props) {
         ) : (
           <>
             {/* Crown Jewel */}
-            {medals.some(m => m.medalType === 'gold') && (
-              <CrownJewelCard
-                medals={medals}
-                crownJewelMedalId={user.crownJewelMedalId}
-                isOwner={isOwner}
-              />
-            )}
+            <div className="max-w-2xl">
+              {medals.some(m => m.medalType === 'gold') && (
+                <CrownJewelCard
+                  medals={medals}
+                  crownJewelMedalId={user.crownJewelMedalId}
+                  isOwner={isOwner}
+                />
+              )}
+            </div>
 
             {/* Category pills */}
             {categoryList.length > 1 && (
@@ -193,91 +203,17 @@ export default async function CriticProfilePage({ params }: Props) {
               </div>
             )}
 
-            {/* Medal shelf */}
-            <h2 className="text-lg font-bold text-gray-900 mb-4">{year} Medal Shelf</h2>
-            <div className="space-y-5">
-              {Object.entries(byCategory).map(([, catMedals]) => {
-                const cat = catMedals[0].foodCategory
-                const sorted = [...catMedals].sort(
-                  (a, b) => (MEDAL_ORDER[a.medalType] ?? 9) - (MEDAL_ORDER[b.medalType] ?? 9),
-                )
-
-                return (
-                  <div
-                    key={cat.id}
-                    id={`cat-${cat.slug}`}
-                    className="bg-white rounded-2xl border border-amber-100 shadow-sm overflow-hidden scroll-mt-20"
-                  >
-                    {/* Shelf header — category name */}
-                    <div className="flex items-center justify-between px-5 py-3.5 border-b border-amber-50">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">
-                          <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} />
-                        </span>
-                        <Link
-                          href={`/categories/${cat.slug}`}
-                          className="font-bold text-gray-800 hover:text-yellow-700 transition-colors"
-                        >
-                          {cat.name}
-                        </Link>
-                      </div>
-                      {isOwner && (
-                        <Link
-                          href={`/categories/${cat.slug}/award`}
-                          className="text-xs font-semibold text-yellow-700 hover:underline"
-                        >
-                          Change picks
-                        </Link>
-                      )}
-                    </div>
-
-                    {/* Shelf — medals on a wood-textured strip */}
-                    <div
-                      className="px-5 py-4"
-                      style={{
-                        background: 'linear-gradient(to bottom, #f5ebe0 0%, #e8d5c0 40%, #c9a97a 42%, #b8935a 44%, #c9a97a 46%, #e8d5c0 48%, #f5ebe0 100%)',
-                      }}
-                    >
-                      <div className="flex items-stretch gap-3">
-                        {sorted.map(m => (
-                          <div
-                            key={m.id}
-                            className="flex-1 bg-white/90 backdrop-blur rounded-xl px-3 py-3 text-center shadow-sm"
-                          >
-                            <div className="flex justify-center mb-1.5">
-                              <MedalImage type={m.medalType} />
-                            </div>
-                            <Link
-                              href={`/restaurants/${m.restaurant.slug}`}
-                              className="text-xs font-semibold text-gray-700 hover:text-yellow-700 transition-colors line-clamp-2 leading-tight"
-                            >
-                              {m.restaurant.name}
-                            </Link>
-                            <p className="text-[10px] text-gray-400 mt-0.5">
-                              {m.restaurant.city}
-                            </p>
-                          </div>
-                        ))}
-                        {/* Empty slots to fill row if < 3 medals */}
-                        {sorted.length < 3 && Array.from({ length: 3 - sorted.length }).map((_, i) => (
-                          <div
-                            key={`empty-${i}`}
-                            className="flex-1 border-2 border-dashed border-amber-200/60 rounded-xl px-3 py-3 flex items-center justify-center"
-                          >
-                            <span className="text-xs text-amber-300">—</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            {/* Trophy Case Grid */}
+            <TrophyCaseGrid
+              byCategory={byCategory}
+              year={year}
+              isOwner={isOwner}
+            />
           </>
         )}
 
         {isOwner && medals.length > 0 && (
-          <div className="mt-8 text-center">
+          <div className="mt-8 pb-8 text-center">
             <Link
               href="/categories"
               className="text-sm text-yellow-700 hover:underline font-medium"

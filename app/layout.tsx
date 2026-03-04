@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono, Lexend } from 'next/font/google'
+import { Geist, Geist_Mono, Lexend, Playfair_Display } from 'next/font/google'
 import { Providers } from '@/components/providers'
 import './globals.css'
 
@@ -15,6 +15,11 @@ const geistMono = Geist_Mono({
 
 const lexend = Lexend({
   variable: "--font-lexend",
+  subsets: ["latin"],
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
   subsets: ["latin"],
 });
 
@@ -52,7 +57,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${lexend.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${lexend.variable} ${playfair.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>
