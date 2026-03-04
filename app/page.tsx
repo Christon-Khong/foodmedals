@@ -60,31 +60,33 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── Trending carousel ─────────────────────────────────────────────── */}
+      {trending.length > 0 && <TrendingCarousel categories={trending} />}
+
       {/* ── How it works ─────────────────────────────────────────────────── */}
       <section className="bg-white border-b border-amber-100">
         <div className="max-w-4xl mx-auto px-4 py-12 sm:py-16">
           <h2 className="text-center text-2xl font-bold text-gray-900 mb-10">How it works</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { icon: '🍔', step: '1', title: 'Browse Categories', desc: 'Cheeseburgers, tacos, pizza, wings — dozens of food categories.' },
-              { icon: <Image src="/medals/gold.png" alt="medal" width={36} height={36} />, step: '2', title: 'Award Your Medals', desc: 'Give Gold, Silver & Bronze to the three restaurants you love most.' },
-              { icon: '🏆', step: '3', title: 'See the Rankings', desc: 'Community votes aggregate into leaderboards that reset every year.' },
+              { icon: '🍔', step: '1', title: 'Browse Categories', href: '/categories', desc: 'Burgers, tacos, pizza, wings — dozens of food categories.' },
+              { icon: <Image src="/medals/gold.png" alt="medal" width={36} height={36} />, step: '2', title: 'Award Your Medals', href: '/categories', desc: 'Give Gold, Silver & Bronze to the three restaurants you love most.' },
+              { icon: '🏆', step: '3', title: 'See the Rankings', href: '/categories', desc: 'Community votes aggregate into leaderboards that reset every year.' },
             ].map(item => (
               <div key={item.step} className="text-center">
                 <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm border border-amber-100">
                   {item.icon}
                 </div>
                 <div className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-1">Step {item.step}</div>
-                <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
+                <Link href={item.href} className="font-bold text-gray-900 mb-2 hover:text-yellow-700 transition-colors inline-block">
+                  <h3>{item.title}</h3>
+                </Link>
                 <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
-
-      {/* ── Trending carousel ─────────────────────────────────────────────── */}
-      {trending.length > 0 && <TrendingCarousel categories={trending} />}
 
       {/* ── Category grid ────────────────────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-4 py-12">

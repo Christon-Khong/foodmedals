@@ -14,7 +14,7 @@ function CategoryCard({ cat }: { cat: TrendingCategory }) {
     <Link
       href={`/categories/${cat.categorySlug}`}
       data-card
-      className="flex-shrink-0 w-[260px] sm:w-[280px] bg-amber-50/60 rounded-2xl border border-amber-100 hover:border-yellow-300 hover:shadow-md transition-all duration-200 p-5 flex flex-col group"
+      className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 hover:shadow-md transition-all duration-200 p-5 flex flex-col group"
       style={{ scrollSnapAlign: 'start' }}
     >
       {/* Category header */}
@@ -64,6 +64,8 @@ function CategoryCard({ cat }: { cat: TrendingCategory }) {
 export function TrendingCarousel({ categories }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const isResetting = useRef(false)
+  const userInteracting = useRef(false)
+  const resumeTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [mounted, setMounted] = useState(false)
 
   // Triple the items: [clone-set] [original-set] [clone-set]
@@ -118,17 +120,75 @@ export function TrendingCarousel({ categories }: Props) {
     return () => el.removeEventListener('scroll', handleScroll)
   }, [handleScroll])
 
+  // ── Auto-scroll: slow creep when user isn't interacting ──────────
+  const pauseAutoScroll = useCallback(() => {
+    userInteracting.current = true
+    clearTimeout(resumeTimer.current)
+  }, [])
+
+  const scheduleResume = useCallback(() => {
+    clearTimeout(resumeTimer.current)
+    resumeTimer.current = setTimeout(() => {
+      userInteracting.current = false
+    }, 3000) // resume after 3 s idle
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+    const el = scrollRef.current
+    if (!el) return
+
+    // Auto-scroll ~1px every 30ms ≈ 33px/s
+    const interval = setInterval(() => {
+      if (userInteracting.current || isResetting.current) return
+      el.scrollLeft += 1
+    }, 30)
+
+    // Pause on hover / touch
+    const onEnter = () => pauseAutoScroll()
+    const onLeave = () => scheduleResume()
+    const onTouchStart = () => pauseAutoScroll()
+    const onTouchEnd = () => scheduleResume()
+
+    // Pause when user manually scrolls (wheel / drag)
+    let scrollTimeout: ReturnType<typeof setTimeout>
+    const onWheel = () => {
+      pauseAutoScroll()
+      clearTimeout(scrollTimeout)
+      scrollTimeout = setTimeout(() => scheduleResume(), 150)
+    }
+
+    el.addEventListener('mouseenter', onEnter)
+    el.addEventListener('mouseleave', onLeave)
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchend', onTouchEnd)
+    el.addEventListener('wheel', onWheel, { passive: true })
+
+    return () => {
+      clearInterval(interval)
+      clearTimeout(resumeTimer.current)
+      clearTimeout(scrollTimeout)
+      el.removeEventListener('mouseenter', onEnter)
+      el.removeEventListener('mouseleave', onLeave)
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('wheel', onWheel)
+    }
+  }, [mounted, pauseAutoScroll, scheduleResume])
+
   function scroll(dir: 'left' | 'right') {
+    pauseAutoScroll()
     const el = scrollRef.current
     if (!el) return
     const cardWidth = el.querySelector<HTMLElement>('[data-card]')?.offsetWidth ?? 280
     el.scrollBy({ left: dir === 'left' ? -cardWidth - 16 : cardWidth + 16, behavior: 'smooth' })
+    scheduleResume()
   }
 
   if (categories.length === 0) return null
 
   return (
-    <section className="py-12 border-b border-amber-100 bg-white">
+    <section className="py-12 border-b border-amber-100 bg-amber-50">
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-end justify-between mb-6">
           <div>
