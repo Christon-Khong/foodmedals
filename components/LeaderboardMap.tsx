@@ -72,6 +72,18 @@ function MapInner({ rows }: Props) {
             <Popup>
               <div className="text-sm font-medium">{row.restaurantName}</div>
               <div className="text-xs text-gray-500">Score: {row.totalScore}</div>
+              {row.address && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    [row.address, row.city, row.state].filter(Boolean).join(', ')
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:underline block mt-1"
+                >
+                  {[row.address, row.city].filter(Boolean).join(', ')} →
+                </a>
+              )}
             </Popup>
           </Marker>
         ))}

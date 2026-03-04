@@ -15,7 +15,6 @@ function CategoryCard({ cat }: { cat: TrendingCategory }) {
       href={`/categories/${cat.categorySlug}`}
       data-card
       className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 hover:shadow-md transition-all duration-200 p-5 flex flex-col group"
-      style={{ scrollSnapAlign: 'start' }}
     >
       {/* Category header */}
       <div className="flex items-center gap-3 mb-4">
@@ -219,8 +218,8 @@ export function TrendingCarousel({ categories }: Props) {
       {/* Scrollable track — tripled for infinite loop */}
       <div
         ref={scrollRef}
-        className={`flex gap-4 overflow-x-auto px-4 sm:px-[max(1rem,calc((100%-56rem)/2+1rem))] pb-2 ${mounted ? 'scroll-smooth' : ''}`}
-        style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+        className="flex gap-4 overflow-x-auto px-4 sm:px-[max(1rem,calc((100%-56rem)/2+1rem))] pb-2"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
       >
         {items.map((cat, i) => (
           <CategoryCard key={`${cat.categoryId}-${i}`} cat={cat} />

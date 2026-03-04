@@ -30,6 +30,9 @@ export type LeaderboardRow = {
   distanceMiles?: number
   lat?:           number | null
   lng?:           number | null
+  address?:       string | null
+  city?:          string | null
+  state?:         string | null
 }
 
 export async function getLeaderboard(
@@ -55,6 +58,9 @@ export async function getLeaderboard(
       total_score:  bigint
       lat:          number | null
       lng:          number | null
+      address:      string | null
+      city:         string | null
+      state:        string | null
     }>
   >`
     SELECT
@@ -63,6 +69,9 @@ export async function getLeaderboard(
       r.slug AS restaurant_slug,
       r.lat,
       r.lng,
+      r.address,
+      r.city,
+      r.state,
       COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'silver') AS silver_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') AS bronze_count,
@@ -78,7 +87,7 @@ export async function getLeaderboard(
       AND rc.verified = true
       AND r.status    = 'active'
       ${locationClause}
-    GROUP BY r.id, r.name, r.slug, r.lat, r.lng
+    GROUP BY r.id, r.name, r.slug, r.lat, r.lng, r.address, r.city, r.state
     ORDER BY total_score DESC, gold_count DESC, r.name ASC
   `
 
@@ -92,6 +101,9 @@ export async function getLeaderboard(
     totalScore:     Number(row.total_score),
     lat:            row.lat,
     lng:            row.lng,
+    address:        row.address,
+    city:           row.city,
+    state:          row.state,
   }))
 }
 
@@ -112,10 +124,13 @@ export async function getLeaderboardNearMe(
       bronze_count:    bigint
       total_score:     bigint
       distance_miles:  number
+      address:         string | null
+      city:            string | null
+      state:           string | null
     }>
   >`
     WITH nearby AS (
-      SELECT r.id, r.name, r.slug, r.lat, r.lng, r.city,
+      SELECT r.id, r.name, r.slug, r.lat, r.lng, r.city, r.state, r.address,
         (3959 * acos(
           LEAST(1.0,
             cos(radians(${lat})) * cos(radians(r.lat)) *
@@ -134,6 +149,9 @@ export async function getLeaderboardNearMe(
       n.name AS restaurant_name,
       n.slug AS restaurant_slug,
       ROUND(n.distance_miles::numeric, 1)                                AS distance_miles,
+      n.address,
+      n.city,
+      n.state,
       COUNT(*) FILTER (WHERE m.medal_type = 'gold')                     AS gold_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'silver')                   AS silver_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'bronze')                   AS bronze_count,
@@ -146,7 +164,7 @@ export async function getLeaderboardNearMe(
                       AND m.food_category_id = ${foodCategoryId}
                       AND m.year = ${year}
     WHERE n.distance_miles <= ${radius}
-    GROUP BY n.id, n.name, n.slug, n.distance_miles
+    GROUP BY n.id, n.name, n.slug, n.distance_miles, n.address, n.city, n.state
     ORDER BY total_score DESC, gold_count DESC, n.distance_miles ASC
   `
 
@@ -159,6 +177,9 @@ export async function getLeaderboardNearMe(
     bronzeCount:    Number(row.bronze_count),
     totalScore:     Number(row.total_score),
     distanceMiles:  Number(row.distance_miles),
+    address:        row.address,
+    city:           row.city,
+    state:          row.state,
   }))
 }
 
