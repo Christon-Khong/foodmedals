@@ -103,6 +103,11 @@ function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
         >
           {row.restaurantName}
         </Link>
+        {row.city && (
+          <p className="text-[10px] text-gray-400 leading-tight mt-0.5">
+            {row.city}{row.state ? `, ${row.state}` : ''}
+          </p>
+        )}
 
         {/* score */}
         <p className="text-[11px] sm:text-xs text-gray-500 mt-1 font-medium">

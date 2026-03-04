@@ -221,6 +221,11 @@ export function LeaderboardResults({
                           >
                             {row.restaurantName}
                           </Link>
+                          {row.city && (
+                            <span className="text-xs text-gray-400 font-normal">
+                              {row.city}{row.state ? `, ${row.state}` : ''}
+                            </span>
+                          )}
                           {row.distanceMiles !== undefined && (
                             <DistanceBadge miles={row.distanceMiles} />
                           )}

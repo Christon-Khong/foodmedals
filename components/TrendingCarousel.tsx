@@ -50,6 +50,11 @@ function CategoryCard({ cat, nearMe }: { cat: TrendingCategory; nearMe: boolean 
             />
             <span className="text-sm text-gray-800 font-medium truncate flex-1">
               {r.restaurantName}
+              {r.city && (
+                <span className="text-xs text-gray-400 font-normal ml-1">
+                  {r.city}{r.state ? `, ${r.state}` : ''}
+                </span>
+              )}
             </span>
             <span className="text-xs text-gray-400 font-semibold tabular-nums flex-shrink-0">
               {r.totalScore} pts

@@ -457,6 +457,8 @@ export type TrendingCategory = {
     restaurantSlug: string
     totalScore:     number
     goldCount:      number
+    city:           string | null
+    state:          string | null
   }>
 }
 
@@ -470,6 +472,8 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
       icon_url:        string | null
       restaurant_name: string
       restaurant_slug: string
+      restaurant_city: string | null
+      restaurant_state: string | null
       total_score:     bigint
       gold_count:      bigint
       rn:              bigint
@@ -485,6 +489,8 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
         fc.sort_order,
         r.name          AS restaurant_name,
         r.slug          AS restaurant_slug,
+        r.city          AS restaurant_city,
+        r.state         AS restaurant_state,
         COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
         (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
          COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
@@ -496,7 +502,7 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
                                    AND m.food_category_id = fc.id
                                    AND m.year = ${year}
       WHERE fc.status = 'active'
-      GROUP BY fc.id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, fc.sort_order, r.name, r.slug
+      GROUP BY fc.id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, fc.sort_order, r.name, r.slug, r.city, r.state
       HAVING (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
               COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
               COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) > 0
@@ -510,7 +516,8 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
       FROM scored
     )
     SELECT category_id, category_name, category_slug, icon_emoji, icon_url,
-           restaurant_name, restaurant_slug, total_score, gold_count, rn
+           restaurant_name, restaurant_slug, restaurant_city, restaurant_state,
+           total_score, gold_count, rn
     FROM ranked
     WHERE rn <= 3
     ORDER BY sort_order, rn
@@ -535,6 +542,8 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
       restaurantSlug: row.restaurant_slug,
       totalScore:     Number(row.total_score),
       goldCount:      Number(row.gold_count),
+      city:           row.restaurant_city,
+      state:          row.restaurant_state,
     })
   }
 
@@ -556,13 +565,15 @@ export async function getTopRestaurantsPerCategoryNearMe(
       icon_url:        string | null
       restaurant_name: string
       restaurant_slug: string
+      restaurant_city: string | null
+      restaurant_state: string | null
       total_score:     bigint
       gold_count:      bigint
       rn:              bigint
     }>
   >`
     WITH nearby AS (
-      SELECT r.id, r.name, r.slug,
+      SELECT r.id, r.name, r.slug, r.city, r.state,
         (3959 * acos(
           LEAST(1.0,
             cos(radians(${lat})) * cos(radians(r.lat)) *
@@ -586,6 +597,8 @@ export async function getTopRestaurantsPerCategoryNearMe(
         fc.sort_order,
         n.name          AS restaurant_name,
         n.slug          AS restaurant_slug,
+        n.city          AS restaurant_city,
+        n.state         AS restaurant_state,
         COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
         (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
          COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
@@ -598,7 +611,7 @@ export async function getTopRestaurantsPerCategoryNearMe(
                         AND m.year = ${year}
       WHERE fc.status = 'active'
         AND n.distance_miles <= ${radiusMiles}
-      GROUP BY fc.id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, fc.sort_order, n.name, n.slug
+      GROUP BY fc.id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, fc.sort_order, n.name, n.slug, n.city, n.state
       HAVING (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
               COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
               COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) > 0
@@ -612,7 +625,8 @@ export async function getTopRestaurantsPerCategoryNearMe(
       FROM scored
     )
     SELECT category_id, category_name, category_slug, icon_emoji, icon_url,
-           restaurant_name, restaurant_slug, total_score, gold_count, rn
+           restaurant_name, restaurant_slug, restaurant_city, restaurant_state,
+           total_score, gold_count, rn
     FROM ranked
     WHERE rn <= 3
     ORDER BY sort_order, rn
@@ -637,6 +651,8 @@ export async function getTopRestaurantsPerCategoryNearMe(
       restaurantSlug: row.restaurant_slug,
       totalScore:     Number(row.total_score),
       goldCount:      Number(row.gold_count),
+      city:           row.restaurant_city,
+      state:          row.restaurant_state,
     })
   }
 
