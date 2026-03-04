@@ -8,6 +8,7 @@ import { getUserProfile } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { ShareProfileButton } from '@/components/ShareProfileButton'
+import { CrownJewelCard } from '@/components/CrownJewelCard'
 import { Trophy, LayoutGrid, Calendar } from 'lucide-react'
 
 const MEDAL_ORDER: Record<string, number> = { gold: 0, silver: 1, bronze: 2 }
@@ -71,9 +72,6 @@ export default async function CriticProfilePage({ params }: Props) {
 
   const memberSince = user.createdAt.getFullYear()
   const categoriesVoted = Object.keys(byCategory).length
-
-  // Crown Jewel: first gold medal (sorted by category sortOrder)
-  const crownJewel = medals.find(m => m.medalType === 'gold')
 
   // Expertise badges: categories where all 3 medals awarded
   const expertCategories = Object.values(byCategory)
@@ -169,37 +167,12 @@ export default async function CriticProfilePage({ params }: Props) {
         ) : (
           <>
             {/* Crown Jewel */}
-            {crownJewel && (
-              <div className="mb-8">
-                <h2 className="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-3">Crown Jewel</h2>
-                <Link
-                  href={`/restaurants/${crownJewel.restaurant.slug}`}
-                  className="block bg-white rounded-2xl border border-amber-100 shadow-sm p-5 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-4">
-                    <Image src="/medals/gold.png" alt="Gold" width={48} height={48} className="flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-lg font-bold text-gray-900 truncate">{crownJewel.restaurant.name}</p>
-                      <p className="text-sm text-gray-500">
-                        <span className="inline-flex items-center gap-1">
-                          <CategoryIcon
-                            slug={crownJewel.foodCategory.slug}
-                            iconEmoji={crownJewel.foodCategory.iconEmoji}
-                            iconUrl={crownJewel.foodCategory.iconUrl}
-                          />
-                          {crownJewel.foodCategory.name}
-                        </span>
-                        {crownJewel.restaurant.city && (
-                          <span className="text-gray-400"> · {crownJewel.restaurant.city}{crownJewel.restaurant.state ? `, ${crownJewel.restaurant.state}` : ''}</span>
-                        )}
-                      </p>
-                    </div>
-                    <span className="text-xs font-bold text-yellow-600 bg-yellow-50 px-2.5 py-1 rounded-full border border-yellow-200 flex-shrink-0">
-                      #1 Pick
-                    </span>
-                  </div>
-                </Link>
-              </div>
+            {medals.some(m => m.medalType === 'gold') && (
+              <CrownJewelCard
+                medals={medals}
+                crownJewelMedalId={user.crownJewelMedalId}
+                isOwner={isOwner}
+              />
             )}
 
             {/* Category pills */}

@@ -759,6 +759,7 @@ export async function getUserProfile(slug: string) {
       avatarUrl: true,
       city: true,
       state: true,
+      crownJewelMedalId: true,
       createdAt: true,
     },
   })

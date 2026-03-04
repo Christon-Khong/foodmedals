@@ -43,6 +43,43 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Crown Jewel sparkle/shimmer effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.crown-jewel-card {
+  position: relative;
+}
+
+.crown-jewel-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 1.25rem;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(232, 163, 23, 0.15) 25%,
+    rgba(255, 208, 107, 0.5) 50%,
+    rgba(232, 163, 23, 0.15) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+  z-index: -1;
+}
+
+.crown-jewel-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 1.15rem;
+  box-shadow: 0 0 20px rgba(232, 163, 23, 0.2), 0 0 40px rgba(232, 163, 23, 0.1);
+  pointer-events: none;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading), sans-serif;
   font-weight: 800;

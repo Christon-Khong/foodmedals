@@ -19,9 +19,10 @@ model User {
   avatarUrl    String?  @map("avatar_url")
   city         String?
   state        String?  @default("UT")
-  isAdmin      Boolean  @default(false) @map("is_admin")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  isAdmin            Boolean  @default(false) @map("is_admin")
+  crownJewelMedalId  String?  @map("crown_jewel_medal_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
   accounts             Account[]
   medals               Medal[]
