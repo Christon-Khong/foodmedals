@@ -80,7 +80,7 @@ export default function SuggestRestaurantPage() {
           </p>
           <div className="flex gap-3 justify-center">
             <Link href="/suggest/vote" className="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-full text-sm transition-colors">
-              View Community Picks
+              View Community Nominations
             </Link>
             <button
               onClick={() => { setDone(false); setForm({ name: '', address: '', city: '', state: '', zip: '', websiteUrl: '', description: '' }); setCategoryIds([]) }}

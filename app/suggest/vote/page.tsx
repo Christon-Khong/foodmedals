@@ -9,7 +9,7 @@ import { VoteButton } from './VoteButton'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Community Picks — FoodMedals',
+  title: 'Community Nominations — FoodMedals',
   description: 'Upvote restaurant suggestions to help them get approved.',
 }
 
@@ -51,7 +51,7 @@ async function getPendingSuggestions(userId?: string) {
   }))
 }
 
-export default async function CommunityPicksPage() {
+export default async function CommunityNominationsPage() {
   const session = await getServerSession(authOptions)
   const suggestions = await getPendingSuggestions(session?.user?.id)
 
@@ -62,7 +62,7 @@ export default async function CommunityPicksPage() {
 
       <div className="max-w-2xl mx-auto px-4 py-10">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Community Picks</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Community Nominations</h1>
           <p className="text-sm text-gray-500 mt-1">
             Upvote restaurant suggestions you&apos;d like to see added.
           </p>

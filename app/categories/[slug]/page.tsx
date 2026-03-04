@@ -2,9 +2,13 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { isAdminEmail } from '@/lib/adminAuth'
 import { getCategoryBySlug, getLeaderboard, getCitiesForCategory } from '@/lib/queries'
 import { HeroImage } from '@/components/HeroImage'
 import { LeaderboardWithLocation } from '@/components/LeaderboardWithLocation'
+import { NominationsSection } from './NominationsSection'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -56,11 +60,48 @@ export default async function CategoryLeaderboardPage({
   const year        = yearParam ? parseInt(yearParam, 10) : new Date().getFullYear()
   const currentYear = new Date().getFullYear()
 
+  const session = await getServerSession(authOptions)
+  const isAdmin = isAdminEmail(session?.user?.email)
+  const isLoggedIn = !!session?.user
+
   // Always fetch statewide for SSR (Googlebot sees full list)
-  const [initialRows, cities] = await Promise.all([
+  const [initialRows, cities, pendingRestaurants] = await Promise.all([
     getLeaderboard(category.id, year),
     getCitiesForCategory(category.id),
+    prisma.restaurant.findMany({
+      where: {
+        status: 'pending_review',
+        categories: { some: { foodCategoryId: category.id } },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        submitter: { select: { displayName: true } },
+        _count: { select: { suggestionVotes: true } },
+      },
+    }),
   ])
+
+  // Check which nominations the current user has voted on
+  let votedIds: Set<string> = new Set()
+  if (session?.user?.id && pendingRestaurants.length > 0) {
+    const votes = await prisma.suggestionVote.findMany({
+      where: { userId: session.user.id, restaurantId: { in: pendingRestaurants.map(r => r.id) } },
+      select: { restaurantId: true },
+    })
+    votedIds = new Set(votes.map(v => v.restaurantId))
+  }
+
+  const nominations = pendingRestaurants.map(r => ({
+    id:          r.id,
+    name:        r.name,
+    city:        r.city,
+    state:       r.state,
+    description: r.description,
+    submitter:   r.submitter?.displayName ?? 'Anonymous',
+    createdAt:   r.createdAt.toISOString(),
+    voteCount:   r._count.suggestionVotes,
+    voted:       votedIds.has(r.id),
+  }))
 
   // Year tab hrefs
   function yearHref(y: number) {
@@ -155,6 +196,14 @@ export default async function CategoryLeaderboardPage({
         cities={cities}
         initialCity={city ?? null}
         initialState={state ?? null}
+      />
+
+      {/* ── Community Nominations ────────────────────────────────────── */}
+      <NominationsSection
+        nominations={nominations}
+        isAdmin={isAdmin}
+        isLoggedIn={isLoggedIn}
+        categorySlug={slug}
       />
 
       {/* ── CTA ─────────────────────────────────────────────────────────── */}
