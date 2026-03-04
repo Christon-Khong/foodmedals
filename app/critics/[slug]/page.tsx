@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getUserProfile } from '@/lib/queries'
+import { getUserProfile, getAllActiveCategories, getTrendingCategoriesInCity } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { ShareProfileButton } from '@/components/ShareProfileButton'
 import { CrownJewelCard } from '@/components/CrownJewelCard'
@@ -76,6 +76,33 @@ export default async function CriticProfilePage({ params }: Props) {
   // Achievement tier
   const achievementTier = getAchievementTier(categoriesVoted)
 
+  // Owner engagement: fetch all categories + trending to compute unranked
+  let totalCategories: number | undefined
+  let unrankedCategories: Array<{ id: string; name: string; slug: string; iconEmoji: string; iconUrl: string | null; trendingCount?: number }> | undefined
+
+  if (isOwner) {
+    const rankedIds = new Set(Object.keys(byCategory))
+    const [allCategories, trending] = await Promise.all([
+      getAllActiveCategories(),
+      user.city && user.state
+        ? getTrendingCategoriesInCity(year, user.city, user.state)
+        : Promise.resolve([]),
+    ])
+    totalCategories = allCategories.length
+    const trendingMap = new Map(trending.map(t => [t.categoryId, t.medalCount]))
+
+    unrankedCategories = allCategories
+      .filter(c => !rankedIds.has(c.id))
+      .map(c => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        iconEmoji: c.iconEmoji,
+        iconUrl: c.iconUrl,
+        trendingCount: trendingMap.get(c.id),
+      }))
+      .sort((a, b) => (b.trendingCount ?? 0) - (a.trendingCount ?? 0))
+  }
 
   return (
     <div className="min-h-screen bg-amber-50">
@@ -187,20 +214,16 @@ export default async function CriticProfilePage({ params }: Props) {
               byCategory={byCategory}
               year={year}
               isOwner={isOwner}
+              totalCategories={totalCategories}
+              rankedCount={categoriesVoted}
+              unrankedCategories={unrankedCategories}
+              userCity={user.city ?? undefined}
             />
           </>
         )}
 
-        {isOwner && medals.length > 0 && (
-          <div className="mt-8 pb-8 text-center">
-            <Link
-              href="/categories"
-              className="text-sm text-yellow-700 hover:underline font-medium"
-            >
-              Vote in more categories →
-            </Link>
-          </div>
-        )}
+        {/* Bottom spacing */}
+        <div className="pb-8" />
       </div>
     </div>
   )

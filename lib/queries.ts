@@ -674,6 +674,59 @@ export async function getTopRestaurantsPerCategoryNearMe(
   return Array.from(map.values())
 }
 
+// ─── Trending categories by city ──────────────────────────────────────────────
+
+export type TrendingCityCategory = {
+  categoryId:   string
+  categoryName: string
+  categorySlug: string
+  iconEmoji:    string
+  iconUrl:      string | null
+  medalCount:   number
+}
+
+export async function getTrendingCategoriesInCity(
+  year: number,
+  city: string,
+  state: string,
+): Promise<TrendingCityCategory[]> {
+  const rows = await prisma.$queryRaw<
+    Array<{
+      category_id:   string
+      category_name: string
+      category_slug: string
+      icon_emoji:    string
+      icon_url:      string | null
+      medal_count:   bigint
+    }>
+  >`
+    SELECT
+      fc.id          AS category_id,
+      fc.name        AS category_name,
+      fc.slug        AS category_slug,
+      fc.icon_emoji,
+      fc.icon_url,
+      COUNT(m.id)    AS medal_count
+    FROM food_categories fc
+    JOIN medals m ON m.food_category_id = fc.id AND m.year = ${year}
+    JOIN restaurants r ON r.id = m.restaurant_id
+    WHERE fc.status = 'active'
+      AND r.city  = ${city}
+      AND r.state = ${state}
+    GROUP BY fc.id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url
+    ORDER BY medal_count DESC
+  `
+
+  return rows.map(r => ({
+    categoryId:   r.category_id,
+    categoryName: r.category_name,
+    categorySlug: r.category_slug,
+    iconEmoji:    r.icon_emoji,
+    iconUrl:      r.icon_url,
+    medalCount:   Number(r.medal_count),
+  }))
+}
+
 // ─── Category suggestions for a restaurant ───────────────────────────────────
 
 export type CategorySuggestion = {

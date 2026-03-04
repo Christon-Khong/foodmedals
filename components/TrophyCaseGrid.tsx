@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { CategoryIcon } from '@/components/CategoryIcon'
-import { LayoutGrid, Map, Lock, Search, X } from 'lucide-react'
+import { LayoutGrid, Map, Lock, Search, X, Plus, Lightbulb, TrendingUp } from 'lucide-react'
 
 const ProfileMapInner = dynamic(() => import('./ProfileMapInner'), {
   ssr: false,
@@ -41,10 +41,23 @@ type Medal = {
   }
 }
 
+type UnrankedCategory = {
+  id: string
+  name: string
+  slug: string
+  iconEmoji: string
+  iconUrl: string | null
+  trendingCount?: number
+}
+
 type Props = {
   byCategory: Record<string, Medal[]>
   year: number
   isOwner: boolean
+  totalCategories?: number
+  rankedCount?: number
+  unrankedCategories?: UnrankedCategory[]
+  userCity?: string
 }
 
 function MedalImage({ type, size }: { type: string; size: number }) {
@@ -55,8 +68,26 @@ function MedalImage({ type, size }: { type: string; size: number }) {
   return <Image src={src} alt={type} width={size} height={size} className="medal-hover cursor-pointer" />
 }
 
-function EmptyMedalSlot({ type }: { type: string }) {
-  const label = type === 'silver' ? '2nd Place' : '3rd Place'
+function EmptyMedalSlot({ type, awardHref }: { type: string; awardHref?: string }) {
+  const label = type === 'gold' ? 'Winner' : type === 'silver' ? '2nd Place' : '3rd Place'
+
+  if (awardHref) {
+    return (
+      <Link
+        href={awardHref}
+        className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-dashed border-yellow-300 bg-yellow-50/50 hover:bg-yellow-50 hover:border-yellow-400 transition-colors group"
+      >
+        <div className="w-7 h-7 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0 group-hover:bg-yellow-200 transition-colors">
+          <Plus className="w-3.5 h-3.5 text-yellow-600" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-yellow-700 font-medium">{label}</p>
+          <p className="text-[10px] text-yellow-500">Award a medal</p>
+        </div>
+      </Link>
+    )
+  }
+
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-dashed border-gray-200 bg-gray-50/50">
       <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
@@ -129,7 +160,7 @@ function CategoryCard({ catMedals, isOwner }: { catMedals: Medal[]; isOwner: boo
             </span>
           </Link>
         ) : (
-          <EmptyMedalSlot type="gold" />
+          <EmptyMedalSlot type="gold" awardHref={isOwner ? `/categories/${cat.slug}/award` : undefined} />
         )}
 
         {/* Silver & Bronze — compact rows */}
@@ -148,7 +179,7 @@ function CategoryCard({ catMedals, isOwner }: { catMedals: Medal[]; isOwner: boo
               </div>
             </Link>
           ) : (
-            <EmptyMedalSlot type="silver" />
+            <EmptyMedalSlot type="silver" awardHref={isOwner ? `/categories/${cat.slug}/award` : undefined} />
           )}
 
           {bronze ? (
@@ -165,7 +196,7 @@ function CategoryCard({ catMedals, isOwner }: { catMedals: Medal[]; isOwner: boo
               </div>
             </Link>
           ) : (
-            <EmptyMedalSlot type="bronze" />
+            <EmptyMedalSlot type="bronze" awardHref={isOwner ? `/categories/${cat.slug}/award` : undefined} />
           )}
         </div>
       </div>
@@ -173,7 +204,104 @@ function CategoryCard({ catMedals, isOwner }: { catMedals: Medal[]; isOwner: boo
   )
 }
 
-export function TrophyCaseGrid({ byCategory, year, isOwner }: Props) {
+function getNextTierInfo(rankedCount: number): { needed: number; tierName: string } | null {
+  if (rankedCount >= 10) return null // already at max tier
+  if (rankedCount >= 5)  return { needed: 10 - rankedCount, tierName: 'Local Legend' }
+  return { needed: 5 - rankedCount, tierName: 'Master Critic' }
+}
+
+function CategoryProgressBar({ rankedCount, totalCategories }: { rankedCount: number; totalCategories: number }) {
+  const pct = totalCategories > 0 ? Math.round((rankedCount / totalCategories) * 100) : 0
+  const nextTier = getNextTierInfo(rankedCount)
+
+  return (
+    <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-5 mb-5">
+      <div className="flex items-center justify-between mb-2.5">
+        <p className="text-sm font-semibold text-gray-800">
+          You&apos;ve ranked <span className="text-yellow-700">{rankedCount}</span> of {totalCategories} categories
+        </p>
+        <span className="text-xs font-bold text-yellow-700">{pct}%</span>
+      </div>
+      <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {nextTier && (
+        <p className="text-xs text-gray-500 mt-2">
+          {nextTier.needed} more to reach <span className="font-semibold text-yellow-700">{nextTier.tierName}</span>
+        </p>
+      )}
+      {!nextTier && rankedCount > 0 && (
+        <p className="text-xs text-purple-600 font-medium mt-2">
+          You&apos;re a Local Legend!
+        </p>
+      )}
+    </div>
+  )
+}
+
+function TrendingUnrankedSection({ categories, userCity }: { categories: UnrankedCategory[]; userCity?: string }) {
+  if (categories.length === 0) return null
+
+  // Show trending (with counts) first, then remaining
+  const trending = categories.filter(c => c.trendingCount && c.trendingCount > 0)
+  const other = categories.filter(c => !c.trendingCount || c.trendingCount === 0)
+  const sorted = [...trending, ...other].slice(0, 12)
+
+  return (
+    <div id="unranked-section" className="mt-8">
+      <div className="flex items-center gap-2 mb-4">
+        <TrendingUp className="w-4 h-4 text-yellow-600" />
+        <h3 className="text-base font-bold text-gray-900">Categories you haven&apos;t ranked</h3>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {sorted.map(cat => (
+          <Link
+            key={cat.id}
+            href={`/categories/${cat.slug}/award`}
+            className="group bg-white rounded-xl border border-amber-100 hover:border-yellow-300 shadow-sm hover:shadow-md p-4 flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-0.5"
+          >
+            <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">
+              <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} />
+            </span>
+            <span className="text-xs font-semibold text-gray-700 leading-tight">{cat.name}</span>
+            {cat.trendingCount && cat.trendingCount > 0 && userCity && (
+              <span className="text-[10px] text-yellow-600 mt-1">
+                {cat.trendingCount} medal{cat.trendingCount !== 1 ? 's' : ''} in {userCity}
+              </span>
+            )}
+            <span className="text-[10px] font-semibold text-yellow-700 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              Start ranking →
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SuggestCategoryCard() {
+  return (
+    <div className="mt-6">
+      <Link
+        href="/suggest/restaurant"
+        className="flex items-center gap-3 p-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-yellow-300 bg-gray-50/50 hover:bg-yellow-50/50 transition-colors group"
+      >
+        <div className="w-10 h-10 rounded-full bg-gray-100 group-hover:bg-yellow-100 flex items-center justify-center flex-shrink-0 transition-colors">
+          <Lightbulb className="w-5 h-5 text-gray-400 group-hover:text-yellow-600 transition-colors" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">Missing a category?</p>
+          <p className="text-xs text-gray-400">Suggest a new restaurant or food category</p>
+        </div>
+      </Link>
+    </div>
+  )
+}
+
+export function TrophyCaseGrid({ byCategory, year, isOwner, totalCategories, rankedCount, unrankedCategories, userCity }: Props) {
   const [view, setView] = useState<'grid' | 'map'>('grid')
   const [search, setSearch] = useState('')
 
@@ -306,6 +434,19 @@ export function TrophyCaseGrid({ byCategory, year, isOwner }: Props) {
       {/* Map View */}
       {view === 'map' && (
         <ProfileMapInner pins={mapPins} />
+      )}
+
+      {/* Owner engagement features */}
+      {isOwner && totalCategories != null && rankedCount != null && (
+        <CategoryProgressBar rankedCount={rankedCount} totalCategories={totalCategories} />
+      )}
+
+      {isOwner && unrankedCategories && unrankedCategories.length > 0 && (
+        <TrendingUnrankedSection categories={unrankedCategories} userCity={userCity} />
+      )}
+
+      {isOwner && (
+        <SuggestCategoryCard />
       )}
     </div>
   )
