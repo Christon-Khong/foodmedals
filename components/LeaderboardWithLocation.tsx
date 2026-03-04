@@ -37,6 +37,7 @@ type Props = {
   nominations: Nomination[]
   isAdmin: boolean
   isLoggedIn: boolean
+  defaultNearMe?: boolean
 }
 
 export function LeaderboardWithLocation({
@@ -51,6 +52,7 @@ export function LeaderboardWithLocation({
   nominations,
   isAdmin,
   isLoggedIn: isLoggedInProp,
+  defaultNearMe = true,
 }: Props) {
   const [mode, setMode]         = useState<Mode>(initialCity && initialState ? 'city' : 'all')
   const [rows, setRows]         = useState<LeaderboardRow[]>(initialRows)
@@ -58,6 +60,8 @@ export function LeaderboardWithLocation({
   const [selectedCity, setSelectedCity]   = useState<string | null>(initialCity ?? null)
   const [selectedState, setSelectedState] = useState<string | null>(initialState ?? null)
   const [stateFilter, setStateFilter]     = useState<string | null>(initialState ?? null)
+  const [nearMeCoords, setNearMeCoords]   = useState<{ lat: number; lng: number } | null>(null)
+  const [nearMeAutoTriggered, setNearMeAutoTriggered] = useState(false)
 
   // Filter cities to only those in the selected state
   const filteredCities = useMemo(
@@ -95,6 +99,39 @@ export function LeaderboardWithLocation({
       })
       .catch(() => {})
   }, [categorySlug, year])
+
+  // Auto-trigger Near Me on mount when defaultNearMe is true
+  useEffect(() => {
+    if (!defaultNearMe || mode !== 'all') return
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords
+        setNearMeCoords({ lat, lng })
+        setNearMeAutoTriggered(true)
+        setMode('nearme')
+        setSelectedCity(null)
+        setSelectedState(null)
+        setLoading(true)
+        const qs = new URLSearchParams({
+          year: String(year),
+          lat: String(lat),
+          lng: String(lng),
+          radius: '25',
+        })
+        fetch(`/api/categories/${categorySlug}/leaderboard?${qs}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => { if (data) setRows(data.rows) })
+          .catch(() => {})
+          .finally(() => setLoading(false))
+      },
+      () => {
+        // Geolocation denied — stay on 'all' mode
+      },
+      { timeout: 5000 },
+    )
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function fetchLeaderboard(params: Record<string, string>) {
     setLoading(true)
@@ -214,6 +251,7 @@ export function LeaderboardWithLocation({
     setMode('nearme')
     setSelectedCity(null)
     setSelectedState(null)
+    setNearMeCoords({ lat, lng })
     fetchLeaderboard({ lat: String(lat), lng: String(lng), radius: String(radius) })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug, year])
@@ -223,6 +261,8 @@ export function LeaderboardWithLocation({
     setStateFilter(null)
     setSelectedCity(null)
     setSelectedState(null)
+    setNearMeCoords(null)
+    setNearMeAutoTriggered(false)
     setRows(initialRows)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRows])
@@ -269,6 +309,9 @@ export function LeaderboardWithLocation({
         <NearMeToggle
           onLocationChange={handleLocationChange}
           onClear={handleNearMeClear}
+          initialActive={nearMeAutoTriggered}
+          initialCoords={nearMeCoords}
+          defaultRadius={25}
         />
         {mode !== 'nearme' && (
           <>

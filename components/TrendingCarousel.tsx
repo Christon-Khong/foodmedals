@@ -5,15 +5,20 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { TrendingCategory } from '@/lib/queries'
 import { CategoryIcon } from '@/components/CategoryIcon'
+import { MapPin } from 'lucide-react'
 
 const MEDAL_IMG = ['/medals/gold.png', '/medals/silver.png', '/medals/bronze.png']
 
-type Props = { categories: TrendingCategory[] }
+type Props = { categories: TrendingCategory[]; year: number }
 
-function CategoryCard({ cat }: { cat: TrendingCategory }) {
+function CategoryCard({ cat, nearMe }: { cat: TrendingCategory; nearMe: boolean }) {
+  const href = nearMe
+    ? `/categories/${cat.categorySlug}?nearme=1`
+    : `/categories/${cat.categorySlug}`
+
   return (
     <Link
-      href={`/categories/${cat.categorySlug}`}
+      href={href}
       data-card
       className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 hover:shadow-md transition-all duration-200 p-5 flex flex-col group"
     >
@@ -61,19 +66,49 @@ function CategoryCard({ cat }: { cat: TrendingCategory }) {
   )
 }
 
-export function TrendingCarousel({ categories }: Props) {
+export function TrendingCarousel({ categories, year }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const isResetting = useRef(false)
   const userInteracting = useRef(false)
   const resumeTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [mounted, setMounted] = useState(false)
 
+  // Location-aware state
+  const [displayCategories, setDisplayCategories] = useState(categories)
+  const [locationActive, setLocationActive] = useState(false)
+
+  // On mount, try to get geolocation and fetch nearby trending
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude: lat, longitude: lng } = pos.coords
+          const res = await fetch(`/api/trending?lat=${lat}&lng=${lng}&radius=25&year=${year}`)
+          if (res.ok) {
+            const data: TrendingCategory[] = await res.json()
+            if (data.length > 0) {
+              setDisplayCategories(data)
+              setLocationActive(true)
+            }
+          }
+        } catch {
+          // Keep global data on error
+        }
+      },
+      () => {
+        // Geolocation denied — keep global data
+      },
+      { timeout: 5000 },
+    )
+  }, [year])
+
   // Triple the items: [clone-set] [original-set] [clone-set]
   // so scrolling past either end wraps around seamlessly
-  const items = [...categories, ...categories, ...categories]
-  const count = categories.length
+  const items = [...displayCategories, ...displayCategories, ...displayCategories]
+  const count = displayCategories.length
 
-  // On mount, scroll to the middle set (the "real" items)
+  // On mount (or when displayCategories change), scroll to the middle set
   useEffect(() => {
     const el = scrollRef.current
     if (!el || count === 0) return
@@ -193,7 +228,16 @@ export function TrendingCarousel({ categories }: Props) {
         <div className="flex items-end justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Trending Rankings</h2>
-            <p className="text-sm text-gray-500 mt-1">Do you agree? Click to see full standings.</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {locationActive ? (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-yellow-600" />
+                  Near you · Click to see full standings
+                </span>
+              ) : (
+                'Do you agree? Click to see full standings.'
+              )}
+            </p>
           </div>
 
           {/* Desktop scroll arrows */}
@@ -223,7 +267,7 @@ export function TrendingCarousel({ categories }: Props) {
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
       >
         {items.map((cat, i) => (
-          <CategoryCard key={`${cat.categoryId}-${i}`} cat={cat} />
+          <CategoryCard key={`${cat.categoryId}-${i}`} cat={cat} nearMe={locationActive} />
         ))}
       </div>
     </section>

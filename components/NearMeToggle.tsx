@@ -9,12 +9,23 @@ type Radius = typeof RADIUS_OPTIONS[number]
 type Props = {
   onLocationChange: (lat: number, lng: number, radius: number) => void
   onClear: () => void
+  initialActive?: boolean
+  initialCoords?: { lat: number; lng: number } | null
+  defaultRadius?: Radius
 }
 
-export function NearMeToggle({ onLocationChange, onClear }: Props) {
-  const [state, setState] = useState<'idle' | 'loading' | 'active' | 'error'>('idle')
-  const [radius, setRadius] = useState<Radius>(10)
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+export function NearMeToggle({
+  onLocationChange,
+  onClear,
+  initialActive = false,
+  initialCoords = null,
+  defaultRadius = 25,
+}: Props) {
+  const [state, setState] = useState<'idle' | 'loading' | 'active' | 'error'>(
+    initialActive ? 'active' : 'idle',
+  )
+  const [radius, setRadius] = useState<Radius>(defaultRadius)
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(initialCoords)
   const [errorMsg, setErrorMsg] = useState('')
 
   function requestLocation() {

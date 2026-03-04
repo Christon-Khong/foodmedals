@@ -96,7 +96,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Trending carousel ─────────────────────────────────────────────── */}
-      {trending.length > 0 && <TrendingCarousel categories={trending} />}
+      {trending.length > 0 && <TrendingCarousel categories={trending} year={currentYear} />}
 
       {/* ── How it works ─────────────────────────────────────────────────── */}
       <section className="bg-white border-b border-amber-100">
