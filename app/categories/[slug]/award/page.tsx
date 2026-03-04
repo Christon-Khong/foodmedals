@@ -59,7 +59,7 @@ export default async function AwardPage({
             <span className="text-gray-700">Award</span>
           </nav>
           <div className="flex items-center gap-3">
-            <span className="text-4xl"><CategoryIcon slug={category.slug} iconEmoji={category.iconEmoji} /></span>
+            <span className="text-4xl"><CategoryIcon slug={category.slug} iconEmoji={category.iconEmoji} iconUrl={category.iconUrl} /></span>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{category.name}</h1>
               <p className="text-sm text-gray-500">

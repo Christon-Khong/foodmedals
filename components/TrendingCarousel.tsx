@@ -20,7 +20,7 @@ function CategoryCard({ cat }: { cat: TrendingCategory }) {
       {/* Category header */}
       <div className="flex items-center gap-3 mb-4">
         <span className="text-3xl group-hover:scale-110 transition-transform duration-200 inline-block">
-          <CategoryIcon slug={cat.categorySlug} iconEmoji={cat.iconEmoji} />
+          <CategoryIcon slug={cat.categorySlug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} />
         </span>
         <div className="min-w-0">
           <h3 className="font-bold text-gray-900 text-sm leading-tight truncate">

@@ -73,7 +73,7 @@ export default async function HallOfFamePage() {
                         href={`/categories/${row.categorySlug}?year=${year}`}
                         className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-amber-100 hover:bg-yellow-50 transition-colors"
                       >
-                        <span className="text-lg"><CategoryIcon slug={row.categorySlug} iconEmoji={row.iconEmoji} /></span>
+                        <span className="text-lg"><CategoryIcon slug={row.categorySlug} iconEmoji={row.iconEmoji} iconUrl={row.iconUrl} /></span>
                         <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">
                           {row.categoryName}
                         </span>

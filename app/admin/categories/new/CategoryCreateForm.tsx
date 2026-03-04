@@ -125,6 +125,7 @@ export function CategoryCreateForm() {
                 Icon Emoji <span className="text-red-400">*</span>
               </label>
               <input type="text" value={form.iconEmoji} onChange={update('iconEmoji')} required placeholder="🍔" className={inputClass} />
+              <p className="text-xs text-gray-600 mt-1">You can upload a custom icon after creating.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Sort Order</label>

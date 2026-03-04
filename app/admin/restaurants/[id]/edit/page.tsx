@@ -16,7 +16,7 @@ export default async function EditRestaurantPage({
     include: {
       categories: {
         include: {
-          foodCategory: { select: { id: true, name: true, iconEmoji: true, slug: true } },
+          foodCategory: { select: { id: true, name: true, iconEmoji: true, iconUrl: true, slug: true } },
         },
       },
       _count: { select: { medals: true } },
@@ -27,7 +27,7 @@ export default async function EditRestaurantPage({
 
   const allCategories = await prisma.foodCategory.findMany({
     where: { status: 'active' },
-    select: { id: true, name: true, iconEmoji: true, slug: true },
+    select: { id: true, name: true, iconEmoji: true, iconUrl: true, slug: true },
     orderBy: { sortOrder: 'asc' },
   })
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { CategoryIcon } from '@/components/CategoryIcon'
 
-type Category = { id: string; name: string; iconEmoji: string; slug: string }
+type Category = { id: string; name: string; iconEmoji: string; iconUrl: string | null; slug: string }
 
 type Props = {
   restaurant: {
@@ -221,7 +221,7 @@ export function RestaurantEditForm({ restaurant, allCategories, currentCategoryI
                     : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-600'
                 }`}
               >
-                <span><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} /></span>
+                <span><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} /></span>
                 <span className="truncate">{cat.name}</span>
               </button>
             ))}

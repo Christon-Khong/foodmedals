@@ -29,7 +29,21 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const emoji = category?.iconEmoji ?? '🍽️'
 
   let customIconSrc: string | null = null
-  if (slug && CUSTOM_ICONS[slug]) {
+
+  // Priority 1: uploaded icon from Supabase
+  if (category?.iconUrl) {
+    try {
+      const res = await fetch(category.iconUrl)
+      if (res.ok) {
+        const buf = Buffer.from(await res.arrayBuffer())
+        const ct = res.headers.get('content-type') || 'image/webp'
+        customIconSrc = `data:${ct};base64,${buf.toString('base64')}`
+      }
+    } catch { /* fall back */ }
+  }
+
+  // Priority 2: hardcoded local PNG
+  if (!customIconSrc && slug && CUSTOM_ICONS[slug]) {
     try {
       const buf = await readFile(join(process.cwd(), 'public/images/categories', CUSTOM_ICONS[slug]))
       customIconSrc = `data:image/png;base64,${buf.toString('base64')}`

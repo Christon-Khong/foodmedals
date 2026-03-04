@@ -46,7 +46,7 @@ export default async function AdminCategoriesPage() {
                 <td className="px-4 py-3 text-gray-600 text-xs">{cat.sortOrder}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl"><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} /></span>
+                    <span className="text-xl"><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} /></span>
                     <span className="font-medium text-white">{cat.name}</span>
                   </div>
                 </td>

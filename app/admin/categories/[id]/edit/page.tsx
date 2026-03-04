@@ -28,6 +28,7 @@ export default async function EditCategoryPage({
           name: category.name,
           slug: category.slug,
           iconEmoji: category.iconEmoji,
+          iconUrl: category.iconUrl,
           description: category.description,
           sortOrder: category.sortOrder,
           status: category.status,

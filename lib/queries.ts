@@ -277,6 +277,7 @@ export type TrophyRow = {
   categoryName: string
   categorySlug: string
   iconEmoji:    string
+  iconUrl:      string | null
   year:         number
   goldCount:    number
   silverCount:  number
@@ -291,6 +292,7 @@ export async function getRestaurantTrophies(restaurantId: string): Promise<Troph
       category_name: string
       category_slug: string
       icon_emoji:    string
+      icon_url:      string | null
       year:          number
       gold_count:    bigint
       silver_count:  bigint
@@ -303,6 +305,7 @@ export async function getRestaurantTrophies(restaurantId: string): Promise<Troph
       fc.name            AS category_name,
       fc.slug            AS category_slug,
       fc.icon_emoji,
+      fc.icon_url,
       m.year,
       COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'silver') AS silver_count,
@@ -313,7 +316,7 @@ export async function getRestaurantTrophies(restaurantId: string): Promise<Troph
     FROM medals m
     JOIN food_categories fc ON fc.id = m.food_category_id
     WHERE m.restaurant_id = ${restaurantId}
-    GROUP BY m.food_category_id, fc.name, fc.slug, fc.icon_emoji, m.year
+    GROUP BY m.food_category_id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, m.year
     ORDER BY m.year DESC, total_score DESC
   `
 
@@ -322,6 +325,7 @@ export async function getRestaurantTrophies(restaurantId: string): Promise<Troph
     categoryName: r.category_name,
     categorySlug: r.category_slug,
     iconEmoji:    r.icon_emoji,
+    iconUrl:      r.icon_url,
     year:         r.year,
     goldCount:    Number(r.gold_count),
     silverCount:  Number(r.silver_count),
@@ -358,6 +362,7 @@ export type HallOfFameRow = {
   categoryName:    string
   categorySlug:    string
   iconEmoji:       string
+  iconUrl:         string | null
   year:            number
   restaurantId:    string
   restaurantName:  string
@@ -376,6 +381,7 @@ export async function getHallOfFame(maxYear: number): Promise<HallOfFameRow[]> {
       category_name:    string
       category_slug:    string
       icon_emoji:       string
+      icon_url:         string | null
       year:             number
       restaurant_id:    string
       restaurant_name:  string
@@ -392,6 +398,7 @@ export async function getHallOfFame(maxYear: number): Promise<HallOfFameRow[]> {
         fc.name            AS category_name,
         fc.slug            AS category_slug,
         fc.icon_emoji,
+        fc.icon_url,
         m.year,
         m.restaurant_id,
         r.name             AS restaurant_name,
@@ -414,7 +421,7 @@ export async function getHallOfFame(maxYear: number): Promise<HallOfFameRow[]> {
       JOIN food_categories fc ON fc.id = m.food_category_id
       JOIN restaurants      r  ON r.id  = m.restaurant_id
       WHERE m.year < ${maxYear}
-      GROUP BY m.food_category_id, fc.name, fc.slug, fc.icon_emoji, m.year, m.restaurant_id, r.name, r.slug, r.city, r.state
+      GROUP BY m.food_category_id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, m.year, m.restaurant_id, r.name, r.slug, r.city, r.state
     )
     SELECT * FROM ranked WHERE rn = 1
     ORDER BY year DESC, category_name ASC
@@ -425,6 +432,7 @@ export async function getHallOfFame(maxYear: number): Promise<HallOfFameRow[]> {
     categoryName:    r.category_name,
     categorySlug:    r.category_slug,
     iconEmoji:       r.icon_emoji,
+    iconUrl:         r.icon_url,
     year:            r.year,
     restaurantId:    r.restaurant_id,
     restaurantName:  r.restaurant_name,
@@ -443,6 +451,7 @@ export type TrendingCategory = {
   categoryName: string
   categorySlug: string
   iconEmoji:    string
+  iconUrl:      string | null
   topRestaurants: Array<{
     restaurantName: string
     restaurantSlug: string
@@ -458,6 +467,7 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
       category_name:   string
       category_slug:   string
       icon_emoji:      string
+      icon_url:        string | null
       restaurant_name: string
       restaurant_slug: string
       total_score:     bigint
@@ -471,6 +481,7 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
         fc.name         AS category_name,
         fc.slug         AS category_slug,
         fc.icon_emoji,
+        fc.icon_url,
         fc.sort_order,
         r.name          AS restaurant_name,
         r.slug          AS restaurant_slug,
@@ -485,7 +496,7 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
                                    AND m.food_category_id = fc.id
                                    AND m.year = ${year}
       WHERE fc.status = 'active'
-      GROUP BY fc.id, fc.name, fc.slug, fc.icon_emoji, fc.sort_order, r.name, r.slug
+      GROUP BY fc.id, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, fc.sort_order, r.name, r.slug
       HAVING (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
               COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
               COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) > 0
@@ -498,7 +509,7 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
         ) AS rn
       FROM scored
     )
-    SELECT category_id, category_name, category_slug, icon_emoji,
+    SELECT category_id, category_name, category_slug, icon_emoji, icon_url,
            restaurant_name, restaurant_slug, total_score, gold_count, rn
     FROM ranked
     WHERE rn <= 3
@@ -514,6 +525,7 @@ export async function getTopRestaurantsPerCategory(year: number): Promise<Trendi
         categoryName: row.category_name,
         categorySlug: row.category_slug,
         iconEmoji:    row.icon_emoji,
+        iconUrl:      row.icon_url,
         topRestaurants: [],
       }
       map.set(row.category_id, cat)

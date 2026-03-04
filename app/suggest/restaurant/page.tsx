@@ -6,7 +6,7 @@ import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { CategoryIcon } from '@/components/CategoryIcon'
 
-type Category = { id: string; name: string; iconEmoji: string; slug: string }
+type Category = { id: string; name: string; iconEmoji: string; iconUrl: string | null; slug: string }
 
 export default function SuggestRestaurantPage() {
   const [form, setForm] = useState({
@@ -169,7 +169,7 @@ export default function SuggestRestaurantPage() {
                         : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                     }`}
                   >
-                    <span><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} /></span>
+                    <span><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} /></span>
                     <span className="truncate">{cat.name}</span>
                   </button>
                 ))}

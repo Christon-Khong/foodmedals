@@ -87,7 +87,7 @@ export default async function MyMedalsPage() {
                       href={`/categories/${cat.slug}`}
                       className="flex items-center gap-2 font-bold text-gray-800 hover:text-yellow-700 transition-colors"
                     >
-                      <span className="text-xl"><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} /></span>
+                      <span className="text-xl"><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} /></span>
                       <span>{cat.name}</span>
                     </Link>
                     <Link

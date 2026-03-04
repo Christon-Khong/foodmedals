@@ -18,12 +18,14 @@ const CUSTOM_ICONS: Record<string, string> = {
 type CategoryIconProps = {
   slug: string
   iconEmoji: string
+  /** Uploaded icon URL from the database (takes priority over hardcoded map) */
+  iconUrl?: string | null
   /** Explicit pixel size — when omitted the image uses 1em (inherits text size) */
   size?: number
 }
 
-export function CategoryIcon({ slug, iconEmoji, size }: CategoryIconProps) {
-  const src = CUSTOM_ICONS[slug]
+export function CategoryIcon({ slug, iconEmoji, iconUrl, size }: CategoryIconProps) {
+  const src = iconUrl || CUSTOM_ICONS[slug]
   if (src) {
     if (size) {
       return (

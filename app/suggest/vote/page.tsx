@@ -20,7 +20,7 @@ async function getPendingSuggestions(userId?: string) {
     orderBy: { createdAt: 'desc' },
     include: {
       submitter:  { select: { displayName: true } },
-      categories: { include: { foodCategory: { select: { name: true, iconEmoji: true, slug: true } } } },
+      categories: { include: { foodCategory: { select: { name: true, iconEmoji: true, iconUrl: true, slug: true } } } },
       _count:     { select: { suggestionVotes: true } },
     },
   })
@@ -44,9 +44,10 @@ async function getPendingSuggestions(userId?: string) {
     submitter:   r.submitter?.displayName ?? 'Anonymous',
     createdAt:   r.createdAt.toISOString(),
     categories:  r.categories.map(c => ({
-      name:  c.foodCategory.name,
-      emoji: c.foodCategory.iconEmoji,
-      slug:  c.foodCategory.slug,
+      name:    c.foodCategory.name,
+      emoji:   c.foodCategory.iconEmoji,
+      iconUrl: c.foodCategory.iconUrl,
+      slug:    c.foodCategory.slug,
     })),
     voteCount: r._count.suggestionVotes,
     voted:     votedIds.has(r.id),
@@ -125,7 +126,7 @@ export default async function CommunityNominationsPage() {
                           key={c.name}
                           className="text-xs bg-amber-50 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full"
                         >
-                          <CategoryIcon slug={c.slug} iconEmoji={c.emoji} /> {c.name}
+                          <CategoryIcon slug={c.slug} iconEmoji={c.emoji} iconUrl={c.iconUrl} /> {c.name}
                         </span>
                       ))}
                     </div>

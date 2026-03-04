@@ -11,7 +11,7 @@ async function getPendingRestaurants() {
     orderBy: { createdAt: 'asc' },
     include: {
       submitter:  { select: { id: true, displayName: true, email: true } },
-      categories: { include: { foodCategory: { select: { name: true, iconEmoji: true, slug: true } } } },
+      categories: { include: { foodCategory: { select: { name: true, iconEmoji: true, iconUrl: true, slug: true } } } },
       _count:     { select: { suggestionVotes: true } },
     },
   })
@@ -73,7 +73,7 @@ export default async function ModerationQueuePage() {
                     <div className="flex flex-wrap gap-1 mt-2">
                       {r.categories.map(c => (
                         <span key={c.foodCategory.name} className="text-xs bg-gray-800 text-gray-300 border border-gray-700 px-2 py-0.5 rounded-full">
-                          <CategoryIcon slug={c.foodCategory.slug} iconEmoji={c.foodCategory.iconEmoji} /> {c.foodCategory.name}
+                          <CategoryIcon slug={c.foodCategory.slug} iconEmoji={c.foodCategory.iconEmoji} iconUrl={c.foodCategory.iconUrl} /> {c.foodCategory.name}
                         </span>
                       ))}
                     </div>

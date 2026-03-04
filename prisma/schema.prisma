@@ -81,6 +81,7 @@ model FoodCategory {
   name        String   @unique
   slug        String   @unique
   iconEmoji   String   @map("icon_emoji")
+  iconUrl     String?  @map("icon_url")
   description String?
   parentId    String?  @map("parent_id")
   sortOrder   Int      @default(0) @map("sort_order")

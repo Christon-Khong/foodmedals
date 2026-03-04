@@ -41,7 +41,7 @@ export default async function CategoriesPage() {
               className="group bg-white rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md border border-amber-100 hover:border-yellow-300 transition-all duration-200 flex flex-col items-center text-center"
             >
               <span className="text-4xl sm:text-5xl mb-3 group-hover:scale-110 transition-transform duration-200 inline-block">
-                <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} />
+                <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} />
               </span>
               <span className="text-sm font-semibold text-gray-800 leading-tight mb-1">
                 {cat.name}

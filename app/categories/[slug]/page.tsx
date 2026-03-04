@@ -160,7 +160,7 @@ export default async function CategoryLeaderboardPage({
       {/* ── Hero header ─────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-amber-100">
         <div className="max-w-3xl mx-auto px-4 py-8 text-center">
-          <div className="text-6xl mb-3"><CategoryIcon slug={category.slug} iconEmoji={category.iconEmoji} /></div>
+          <div className="text-6xl mb-3"><CategoryIcon slug={category.slug} iconEmoji={category.iconEmoji} iconUrl={category.iconUrl} /></div>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
             Best {category.name}
           </h1>

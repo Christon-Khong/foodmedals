@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -10,6 +10,7 @@ type Props = {
     name: string
     slug: string
     iconEmoji: string
+    iconUrl: string | null
     description: string | null
     sortOrder: number
     status: string
@@ -41,11 +42,14 @@ export function CategoryEditForm({ category, restaurantCount, medalCount }: Prop
     sortOrder: category.sortOrder,
     status: category.status,
   })
+  const [iconUrl, setIconUrl] = useState<string | null>(category.iconUrl)
   const [autoSlug, setAutoSlug] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function update(field: string) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -105,6 +109,51 @@ export function CategoryEditForm({ category, restaurantCount, medalCount }: Prop
       setError(data.error ?? 'Failed to delete')
       setDeleting(false)
     }
+  }
+
+  async function handleUploadIcon(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setError('')
+
+    const fd = new FormData()
+    fd.append('file', file)
+
+    const res = await fetch(`/api/admin/categories/${category.id}/upload-icon`, {
+      method: 'POST',
+      body: fd,
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      setIconUrl(data.iconUrl)
+      setSuccess('Icon uploaded!')
+      router.refresh()
+      setTimeout(() => setSuccess(''), 2000)
+    } else {
+      const data = await res.json()
+      setError(data.error ?? 'Upload failed')
+    }
+    setUploading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  async function handleRemoveIcon() {
+    setUploading(true)
+    setError('')
+
+    const res = await fetch(`/api/admin/categories/${category.id}/upload-icon`, { method: 'DELETE' })
+    if (res.ok) {
+      setIconUrl(null)
+      setSuccess('Icon removed')
+      router.refresh()
+      setTimeout(() => setSuccess(''), 2000)
+    } else {
+      const data = await res.json()
+      setError(data.error ?? 'Failed to remove icon')
+    }
+    setUploading(false)
   }
 
   const inputClass =
@@ -188,6 +237,49 @@ export function CategoryEditForm({ category, restaurantCount, medalCount }: Prop
               placeholder="Short description for this category"
               className={`${inputClass} resize-none`}
             />
+          </div>
+        </div>
+
+        {/* Category Icon */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Category Icon</h2>
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center overflow-hidden shrink-0">
+              {iconUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={iconUrl} alt={form.name} className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-3xl">{form.iconEmoji}</span>
+              )}
+            </div>
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={handleUploadIcon}
+                ref={fileInputRef}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="px-3 py-1.5 bg-gray-800 border border-gray-700 hover:border-yellow-500 text-gray-300 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+              >
+                {uploading ? 'Uploading…' : iconUrl ? 'Replace image' : 'Upload image'}
+              </button>
+              {iconUrl && (
+                <button
+                  type="button"
+                  onClick={handleRemoveIcon}
+                  disabled={uploading}
+                  className="block text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                >
+                  Remove image (use emoji)
+                </button>
+              )}
+              <p className="text-xs text-gray-600">PNG, JPEG, WebP, or SVG. Max 2 MB. Auto-resized to 256px.</p>
+            </div>
           </div>
         </div>
 
