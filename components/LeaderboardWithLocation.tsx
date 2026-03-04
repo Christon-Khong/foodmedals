@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { NearMeToggle } from '@/components/NearMeToggle'
+import { StateFilter } from '@/components/StateFilter'
 import { CityFilter } from '@/components/CityFilter'
 import { LeaderboardResults } from '@/components/LeaderboardResults'
 import { Confetti } from '@/components/Confetti'
-import type { LeaderboardRow, CityOption } from '@/lib/queries'
+import type { LeaderboardRow, CityOption, StateOption } from '@/lib/queries'
 
 type Mode = 'all' | 'nearme' | 'city'
 type MedalType = 'gold' | 'silver' | 'bronze'
@@ -17,6 +18,7 @@ type Props = {
   year: number
   initialRows: LeaderboardRow[]
   cities: CityOption[]
+  states: StateOption[]
   initialCity?: string | null
   initialState?: string | null
 }
@@ -27,6 +29,7 @@ export function LeaderboardWithLocation({
   year,
   initialRows,
   cities,
+  states,
   initialCity,
   initialState,
 }: Props) {
@@ -35,6 +38,13 @@ export function LeaderboardWithLocation({
   const [loading, setLoading]   = useState(false)
   const [selectedCity, setSelectedCity]   = useState<string | null>(initialCity ?? null)
   const [selectedState, setSelectedState] = useState<string | null>(initialState ?? null)
+  const [stateFilter, setStateFilter]     = useState<string | null>(initialState ?? null)
+
+  // Filter cities to only those in the selected state
+  const filteredCities = useMemo(
+    () => stateFilter ? cities.filter(c => c.state === stateFilter) : cities,
+    [cities, stateFilter],
+  )
 
   // Medal state
   const [userMedals, setUserMedals] = useState<UserMedals>({ gold: null, silver: null, bronze: null })
@@ -185,22 +195,45 @@ export function LeaderboardWithLocation({
 
   const handleNearMeClear = useCallback(() => {
     setMode('all')
+    setStateFilter(null)
+    setSelectedCity(null)
+    setSelectedState(null)
     setRows(initialRows)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRows])
+
+  const handleStateChange = useCallback((state: string | null) => {
+    setStateFilter(state)
+    setSelectedCity(null)
+    setSelectedState(null)
+    if (!state) {
+      setMode('all')
+      setRows(initialRows)
+    } else {
+      setMode('city')
+      fetchLeaderboard({ state })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categorySlug, year, initialRows])
 
   const handleCityChange = useCallback((city: string | null, state: string | null) => {
     setSelectedCity(city)
     setSelectedState(state)
     if (!city || !state) {
-      setMode('all')
-      setRows(initialRows)
+      // City cleared — fall back to state filter if active
+      if (stateFilter) {
+        setMode('city')
+        fetchLeaderboard({ state: stateFilter })
+      } else {
+        setMode('all')
+        setRows(initialRows)
+      }
     } else {
       setMode('city')
       fetchLeaderboard({ city, state })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug, year, initialRows])
+  }, [categorySlug, year, initialRows, stateFilter])
 
   return (
     <div className="max-w-3xl mx-auto px-4">
@@ -213,16 +246,28 @@ export function LeaderboardWithLocation({
           onClear={handleNearMeClear}
         />
         {mode !== 'nearme' && (
-          <CityFilter
-            cities={cities}
-            selectedCity={selectedCity}
-            selectedState={selectedState}
-            onCityChange={handleCityChange}
-          />
+          <>
+            <StateFilter
+              states={states}
+              selectedState={stateFilter}
+              onStateChange={handleStateChange}
+            />
+            <CityFilter
+              cities={filteredCities}
+              selectedCity={selectedCity}
+              selectedState={selectedState}
+              onCityChange={handleCityChange}
+            />
+          </>
         )}
         {mode === 'city' && selectedCity && selectedState && (
           <span className="text-sm text-gray-500">
-            📍 {selectedCity}, {selectedState}
+            {selectedCity}, {selectedState}
+          </span>
+        )}
+        {mode === 'city' && stateFilter && !selectedCity && (
+          <span className="text-sm text-gray-500">
+            {stateFilter}
           </span>
         )}
       </div>

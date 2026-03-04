@@ -28,6 +28,8 @@ export type LeaderboardRow = {
   bronzeCount:    number
   totalScore:     number
   distanceMiles?: number
+  lat?:           number | null
+  lng?:           number | null
 }
 
 export async function getLeaderboard(
@@ -36,9 +38,11 @@ export async function getLeaderboard(
   city?: string,
   state?: string,
 ): Promise<LeaderboardRow[]> {
-  const cityClause = city && state
+  const locationClause = city && state
     ? Prisma.sql`AND r.city = ${city} AND r.state = ${state}`
-    : Prisma.empty
+    : state
+      ? Prisma.sql`AND r.state = ${state}`
+      : Prisma.empty
 
   const rows = await prisma.$queryRaw<
     Array<{
@@ -49,12 +53,16 @@ export async function getLeaderboard(
       silver_count: bigint
       bronze_count: bigint
       total_score:  bigint
+      lat:          number | null
+      lng:          number | null
     }>
   >`
     SELECT
       r.id   AS restaurant_id,
       r.name AS restaurant_name,
       r.slug AS restaurant_slug,
+      r.lat,
+      r.lng,
       COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'silver') AS silver_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') AS bronze_count,
@@ -69,8 +77,8 @@ export async function getLeaderboard(
     WHERE rc.food_category_id = ${foodCategoryId}
       AND rc.verified = true
       AND r.status    = 'active'
-      ${cityClause}
-    GROUP BY r.id, r.name, r.slug
+      ${locationClause}
+    GROUP BY r.id, r.name, r.slug, r.lat, r.lng
     ORDER BY total_score DESC, gold_count DESC, r.name ASC
   `
 
@@ -82,6 +90,8 @@ export async function getLeaderboard(
     silverCount:    Number(row.silver_count),
     bronzeCount:    Number(row.bronze_count),
     totalScore:     Number(row.total_score),
+    lat:            row.lat,
+    lng:            row.lng,
   }))
 }
 
@@ -210,6 +220,32 @@ export async function getCitiesForCategory(foodCategoryId: string): Promise<City
   `
   return rows.map(row => ({
     city:  row.city,
+    state: row.state,
+    count: Number(row.count),
+  }))
+}
+
+// ─── States ──────────────────────────────────────────────────────────────────
+
+export type StateOption = {
+  state: string
+  count: number
+}
+
+export async function getStatesForCategory(foodCategoryId: string): Promise<StateOption[]> {
+  const rows = await prisma.$queryRaw<
+    Array<{ state: string; count: bigint }>
+  >`
+    SELECT r.state, COUNT(DISTINCT r.id) AS count
+    FROM restaurant_categories rc
+    JOIN restaurants r ON r.id = rc.restaurant_id
+    WHERE rc.food_category_id = ${foodCategoryId}
+      AND rc.verified = true
+      AND r.status = 'active'
+    GROUP BY r.state
+    ORDER BY r.state
+  `
+  return rows.map(row => ({
     state: row.state,
     count: Number(row.count),
   }))

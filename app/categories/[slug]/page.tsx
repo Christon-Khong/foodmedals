@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { isAdminEmail } from '@/lib/adminAuth'
-import { getCategoryBySlug, getLeaderboard, getCitiesForCategory } from '@/lib/queries'
+import { getCategoryBySlug, getLeaderboard, getCitiesForCategory, getStatesForCategory } from '@/lib/queries'
 import { HeroImage } from '@/components/HeroImage'
 import { LeaderboardWithLocation } from '@/components/LeaderboardWithLocation'
 import { NominationsSection } from './NominationsSection'
@@ -65,9 +65,10 @@ export default async function CategoryLeaderboardPage({
   const isLoggedIn = !!session?.user
 
   // Always fetch statewide for SSR (Googlebot sees full list)
-  const [initialRows, cities, pendingRestaurants] = await Promise.all([
+  const [initialRows, cities, states, pendingRestaurants] = await Promise.all([
     getLeaderboard(category.id, year),
     getCitiesForCategory(category.id),
+    getStatesForCategory(category.id),
     prisma.restaurant.findMany({
       where: {
         status: 'pending_review',
@@ -195,6 +196,7 @@ export default async function CategoryLeaderboardPage({
         year={year}
         initialRows={initialRows}
         cities={cities}
+        states={states}
         initialCity={city ?? null}
         initialState={state ?? null}
       />

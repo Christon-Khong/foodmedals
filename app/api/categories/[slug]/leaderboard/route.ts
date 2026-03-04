@@ -41,6 +41,13 @@ export async function GET(
   const city  = sp.get('city')  ?? undefined
   const state = sp.get('state') ?? undefined
 
+  if (state && state.length > 50) {
+    return NextResponse.json({ error: 'Invalid state' }, { status: 400 })
+  }
+  if (city && city.length > 100) {
+    return NextResponse.json({ error: 'Invalid city' }, { status: 400 })
+  }
+
   const rows = await getLeaderboard(category.id, year, city, state)
   return NextResponse.json({ category, year, rows })
 }

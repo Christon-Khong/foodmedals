@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Podium } from '@/components/Podium'
+import { LeaderboardMap } from '@/components/LeaderboardMap'
 import type { LeaderboardRow } from '@/lib/queries'
 
 type MedalType = 'gold' | 'silver' | 'bronze'
@@ -130,11 +131,12 @@ export function LeaderboardResults({
 
   return (
     <>
-      {/* Podium */}
+      {/* Map + Podium */}
       <div>
         <h2 className="text-center text-xs font-bold text-gray-500 pt-6 pb-2 tracking-wide uppercase">
-          🏆 {year} Community Favorites{nearMe ? ' — Near You' : ''}
+          {year} Community Favorites{nearMe ? ' — Near You' : ''}
         </h2>
+        <LeaderboardMap rows={medalled} />
         <Podium rows={top3} userMedals={userMedals} />
       </div>
 
