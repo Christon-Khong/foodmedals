@@ -26,6 +26,9 @@ export function Navbar() {
           {session ? (
             <>
               <Link href="/my-medals" className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">My Medals</Link>
+              {session.user?.isAdmin && (
+                <Link href="/admin" className="px-3 py-1.5 text-sm text-yellow-700 hover:text-yellow-900 rounded-lg hover:bg-yellow-50 transition-colors font-medium">Admin</Link>
+              )}
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
                 className="ml-1 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors"
@@ -66,6 +69,9 @@ export function Navbar() {
           {session ? (
             <>
               <Link href="/my-medals" onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">My Medals</Link>
+              {session.user?.isAdmin && (
+                <Link href="/admin" onClick={() => setOpen(false)} className="py-2 text-sm font-medium text-yellow-700">Admin</Link>
+              )}
               <button onClick={() => signOut({ callbackUrl: '/' })} className="py-2 text-sm text-left text-gray-500">Sign out</button>
             </>
           ) : (

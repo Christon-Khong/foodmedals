@@ -6,6 +6,7 @@ import FacebookProvider from 'next-auth/providers/facebook'
 import TwitterProvider from 'next-auth/providers/twitter'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { isAdminEmail } from '@/lib/adminAuth'
 
 /* ── Custom adapter (maps displayName/avatarUrl ↔ name/image) ── */
 
@@ -155,11 +156,17 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = user.id
+      if (user) {
+        token.id = user.id
+        token.isAdmin = isAdminEmail(user.email)
+      }
       return token
     },
     async session({ session, token }) {
-      if (session.user) session.user.id = token.id as string
+      if (session.user) {
+        session.user.id = token.id as string
+        session.user.isAdmin = token.isAdmin ?? false
+      }
       return session
     },
   },
