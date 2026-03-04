@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: 'Hall of Fame — FoodMedals',
   description: 'See every past Gold Medal winner per food category. The definitive archive of community food rankings.',
   alternates: { canonical: 'https://foodmedals.com/hall-of-fame' },
+  robots: { index: false, follow: false },
 }
 
 export default async function HallOfFamePage() {

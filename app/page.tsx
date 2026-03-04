@@ -177,7 +177,6 @@ export default async function HomePage() {
           </span>
           <div className="flex gap-4">
             <Link href="/categories"   className="hover:text-gray-600 transition-colors">Categories</Link>
-            <Link href="/hall-of-fame" className="hover:text-gray-600 transition-colors">Hall of Fame</Link>
             {!isLoggedIn && <Link href="/auth/signup" className="hover:text-gray-600 transition-colors">Sign up</Link>}
           </div>
         </div>

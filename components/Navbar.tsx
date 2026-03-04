@@ -21,7 +21,6 @@ export function Navbar() {
         {/* Desktop links */}
         <div className="hidden sm:flex items-center gap-1">
           <Link href="/categories"   className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">Categories</Link>
-          <Link href="/hall-of-fame" className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">Hall of Fame</Link>
           <Link href="/suggest/vote" className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">Community Nominations</Link>
           {session ? (
             <>
@@ -64,7 +63,6 @@ export function Navbar() {
       {open && (
         <div className="sm:hidden border-t border-amber-100 bg-white px-4 py-3 flex flex-col gap-1">
           <Link href="/categories"   onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">Categories</Link>
-          <Link href="/hall-of-fame" onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">Hall of Fame</Link>
           <Link href="/suggest/vote" onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">Community Nominations</Link>
           {session ? (
             <>
