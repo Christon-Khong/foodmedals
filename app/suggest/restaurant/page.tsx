@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { CategoryIcon } from '@/components/CategoryIcon'
+import { MapPin, Loader2 } from 'lucide-react'
 
 type Category = { id: string; name: string; iconEmoji: string; iconUrl: string | null; slug: string }
 
@@ -23,6 +24,9 @@ export default function SuggestRestaurantPage() {
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
   const [done,    setDone]    = useState(false)
+  const [mapsUrl, setMapsUrl] = useState('')
+  const [parsing, setParsing] = useState(false)
+  const [parseMsg, setParseMsg] = useState('')
 
   useEffect(() => {
     fetch('/api/categories/list')
@@ -62,6 +66,37 @@ export default function SuggestRestaurantPage() {
     }
   }
 
+  async function handleParseMapsUrl() {
+    if (!mapsUrl.trim()) return
+    setParsing(true)
+    setParseMsg('')
+    try {
+      const res = await fetch('/api/restaurants/parse-maps-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: mapsUrl.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setParseMsg(data.error ?? 'Could not parse URL')
+      } else {
+        setForm(prev => ({
+          ...prev,
+          name:    data.name    || prev.name,
+          address: data.address || prev.address,
+          city:    data.city    || prev.city,
+          state:   data.state   || prev.state,
+          zip:     data.zip     || prev.zip,
+        }))
+        setParseMsg('Fields auto-filled — please verify and correct if needed.')
+      }
+    } catch {
+      setParseMsg('Could not parse URL')
+    } finally {
+      setParsing(false)
+    }
+  }
+
   function toggleCategory(id: string) {
     setCategoryIds(prev =>
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
@@ -84,7 +119,7 @@ export default function SuggestRestaurantPage() {
               View Community Nominations
             </Link>
             <button
-              onClick={() => { setDone(false); setForm({ name: '', address: '', city: '', state: '', zip: '', websiteUrl: '', description: '' }); setCategoryIds([]) }}
+              onClick={() => { setDone(false); setForm({ name: '', address: '', city: '', state: '', zip: '', websiteUrl: '', description: '' }); setCategoryIds([]); setMapsUrl(''); setParseMsg('') }}
               className="px-5 py-2.5 border border-gray-200 hover:border-yellow-300 text-gray-700 font-semibold rounded-full text-sm transition-colors"
             >
               Suggest another
@@ -112,6 +147,38 @@ export default function SuggestRestaurantPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-amber-100 shadow-sm p-6 space-y-4">
+          {/* Google Maps URL autofill */}
+          <div className="bg-blue-50 rounded-xl border border-blue-100 p-4">
+            <label className="block text-sm font-medium text-blue-800 mb-1.5 flex items-center gap-1.5">
+              <MapPin className="w-4 h-4" />
+              Autofill from Google Maps
+            </label>
+            <p className="text-[11px] text-blue-500 mb-2">Paste a Google Maps link to auto-fill the restaurant details below.</p>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={mapsUrl}
+                onChange={e => { setMapsUrl(e.target.value); setParseMsg('') }}
+                placeholder="https://maps.app.goo.gl/... or Google Maps URL"
+                className="flex-1 min-w-0 border border-blue-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+              />
+              <button
+                type="button"
+                onClick={handleParseMapsUrl}
+                disabled={parsing || !mapsUrl.trim()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+              >
+                {parsing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                {parsing ? 'Parsing…' : 'Autofill'}
+              </button>
+            </div>
+            {parseMsg && (
+              <p className={`text-xs mt-2 ${parseMsg.includes('auto-filled') ? 'text-green-600' : 'text-red-600'}`}>
+                {parseMsg}
+              </p>
+            )}
+          </div>
+
           {[
             { label: 'Restaurant name',    field: 'name',        type: 'text',  required: true,  placeholder: 'e.g. Crown Burgers' },
             { label: 'Street address',     field: 'address',     type: 'text',  required: true,  placeholder: '123 Main St' },
