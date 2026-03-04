@@ -7,6 +7,8 @@ import { authOptions } from '@/lib/auth'
 import { getUserProfile } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { CategoryIcon } from '@/components/CategoryIcon'
+import { ShareProfileButton } from '@/components/ShareProfileButton'
+import { Trophy, LayoutGrid, Calendar } from 'lucide-react'
 
 const MEDAL_ORDER: Record<string, number> = { gold: 0, silver: 1, bronze: 2 }
 
@@ -23,11 +25,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 function MedalImage({ type }: { type: string }) {
+  const size = type === 'gold' ? 36 : type === 'silver' ? 28 : 24
   const src =
     type === 'gold'   ? '/medals/gold.png'   :
     type === 'silver' ? '/medals/silver.png' :
                         '/medals/bronze.png'
-  return <Image src={src} alt={type} width={28} height={28} />
+  return <Image src={src} alt={type} width={size} height={size} />
 }
 
 function Initials({ name }: { name: string }) {
@@ -69,46 +72,82 @@ export default async function CriticProfilePage({ params }: Props) {
   const memberSince = user.createdAt.getFullYear()
   const categoriesVoted = Object.keys(byCategory).length
 
+  // Crown Jewel: first gold medal (sorted by category sortOrder)
+  const crownJewel = medals.find(m => m.medalType === 'gold')
+
+  // Expertise badges: categories where all 3 medals awarded
+  const expertCategories = Object.values(byCategory)
+    .filter(m => m.length === 3)
+    .map(m => m[0].foodCategory.name)
+
+  // Category list for pills
+  const categoryList = Object.values(byCategory).map(m => m[0].foodCategory)
+
   return (
     <div className="min-h-screen bg-amber-50">
       <Navbar />
 
       {/* Profile header */}
       <div className="bg-white border-b border-amber-100">
-        <div className="max-w-2xl mx-auto px-4 py-8 flex items-center gap-5">
-          {user.avatarUrl ? (
-            <Image
-              src={user.avatarUrl}
-              alt={user.displayName}
-              width={80}
-              height={80}
-              className="rounded-full shadow-lg"
-            />
-          ) : (
-            <Initials name={user.displayName} />
-          )}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{user.displayName}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {user.city && user.state ? `${user.city}, ${user.state}` : 'Food Critic'}
-              {' · '}Member since {memberSince}
-            </p>
-            <div className="flex items-center gap-3 mt-2">
-              <span className="text-xs font-semibold bg-yellow-100 text-yellow-800 px-2.5 py-1 rounded-full">
-                {medals.length} medal{medals.length !== 1 ? 's' : ''} awarded
-              </span>
-              <span className="text-xs font-semibold bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">
-                {categoriesVoted} categor{categoriesVoted !== 1 ? 'ies' : 'y'}
-              </span>
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <div className="flex items-start gap-5">
+            {user.avatarUrl ? (
+              <Image
+                src={user.avatarUrl}
+                alt={user.displayName}
+                width={80}
+                height={80}
+                className="rounded-full shadow-lg flex-shrink-0"
+              />
+            ) : (
+              <div className="flex-shrink-0">
+                <Initials name={user.displayName} />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-3">
+                <h1 className="text-2xl font-bold text-gray-900">{user.displayName}</h1>
+                <ShareProfileButton />
+              </div>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {user.city && user.state ? `${user.city}, ${user.state}` : 'Food Critic'}
+              </p>
+
+              {/* Expertise badges */}
+              {expertCategories.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {expertCategories.map(name => (
+                    <span
+                      key={name}
+                      className="text-[11px] font-semibold bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 px-2.5 py-0.5 rounded-full border border-yellow-200"
+                    >
+                      {name} Expert
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Stats bar */}
+              <div className="flex items-center gap-5 mt-3 text-sm text-gray-500">
+                <span className="flex items-center gap-1.5">
+                  <Trophy className="w-4 h-4 text-yellow-500" />
+                  <span className="font-semibold text-gray-700">{medals.length}</span> medal{medals.length !== 1 ? 's' : ''}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <LayoutGrid className="w-4 h-4 text-yellow-500" />
+                  <span className="font-semibold text-gray-700">{categoriesVoted}</span> categor{categoriesVoted !== 1 ? 'ies' : 'y'}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-yellow-500" />
+                  Since {memberSince}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Medal shelf */}
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">{year} Medal Shelf</h2>
-
         {medals.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-amber-100">
             <div className="mb-4 flex justify-center">
@@ -128,80 +167,140 @@ export default async function CriticProfilePage({ params }: Props) {
             )}
           </div>
         ) : (
-          <div className="space-y-3">
-            {Object.entries(byCategory).map(([, catMedals]) => {
-              const cat = catMedals[0].foodCategory
-              const sorted = [...catMedals].sort(
-                (a, b) => (MEDAL_ORDER[a.medalType] ?? 9) - (MEDAL_ORDER[b.medalType] ?? 9),
-              )
-
-              return (
-                <div key={cat.id} className="bg-white rounded-2xl border border-amber-100 shadow-sm overflow-hidden">
-                  {/* Shelf header — category name */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-amber-50">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">
-                        <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} />
-                      </span>
-                      <Link
-                        href={`/categories/${cat.slug}`}
-                        className="font-bold text-gray-800 hover:text-yellow-700 transition-colors"
-                      >
-                        {cat.name}
-                      </Link>
+          <>
+            {/* Crown Jewel */}
+            {crownJewel && (
+              <div className="mb-8">
+                <h2 className="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-3">Crown Jewel</h2>
+                <Link
+                  href={`/restaurants/${crownJewel.restaurant.slug}`}
+                  className="block bg-white rounded-2xl border border-amber-100 shadow-sm p-5 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center gap-4">
+                    <Image src="/medals/gold.png" alt="Gold" width={48} height={48} className="flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-lg font-bold text-gray-900 truncate">{crownJewel.restaurant.name}</p>
+                      <p className="text-sm text-gray-500">
+                        <span className="inline-flex items-center gap-1">
+                          <CategoryIcon
+                            slug={crownJewel.foodCategory.slug}
+                            iconEmoji={crownJewel.foodCategory.iconEmoji}
+                            iconUrl={crownJewel.foodCategory.iconUrl}
+                          />
+                          {crownJewel.foodCategory.name}
+                        </span>
+                        {crownJewel.restaurant.city && (
+                          <span className="text-gray-400"> · {crownJewel.restaurant.city}{crownJewel.restaurant.state ? `, ${crownJewel.restaurant.state}` : ''}</span>
+                        )}
+                      </p>
                     </div>
-                    {isOwner && (
-                      <Link
-                        href={`/categories/${cat.slug}/award`}
-                        className="text-xs font-semibold text-yellow-700 hover:underline"
-                      >
-                        Change picks
-                      </Link>
-                    )}
+                    <span className="text-xs font-bold text-yellow-600 bg-yellow-50 px-2.5 py-1 rounded-full border border-yellow-200 flex-shrink-0">
+                      #1 Pick
+                    </span>
                   </div>
+                </Link>
+              </div>
+            )}
 
-                  {/* Shelf — medals on a wood-textured strip */}
-                  <div
-                    className="px-4 py-3"
-                    style={{
-                      background: 'linear-gradient(to bottom, #f5ebe0 0%, #e8d5c0 40%, #c9a97a 42%, #b8935a 44%, #c9a97a 46%, #e8d5c0 48%, #f5ebe0 100%)',
-                    }}
+            {/* Category pills */}
+            {categoryList.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-3 mb-5" style={{ scrollbarWidth: 'none' }}>
+                {categoryList.map(cat => (
+                  <a
+                    key={cat.slug}
+                    href={`#cat-${cat.slug}`}
+                    className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white border border-amber-100 rounded-full hover:border-yellow-300 hover:text-gray-900 transition-colors"
                   >
-                    <div className="flex items-stretch gap-3">
-                      {sorted.map(m => (
-                        <div
-                          key={m.id}
-                          className="flex-1 bg-white/90 backdrop-blur rounded-xl px-3 py-2.5 text-center shadow-sm"
+                    <span className="text-sm">
+                      <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} />
+                    </span>
+                    {cat.name}
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {/* Medal shelf */}
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{year} Medal Shelf</h2>
+            <div className="space-y-5">
+              {Object.entries(byCategory).map(([, catMedals]) => {
+                const cat = catMedals[0].foodCategory
+                const sorted = [...catMedals].sort(
+                  (a, b) => (MEDAL_ORDER[a.medalType] ?? 9) - (MEDAL_ORDER[b.medalType] ?? 9),
+                )
+
+                return (
+                  <div
+                    key={cat.id}
+                    id={`cat-${cat.slug}`}
+                    className="bg-white rounded-2xl border border-amber-100 shadow-sm overflow-hidden scroll-mt-20"
+                  >
+                    {/* Shelf header — category name */}
+                    <div className="flex items-center justify-between px-5 py-3.5 border-b border-amber-50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">
+                          <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} />
+                        </span>
+                        <Link
+                          href={`/categories/${cat.slug}`}
+                          className="font-bold text-gray-800 hover:text-yellow-700 transition-colors"
                         >
-                          <div className="flex justify-center mb-1">
-                            <MedalImage type={m.medalType} />
-                          </div>
-                          <Link
-                            href={`/restaurants/${m.restaurant.slug}`}
-                            className="text-xs font-semibold text-gray-700 hover:text-yellow-700 transition-colors line-clamp-2 leading-tight"
+                          {cat.name}
+                        </Link>
+                      </div>
+                      {isOwner && (
+                        <Link
+                          href={`/categories/${cat.slug}/award`}
+                          className="text-xs font-semibold text-yellow-700 hover:underline"
+                        >
+                          Change picks
+                        </Link>
+                      )}
+                    </div>
+
+                    {/* Shelf — medals on a wood-textured strip */}
+                    <div
+                      className="px-5 py-4"
+                      style={{
+                        background: 'linear-gradient(to bottom, #f5ebe0 0%, #e8d5c0 40%, #c9a97a 42%, #b8935a 44%, #c9a97a 46%, #e8d5c0 48%, #f5ebe0 100%)',
+                      }}
+                    >
+                      <div className="flex items-stretch gap-3">
+                        {sorted.map(m => (
+                          <div
+                            key={m.id}
+                            className="flex-1 bg-white/90 backdrop-blur rounded-xl px-3 py-3 text-center shadow-sm"
                           >
-                            {m.restaurant.name}
-                          </Link>
-                          <p className="text-[10px] text-gray-400 mt-0.5">
-                            {m.restaurant.city}
-                          </p>
-                        </div>
-                      ))}
-                      {/* Empty slots to fill row if < 3 medals */}
-                      {sorted.length < 3 && Array.from({ length: 3 - sorted.length }).map((_, i) => (
-                        <div
-                          key={`empty-${i}`}
-                          className="flex-1 border-2 border-dashed border-amber-200/60 rounded-xl px-3 py-2.5 flex items-center justify-center"
-                        >
-                          <span className="text-xs text-amber-300">—</span>
-                        </div>
-                      ))}
+                            <div className="flex justify-center mb-1.5">
+                              <MedalImage type={m.medalType} />
+                            </div>
+                            <Link
+                              href={`/restaurants/${m.restaurant.slug}`}
+                              className="text-xs font-semibold text-gray-700 hover:text-yellow-700 transition-colors line-clamp-2 leading-tight"
+                            >
+                              {m.restaurant.name}
+                            </Link>
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              {m.restaurant.city}
+                            </p>
+                          </div>
+                        ))}
+                        {/* Empty slots to fill row if < 3 medals */}
+                        {sorted.length < 3 && Array.from({ length: 3 - sorted.length }).map((_, i) => (
+                          <div
+                            key={`empty-${i}`}
+                            className="flex-1 border-2 border-dashed border-amber-200/60 rounded-xl px-3 py-3 flex items-center justify-center"
+                          >
+                            <span className="text-xs text-amber-300">—</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          </>
         )}
 
         {isOwner && medals.length > 0 && (
