@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { generateUserSlug } from '@/lib/queries'
 
 export async function POST(req: NextRequest) {
   const { email, password, displayName, city } = await req.json()
@@ -18,11 +19,13 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12)
+  const slug = await generateUserSlug(displayName.trim())
   const user = await prisma.user.create({
     data: {
       email:        email.toLowerCase(),
       passwordHash,
       displayName:  displayName.trim(),
+      slug,
       city:         city?.trim() || null,
     },
   })

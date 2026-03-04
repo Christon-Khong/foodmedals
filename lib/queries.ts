@@ -726,3 +726,57 @@ export async function searchAll(query: string) {
   ])
   return { restaurants, categories }
 }
+
+// ─── User Profiles ────────────────────────────────────────────────────────────
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+/** Generate a unique user slug from display name, appending a number if needed */
+export async function generateUserSlug(displayName: string): Promise<string> {
+  const base = slugify(displayName) || 'user'
+  let slug = base
+  let i = 1
+  while (await prisma.user.findUnique({ where: { slug }, select: { id: true } })) {
+    slug = `${base}-${i++}`
+  }
+  return slug
+}
+
+export async function getUserProfile(slug: string) {
+  const user = await prisma.user.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      displayName: true,
+      avatarUrl: true,
+      city: true,
+      state: true,
+      createdAt: true,
+    },
+  })
+  if (!user) return null
+
+  const year = new Date().getFullYear()
+  const medals = await prisma.medal.findMany({
+    where: { userId: user.id, year },
+    include: {
+      foodCategory: {
+        select: { id: true, name: true, slug: true, iconEmoji: true, iconUrl: true, sortOrder: true },
+      },
+      restaurant: {
+        select: { name: true, slug: true, city: true, state: true },
+      },
+    },
+    orderBy: [{ foodCategory: { sortOrder: 'asc' } }, { medalType: 'asc' }],
+  })
+
+  return { user, medals, year }
+}

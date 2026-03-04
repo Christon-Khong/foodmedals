@@ -7,6 +7,7 @@ import TwitterProvider from 'next-auth/providers/twitter'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { isAdminEmail } from '@/lib/adminAuth'
+import { generateUserSlug } from '@/lib/queries'
 
 /* ── Custom adapter (maps displayName/avatarUrl ↔ name/image) ── */
 
@@ -29,10 +30,13 @@ function toAdapterUser(user: {
 function foodMedalsAdapter(): Adapter {
   return {
     async createUser(data: { name?: string | null; email: string; image?: string | null; emailVerified?: Date | null }) {
+      const displayName = data.name ?? data.email.split('@')[0]
+      const slug = await generateUserSlug(displayName)
       const user = await prisma.user.create({
         data: {
           email: data.email,
-          displayName: data.name ?? data.email.split('@')[0],
+          displayName,
+          slug,
           avatarUrl: data.image ?? null,
         },
       })

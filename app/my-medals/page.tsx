@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getAllUserMedals } from '@/lib/queries'
+import { prisma } from '@/lib/prisma'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { CategoryIcon } from '@/components/CategoryIcon'
@@ -30,7 +31,13 @@ export default async function MyMedalsPage() {
   if (!session?.user?.id) redirect('/auth/signin?callbackUrl=/my-medals')
 
   const year   = new Date().getFullYear()
-  const medals = await getAllUserMedals(session.user.id, year)
+  const [medals, dbUser] = await Promise.all([
+    getAllUserMedals(session.user.id, year),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { slug: true },
+    }),
+  ])
 
   // Group by category
   const byCategory = medals.reduce<Record<string, typeof medals>>(
@@ -56,6 +63,14 @@ export default async function MyMedalsPage() {
           <p className="text-sm text-gray-500 mt-1">
             {session.user.name} · {year} · {categoriesVoted} categor{categoriesVoted !== 1 ? 'ies' : 'y'} voted
           </p>
+          {dbUser?.slug && (
+            <Link
+              href={`/critics/${dbUser.slug}`}
+              className="inline-block mt-2 text-xs font-semibold text-yellow-700 hover:underline"
+            >
+              View public profile →
+            </Link>
+          )}
         </div>
 
         {medals.length === 0 ? (
