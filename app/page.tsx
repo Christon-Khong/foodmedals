@@ -2,14 +2,17 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getAllActiveCategories } from '@/lib/queries'
+import { getAllActiveCategories, getTopRestaurantsPerCategory } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
+import { TrendingCarousel } from '@/components/TrendingCarousel'
 
 export default async function HomePage() {
-  const [categories, session] = await Promise.all([
+  const currentYear = new Date().getFullYear()
+  const [categories, session, trending] = await Promise.all([
     getAllActiveCategories(),
     getServerSession(authOptions),
+    getTopRestaurantsPerCategory(currentYear),
   ])
   const isLoggedIn = !!session?.user
 
@@ -79,6 +82,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Trending carousel ─────────────────────────────────────────────── */}
+      {trending.length > 0 && <TrendingCarousel categories={trending} />}
 
       {/* ── Category grid ────────────────────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-4 py-12">

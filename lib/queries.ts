@@ -415,6 +415,99 @@ export async function getHallOfFame(maxYear: number): Promise<HallOfFameRow[]> {
   }))
 }
 
+// ─── Trending (homepage carousel) ─────────────────────────────────────────────
+
+export type TrendingCategory = {
+  categoryId:   string
+  categoryName: string
+  categorySlug: string
+  iconEmoji:    string
+  topRestaurants: Array<{
+    restaurantName: string
+    restaurantSlug: string
+    totalScore:     number
+    goldCount:      number
+  }>
+}
+
+export async function getTopRestaurantsPerCategory(year: number): Promise<TrendingCategory[]> {
+  const rows = await prisma.$queryRaw<
+    Array<{
+      category_id:     string
+      category_name:   string
+      category_slug:   string
+      icon_emoji:      string
+      restaurant_name: string
+      restaurant_slug: string
+      total_score:     bigint
+      gold_count:      bigint
+      rn:              bigint
+    }>
+  >`
+    WITH scored AS (
+      SELECT
+        fc.id           AS category_id,
+        fc.name         AS category_name,
+        fc.slug         AS category_slug,
+        fc.icon_emoji,
+        fc.sort_order,
+        r.name          AS restaurant_name,
+        r.slug          AS restaurant_slug,
+        COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
+        (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
+         COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
+         COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) AS total_score
+      FROM food_categories fc
+      JOIN restaurant_categories rc ON rc.food_category_id = fc.id AND rc.verified = true
+      JOIN restaurants r            ON r.id = rc.restaurant_id     AND r.status = 'active'
+      LEFT JOIN medals m            ON m.restaurant_id = r.id
+                                   AND m.food_category_id = fc.id
+                                   AND m.year = ${year}
+      WHERE fc.status = 'active'
+      GROUP BY fc.id, fc.name, fc.slug, fc.icon_emoji, fc.sort_order, r.name, r.slug
+      HAVING (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
+              COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
+              COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1) > 0
+    ),
+    ranked AS (
+      SELECT *,
+        ROW_NUMBER() OVER (
+          PARTITION BY category_id
+          ORDER BY total_score DESC, gold_count DESC
+        ) AS rn
+      FROM scored
+    )
+    SELECT category_id, category_name, category_slug, icon_emoji,
+           restaurant_name, restaurant_slug, total_score, gold_count, rn
+    FROM ranked
+    WHERE rn <= 3
+    ORDER BY sort_order, rn
+  `
+
+  const map = new Map<string, TrendingCategory>()
+  for (const row of rows) {
+    let cat = map.get(row.category_id)
+    if (!cat) {
+      cat = {
+        categoryId:   row.category_id,
+        categoryName: row.category_name,
+        categorySlug: row.category_slug,
+        iconEmoji:    row.icon_emoji,
+        topRestaurants: [],
+      }
+      map.set(row.category_id, cat)
+    }
+    cat.topRestaurants.push({
+      restaurantName: row.restaurant_name,
+      restaurantSlug: row.restaurant_slug,
+      totalScore:     Number(row.total_score),
+      goldCount:      Number(row.gold_count),
+    })
+  }
+
+  return Array.from(map.values())
+}
+
 // ─── Search ───────────────────────────────────────────────────────────────────
 
 export async function searchAll(query: string) {
