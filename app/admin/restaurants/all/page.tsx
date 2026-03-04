@@ -92,7 +92,15 @@ export default async function AllRestaurantsPage({
                 <td className="px-4 py-3 text-center text-gray-400 hidden lg:table-cell">{r._count.medals}</td>
                 <td className="px-4 py-3 text-center text-gray-400 hidden lg:table-cell">{r._count.categories}</td>
                 <td className="px-4 py-3">
-                  <BulkStatusSelect restaurantId={r.id} currentStatus={r.status} />
+                  <div className="flex items-center gap-2">
+                    <BulkStatusSelect restaurantId={r.id} currentStatus={r.status} />
+                    <Link
+                      href={`/admin/restaurants/${r.id}/edit`}
+                      className="text-xs text-gray-500 hover:text-yellow-400 transition-colors"
+                    >
+                      Edit
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

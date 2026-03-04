@@ -108,7 +108,15 @@ export default async function ModerationQueuePage() {
                 </div>
 
                 {/* Actions */}
-                <ApproveRejectButtons restaurantId={r.id} restaurantName={r.name} />
+                <div className="flex flex-col gap-2 shrink-0">
+                  <ApproveRejectButtons restaurantId={r.id} restaurantName={r.name} />
+                  <Link
+                    href={`/admin/restaurants/${r.id}/edit`}
+                    className="text-xs text-center text-gray-500 hover:text-yellow-400 transition-colors"
+                  >
+                    Edit details
+                  </Link>
+                </div>
               </div>
             </div>
           ))}
