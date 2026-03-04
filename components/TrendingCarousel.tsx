@@ -20,7 +20,7 @@ function CategoryCard({ cat, nearMe }: { cat: TrendingCategory; nearMe: boolean 
     <Link
       href={href}
       data-card
-      className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 hover:shadow-md transition-all duration-200 p-5 flex flex-col group"
+      className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 p-5 flex flex-col group"
     >
       {/* Category header */}
       <div className="flex items-center gap-3 mb-4">
