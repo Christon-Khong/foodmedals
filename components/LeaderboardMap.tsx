@@ -35,7 +35,7 @@ function createIcon(index: number) {
 
 function MapInner({ rows }: Props) {
   const mappableRows = useMemo(
-    () => rows.filter(r => r.lat != null && r.lng != null).slice(0, 3),
+    () => rows.filter(r => r.lat != null && r.lng != null),
     [rows],
   )
 

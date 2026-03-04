@@ -136,7 +136,7 @@ export function LeaderboardResults({
         <h2 className="text-center text-xs font-bold text-gray-500 pt-6 pb-2 tracking-wide uppercase">
           {year} Community Favorites{nearMe ? ' — Near You' : ''}
         </h2>
-        <LeaderboardMap rows={medalled} />
+        <LeaderboardMap rows={top3} />
         <Podium rows={top3} userMedals={userMedals} />
       </div>
 
