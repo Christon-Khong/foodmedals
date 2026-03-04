@@ -37,9 +37,21 @@ function Initials({ name }: { name: string }) {
   )
 }
 
+const TIERS = [
+  { min: 45, label: 'The Palate',    color: 'from-rose-100 to-pink-100 text-rose-800 border-rose-200' },
+  { min: 30, label: 'Grand Curator', color: 'from-indigo-100 to-blue-100 text-indigo-800 border-indigo-200' },
+  { min: 20, label: 'Master Critic', color: 'from-purple-100 to-violet-100 text-purple-800 border-purple-200' },
+  { min: 12, label: 'Local Legend',  color: 'from-emerald-100 to-teal-100 text-emerald-800 border-emerald-200' },
+  { min:  7, label: 'Silver Spoon',  color: 'from-slate-100 to-gray-100 text-slate-700 border-slate-200' },
+  { min:  4, label: 'Flavor Chaser', color: 'from-orange-100 to-amber-100 text-orange-800 border-orange-200' },
+  { min:  2, label: 'Food Scout',    color: 'from-lime-100 to-green-100 text-lime-800 border-lime-200' },
+  { min:  1, label: 'Taste Tester',  color: 'from-yellow-100 to-amber-100 text-yellow-800 border-yellow-200' },
+]
+
 function getAchievementTier(categoryCount: number): { label: string; color: string } | null {
-  if (categoryCount >= 10) return { label: 'Local Legend', color: 'from-purple-100 to-violet-100 text-purple-800 border-purple-200' }
-  if (categoryCount >= 5)  return { label: 'Master Critic', color: 'from-yellow-100 to-amber-100 text-yellow-800 border-yellow-200' }
+  for (const tier of TIERS) {
+    if (categoryCount >= tier.min) return { label: tier.label, color: tier.color }
+  }
   return null
 }
 

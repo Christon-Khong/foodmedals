@@ -204,10 +204,32 @@ function CategoryCard({ catMedals, isOwner }: { catMedals: Medal[]; isOwner: boo
   )
 }
 
+const TIER_THRESHOLDS = [
+  { min: 45, label: 'The Palate' },
+  { min: 30, label: 'Grand Curator' },
+  { min: 20, label: 'Master Critic' },
+  { min: 12, label: 'Local Legend' },
+  { min:  7, label: 'Silver Spoon' },
+  { min:  4, label: 'Flavor Chaser' },
+  { min:  2, label: 'Food Scout' },
+  { min:  1, label: 'Taste Tester' },
+]
+
 function getNextTierInfo(rankedCount: number): { needed: number; tierName: string } | null {
-  if (rankedCount >= 10) return null // already at max tier
-  if (rankedCount >= 5)  return { needed: 10 - rankedCount, tierName: 'Local Legend' }
-  return { needed: 5 - rankedCount, tierName: 'Master Critic' }
+  // Find the next tier above current count
+  for (let i = TIER_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (rankedCount < TIER_THRESHOLDS[i].min) {
+      return { needed: TIER_THRESHOLDS[i].min - rankedCount, tierName: TIER_THRESHOLDS[i].label }
+    }
+  }
+  return null // already at max tier
+}
+
+function getCurrentTierLabel(rankedCount: number): string | null {
+  for (const tier of TIER_THRESHOLDS) {
+    if (rankedCount >= tier.min) return tier.label
+  }
+  return null
 }
 
 function CategoryProgressBar({ rankedCount, totalCategories }: { rankedCount: number; totalCategories: number }) {
@@ -234,8 +256,8 @@ function CategoryProgressBar({ rankedCount, totalCategories }: { rankedCount: nu
         </p>
       )}
       {!nextTier && rankedCount > 0 && (
-        <p className="text-xs text-purple-600 font-medium mt-2">
-          You&apos;re a Local Legend!
+        <p className="text-xs text-rose-600 font-medium mt-2">
+          You&apos;ve reached The Palate — the highest rank!
         </p>
       )}
     </div>
