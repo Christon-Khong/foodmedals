@@ -11,6 +11,8 @@ import { CategoryIcon } from '@/components/CategoryIcon'
 
 export const metadata: Metadata = {
   title: 'My Medals — FoodMedals',
+  description: 'View and manage your Gold, Silver & Bronze medal picks across all food categories.',
+  robots: { index: false, follow: false },
 }
 
 const MEDAL_ORDER: Record<string, number> = { gold: 0, silver: 1, bronze: 2 }

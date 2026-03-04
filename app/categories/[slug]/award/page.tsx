@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
@@ -7,6 +8,21 @@ import { AwardForm } from '@/components/AwardForm'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { CategoryIcon } from '@/components/CategoryIcon'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const category = await getCategoryBySlug(slug)
+  if (!category) return {}
+  return {
+    title: `Award Medals for ${category.name} — FoodMedals`,
+    description: `Pick your Gold, Silver & Bronze for the best ${category.name}. Community food rankings on FoodMedals.`,
+    robots: { index: false, follow: true },
+  }
+}
 
 export default async function AwardPage({
   params,

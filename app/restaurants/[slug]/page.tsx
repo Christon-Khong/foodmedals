@@ -46,7 +46,10 @@ export default async function RestaurantPage({
   const pastTrophies     = trophies.filter(t => t.year < year)
 
   // JSON-LD
-  const jsonLd = {
+  const totalMedals = thisYearTrophies.reduce(
+    (sum, t) => sum + t.goldCount + t.silverCount + t.bronzeCount, 0
+  )
+  const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type':    'Restaurant',
     name:       restaurant.name,
@@ -59,6 +62,20 @@ export default async function RestaurantPage({
       addressCountry:  'US',
     },
     url: restaurant.websiteUrl ?? undefined,
+    ...(restaurant.imageUrl && { image: restaurant.imageUrl }),
+    ...(restaurant.description && { description: restaurant.description }),
+  }
+  if (totalMedals > 0) {
+    const totalScore = thisYearTrophies.reduce(
+      (sum, t) => sum + t.goldCount * 3 + t.silverCount * 2 + t.bronzeCount, 0
+    )
+    jsonLd.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: Math.round((totalScore / totalMedals) * 10) / 10,
+      bestRating: 3,
+      worstRating: 1,
+      ratingCount: totalMedals,
+    }
   }
 
   return (

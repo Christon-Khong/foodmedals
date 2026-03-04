@@ -14,8 +14,26 @@ export const metadata: Metadata = {
 export default async function CategoriesPage() {
   const categories = await getAllActiveCategories()
 
+  const itemListLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Food Categories',
+    description: 'All food categories with community-voted restaurant rankings on FoodMedals.',
+    numberOfItems: categories.length,
+    itemListElement: categories.map((cat, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: cat.name,
+      url: `https://foodmedals.com/categories/${cat.slug}`,
+    })),
+  }
+
   return (
     <main className="min-h-screen bg-amber-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
+      />
       <Navbar />
       <HeroImage />
       {/* Header */}

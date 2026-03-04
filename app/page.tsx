@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getServerSession } from 'next-auth'
@@ -6,6 +7,19 @@ import { getAllActiveCategories, getTopRestaurantsPerCategory } from '@/lib/quer
 import { Navbar } from '@/components/Navbar'
 import { TrendingCarousel } from '@/components/TrendingCarousel'
 import { CategoryIcon } from '@/components/CategoryIcon'
+
+export const metadata: Metadata = {
+  title: 'FoodMedals — Community Food Rankings for Utah Restaurants',
+  description:
+    'Vote for the best burgers, tacos, fries, and more. Award Gold, Silver & Bronze medals to your favorite Utah restaurants.',
+  alternates: { canonical: 'https://foodmedals.com' },
+  openGraph: {
+    title: 'FoodMedals — Community Food Rankings for Utah Restaurants',
+    description: 'Vote for the best burgers, tacos, fries, and more. Award Gold, Silver & Bronze medals to your favorite Utah restaurants.',
+    type: 'website',
+    url: 'https://foodmedals.com',
+  },
+}
 
 export default async function HomePage() {
   const currentYear = new Date().getFullYear()
@@ -18,6 +32,17 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-amber-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'FoodMedals',
+          url: 'https://foodmedals.com',
+          logo: 'https://foodmedals.com/android-chrome-512x512.png',
+          description: 'Community-powered restaurant rankings. Award Gold, Silver & Bronze medals to the best food in Utah.',
+        }) }}
+      />
       <Navbar />
 
       {/* ── Hero with background image ────────────────────────────────────── */}

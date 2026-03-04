@@ -19,10 +19,24 @@ export const metadata: Metadata = {
   description:
     'Community-powered restaurant rankings. Award Gold, Silver & Bronze medals to the best food in your city.',
   manifest: '/site.webmanifest',
+  icons: {
+    icon: [
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/android-chrome-192x192.png',
+  },
   openGraph: {
     title: 'FoodMedals — Community Food Rankings',
+    description: 'Community-powered restaurant rankings. Award Gold, Silver & Bronze medals to the best food in your city.',
     type: 'website',
     url: 'https://foodmedals.com',
+    siteName: 'FoodMedals',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'FoodMedals — Community Food Rankings',
+    description: 'Community-powered restaurant rankings. Award Gold, Silver & Bronze medals to the best food in your city.',
   },
 }
 
