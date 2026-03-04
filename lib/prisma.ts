@@ -2,9 +2,19 @@ import { PrismaClient } from '@/app/generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
-// Cap connections to 1 per worker so that N build workers × 1 = N total,
-// safely under Neon's session-mode PgBouncer pool_size limit.
-const POOL_MAX = 1
+/**
+ * Force the Supabase pooler into transaction mode (port 6543) instead of
+ * session mode (port 5432).  Transaction mode releases the backend
+ * connection after each query, which prevents the "MaxClientsInSessionMode"
+ * error in serverless environments where many function invocations run
+ * concurrently.
+ */
+function toTransactionMode(url: string): string {
+  return url.replace(
+    /\.pooler\.supabase\.com:5432\b/,
+    '.pooler.supabase.com:6543',
+  )
+}
 
 const globalForPrisma = globalThis as unknown as {
   pool:   Pool | undefined
@@ -14,8 +24,10 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
   if (!globalForPrisma.pool) {
     globalForPrisma.pool = new Pool({
-      connectionString: process.env.DATABASE_URL!,
-      max: POOL_MAX,
+      connectionString: toTransactionMode(process.env.DATABASE_URL!),
+      max: 1,
+      idleTimeoutMillis: 20_000,
+      connectionTimeoutMillis: 10_000,
     })
   }
   const adapter = new PrismaPg(globalForPrisma.pool)
