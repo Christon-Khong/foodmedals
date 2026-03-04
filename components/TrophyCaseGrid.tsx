@@ -205,6 +205,8 @@ function CategoryCard({ catMedals, isOwner }: { catMedals: Medal[]; isOwner: boo
 }
 
 const TIER_THRESHOLDS = [
+  { min: 80, label: 'Oracle' },
+  { min: 60, label: 'Vanguard' },
   { min: 45, label: 'The Palate' },
   { min: 30, label: 'Grand Curator' },
   { min: 20, label: 'Master Critic' },
@@ -256,8 +258,8 @@ function CategoryProgressBar({ rankedCount, totalCategories }: { rankedCount: nu
         </p>
       )}
       {!nextTier && rankedCount > 0 && (
-        <p className="text-xs text-rose-600 font-medium mt-2">
-          You&apos;ve reached The Palate — the highest rank!
+        <p className="text-xs text-amber-700 font-medium mt-2">
+          You&apos;ve reached Oracle — the highest rank!
         </p>
       )}
     </div>
