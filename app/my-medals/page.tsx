@@ -1,154 +1,21 @@
-import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getAllUserMedals } from '@/lib/queries'
 import { prisma } from '@/lib/prisma'
-import { Navbar } from '@/components/Navbar'
-import { HeroImage } from '@/components/HeroImage'
-import { CategoryIcon } from '@/components/CategoryIcon'
-
-export const metadata: Metadata = {
-  title: 'My Medals — FoodMedals',
-  description: 'View and manage your Gold, Silver & Bronze medal picks across all food categories.',
-  robots: { index: false, follow: false },
-}
-
-const MEDAL_ORDER: Record<string, number> = { gold: 0, silver: 1, bronze: 2 }
-
-function MedalImage({ type }: { type: string }) {
-  const src =
-    type === 'gold'   ? '/medals/gold.png'   :
-    type === 'silver' ? '/medals/silver.png' :
-                        '/medals/bronze.png'
-  return <Image src={src} alt={type} width={20} height={20} />
-}
 
 export default async function MyMedalsPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/auth/signin?callbackUrl=/my-medals')
 
-  const year   = new Date().getFullYear()
-  const [medals, dbUser] = await Promise.all([
-    getAllUserMedals(session.user.id, year),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { slug: true },
-    }),
-  ])
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { slug: true },
+  })
 
-  // Group by category
-  const byCategory = medals.reduce<Record<string, typeof medals>>(
-    (acc, m) => {
-      const key = m.foodCategoryId
-      if (!acc[key]) acc[key] = []
-      acc[key].push(m)
-      return acc
-    },
-    {},
-  )
+  if (dbUser?.slug) {
+    redirect(`/critics/${dbUser.slug}`)
+  }
 
-  const categoriesVoted = Object.keys(byCategory).length
-
-  return (
-    <div className="min-h-screen bg-amber-50">
-      <Navbar />
-      <HeroImage />
-
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">My Medals</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {session.user.name} · {year} · {categoriesVoted} categor{categoriesVoted !== 1 ? 'ies' : 'y'} voted
-          </p>
-          {dbUser?.slug && (
-            <Link
-              href={`/critics/${dbUser.slug}`}
-              className="inline-block mt-2 text-xs font-semibold text-yellow-700 hover:underline"
-            >
-              View public profile →
-            </Link>
-          )}
-        </div>
-
-        {medals.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-amber-100">
-            <div className="mb-4 flex justify-center">
-              <Image src="/medals/gold.png" alt="medals" width={56} height={56} />
-            </div>
-            <h2 className="text-xl font-bold text-gray-700 mb-2">No medals yet</h2>
-            <p className="text-gray-400 text-sm mb-6">
-              Browse a category and award your first Gold medal.
-            </p>
-            <Link
-              href="/categories"
-              className="inline-block bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold px-6 py-2.5 rounded-full transition-colors"
-            >
-              Browse categories
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {Object.entries(byCategory).map(([, catMedals]) => {
-              const cat    = catMedals[0].foodCategory
-              const sorted = [...catMedals].sort(
-                (a, b) => (MEDAL_ORDER[a.medalType] ?? 9) - (MEDAL_ORDER[b.medalType] ?? 9),
-              )
-              return (
-                <div key={cat.id} className="bg-white rounded-2xl border border-amber-100 shadow-sm overflow-hidden">
-                  {/* Category header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-amber-50">
-                    <Link
-                      href={`/categories/${cat.slug}`}
-                      className="flex items-center gap-2 font-bold text-gray-800 hover:text-yellow-700 transition-colors"
-                    >
-                      <span className="text-xl"><CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} /></span>
-                      <span>{cat.name}</span>
-                    </Link>
-                    <Link
-                      href={`/categories/${cat.slug}/award`}
-                      className="text-xs font-semibold text-yellow-700 hover:underline"
-                    >
-                      Change picks
-                    </Link>
-                  </div>
-
-                  {/* Medal rows */}
-                  <div className="divide-y divide-amber-50">
-                    {sorted.map(m => (
-                      <div key={m.id} className="flex items-center gap-3 px-4 py-2.5">
-                        <span className="w-6 flex justify-center">
-                          <MedalImage type={m.medalType} />
-                        </span>
-                        <Link
-                          href={`/restaurants/${m.restaurant.slug}`}
-                          className="text-sm font-medium text-gray-700 hover:text-yellow-700 transition-colors flex-1"
-                        >
-                          {m.restaurant.name}
-                        </Link>
-                        <span className="text-xs text-gray-400">{m.restaurant.city}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {medals.length > 0 && (
-          <div className="mt-8 text-center">
-            <Link
-              href="/categories"
-              className="text-sm text-yellow-700 hover:underline font-medium"
-            >
-              Vote in more categories →
-            </Link>
-          </div>
-        )}
-      </div>
-    </div>
-  )
+  // Fallback: if user has no slug somehow, redirect to categories
+  redirect('/categories')
 }

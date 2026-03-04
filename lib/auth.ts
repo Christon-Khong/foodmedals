@@ -163,18 +163,20 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
       }
-      // Check admin status on every token refresh (env var OR DB field)
+      // Check admin status + slug on every token refresh
       const dbUser = await prisma.user.findUnique({
         where: { email: token.email! },
-        select: { isAdmin: true },
+        select: { isAdmin: true, slug: true },
       })
       token.isAdmin = isAdminEmail(token.email) || (dbUser?.isAdmin ?? false)
+      token.slug = dbUser?.slug ?? null
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
         session.user.isAdmin = token.isAdmin ?? false
+        session.user.slug = token.slug ?? null
       }
       return session
     },

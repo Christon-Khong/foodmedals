@@ -27,7 +27,7 @@ export function Navbar() {
           <Link href="/categories"   className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">Categories</Link>
           {session ? (
             <>
-              <Link href="/my-medals" className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">My Medals</Link>
+              <Link href={session.user?.slug ? `/critics/${session.user.slug}` : '/my-medals'} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">My Profile</Link>
               {session.user?.isAdmin && (
                 <Link href="/admin" className="px-3 py-1.5 text-sm text-yellow-700 hover:text-yellow-900 rounded-lg hover:bg-yellow-50 transition-colors font-medium">Admin</Link>
               )}
@@ -68,7 +68,7 @@ export function Navbar() {
           <Link href="/categories"   onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">Categories</Link>
           {session ? (
             <>
-              <Link href="/my-medals" onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">My Medals</Link>
+              <Link href={session.user?.slug ? `/critics/${session.user.slug}` : '/my-medals'} onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">My Profile</Link>
               {session.user?.isAdmin && (
                 <Link href="/admin" onClick={() => setOpen(false)} className="py-2 text-sm font-medium text-yellow-700">Admin</Link>
               )}
