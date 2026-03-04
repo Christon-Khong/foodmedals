@@ -60,6 +60,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Select at least one category' }, { status: 400 })
   }
 
+  // Field length limits
+  if (name.length > 200 || address.length > 300 || city.length > 100 || state.length > 50 || zip.length > 20) {
+    return NextResponse.json({ error: 'Field too long' }, { status: 400 })
+  }
+  if (description && description.length > 1000) {
+    return NextResponse.json({ error: 'Description too long (max 1000 chars)' }, { status: 400 })
+  }
+  if (websiteUrl && websiteUrl.length > 500) {
+    return NextResponse.json({ error: 'URL too long' }, { status: 400 })
+  }
+  if (categoryIds.length > 10) {
+    return NextResponse.json({ error: 'Too many categories (max 10)' }, { status: 400 })
+  }
+
   // Generate a unique slug
   let slug = toSlug(name, city)
   const existing = await prisma.restaurant.findUnique({ where: { slug } })

@@ -19,6 +19,11 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid medal type' }, { status: 400 })
   }
 
+  const currentYear = new Date().getFullYear()
+  if (typeof year !== 'number' || year < 2020 || year > currentYear + 1) {
+    return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
+  }
+
   const userId = session.user.id
 
   // Business rule: user cannot give two different medals to the same restaurant
@@ -66,6 +71,11 @@ export async function DELETE(req: NextRequest) {
 
   if (!['gold', 'silver', 'bronze'].includes(medalType)) {
     return NextResponse.json({ error: 'Invalid medal type' }, { status: 400 })
+  }
+
+  const currentYear = new Date().getFullYear()
+  if (typeof year !== 'number' || year < 2020 || year > currentYear + 1) {
+    return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
   }
 
   await prisma.medal.deleteMany({

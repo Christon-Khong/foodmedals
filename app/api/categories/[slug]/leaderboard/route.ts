@@ -7,7 +7,12 @@ export async function GET(
 ) {
   const { slug } = await params
   const sp   = req.nextUrl.searchParams
-  const year = parseInt(sp.get('year') ?? String(new Date().getFullYear()), 10)
+  const currentYear = new Date().getFullYear()
+  const year = parseInt(sp.get('year') ?? String(currentYear), 10)
+
+  if (isNaN(year) || year < 2020 || year > currentYear + 1) {
+    return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
+  }
 
   const category = await getCategoryBySlug(slug)
   if (!category) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -19,9 +24,9 @@ export async function GET(
     // Near-me mode — Haversine query, never cached
     const lat    = parseFloat(latStr)
     const lng    = parseFloat(lngStr)
-    const radius = parseFloat(sp.get('radius') ?? '10')
+    const radius = Math.min(parseFloat(sp.get('radius') ?? '10'), 100)
 
-    if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
+    if (isNaN(lat) || isNaN(lng) || isNaN(radius) || lat < -90 || lat > 90 || lng < -180 || lng > 180 || radius < 1) {
       return NextResponse.json({ error: 'Invalid lat/lng/radius' }, { status: 400 })
     }
 
