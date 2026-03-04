@@ -182,7 +182,7 @@ export default async function RestaurantPage({
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
         {/* ── Trophy Case ─────────────────────────────────────────────── */}
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 mb-4 flex items-center gap-2">
             <span>🏆</span> Trophy Case — {year}
           </h2>
           {thisYearTrophies.length === 0 ? (
@@ -232,7 +232,7 @@ export default async function RestaurantPage({
         {/* ── Past Awards ─────────────────────────────────────────────── */}
         {pastTrophies.length > 0 && (
           <section>
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-extrabold text-gray-900 mb-4 flex items-center gap-2">
               <span>📜</span> Past Awards
             </h2>
             <div className="bg-white rounded-2xl border border-amber-100 overflow-hidden">

@@ -161,7 +161,7 @@ export default async function CategoryLeaderboardPage({
       <div className="bg-white border-b border-amber-100">
         <div className="max-w-3xl mx-auto px-4 py-8 text-center">
           <div className="text-6xl mb-3"><CategoryIcon slug={category.slug} iconEmoji={category.iconEmoji} iconUrl={category.iconUrl} /></div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">
             Best {category.name}
           </h1>
           {category.description && (
@@ -211,7 +211,7 @@ export default async function CategoryLeaderboardPage({
           <div className="mb-3 flex justify-center">
             <Image src="/medals/gold.png" alt="medal" width={48} height={48} />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-extrabold text-gray-900 mb-2">
             Have a favorite {category.name}?
           </h2>
           <p className="text-gray-500 text-sm mb-6">

@@ -217,7 +217,7 @@ export function LeaderboardResults({
                         <span className="flex items-center flex-wrap gap-x-1">
                           <Link
                             href={`/restaurants/${row.restaurantSlug}`}
-                            className="text-gray-800 hover:text-yellow-700 transition-colors font-medium"
+                            className="text-gray-800 hover:text-yellow-700 transition-colors font-bold"
                           >
                             {row.restaurantName}
                           </Link>

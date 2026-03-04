@@ -48,7 +48,7 @@ function CategoryCard({ cat, nearMe }: { cat: TrendingCategory; nearMe: boolean 
               height={20}
               className="flex-shrink-0"
             />
-            <span className="text-sm text-gray-800 font-medium truncate flex-1">
+            <span className="text-sm text-gray-800 font-bold truncate flex-1">
               {r.restaurantName}
               {r.city && (
                 <span className="text-xs text-gray-400 font-normal ml-1">

@@ -46,7 +46,7 @@ export function NominationsSection({
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-gray-900">Community Nominations</h2>
+        <h2 className="text-xl font-extrabold text-gray-900">Community Nominations</h2>
         <Link
           href="/suggest/restaurant"
           className="text-xs font-semibold text-yellow-700 hover:underline"
