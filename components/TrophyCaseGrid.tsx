@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { CategoryIcon } from '@/components/CategoryIcon'
-import { LayoutGrid, Map, Lock } from 'lucide-react'
+import { LayoutGrid, Map, Lock, Search, X } from 'lucide-react'
 
 const ProfileMapInner = dynamic(() => import('./ProfileMapInner'), {
   ssr: false,
@@ -175,6 +175,23 @@ function CategoryCard({ catMedals, isOwner }: { catMedals: Medal[]; isOwner: boo
 
 export function TrophyCaseGrid({ byCategory, year, isOwner }: Props) {
   const [view, setView] = useState<'grid' | 'map'>('grid')
+  const [search, setSearch] = useState('')
+
+  // Filter categories by search query (category name, restaurant name, city, state)
+  const filteredCategories = useMemo(() => {
+    const q = search.toLowerCase().trim()
+    if (!q) return Object.entries(byCategory)
+    return Object.entries(byCategory).filter(([, catMedals]) => {
+      const cat = catMedals[0].foodCategory
+      if (cat.name.toLowerCase().includes(q)) return true
+      return catMedals.some(m => {
+        if (m.restaurant.name.toLowerCase().includes(q)) return true
+        if (m.restaurant.city?.toLowerCase().includes(q)) return true
+        if (m.restaurant.state?.toLowerCase().includes(q)) return true
+        return false
+      })
+    })
+  }, [byCategory, search])
 
   // Collect all map pins from medals with coordinates
   const mapPins = useMemo(() => {
@@ -218,44 +235,72 @@ export function TrophyCaseGrid({ byCategory, year, isOwner }: Props) {
 
   return (
     <div>
-      {/* Header with view toggle */}
-      <div className="flex items-center justify-between mb-5">
+      {/* Header with search + view toggle */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <h2 className="text-lg font-bold text-gray-900">{year} Trophy Case</h2>
-        {hasMapPins && (
-          <div className="flex bg-white rounded-full border border-gray-200 p-0.5">
-            <button
-              onClick={() => setView('grid')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                view === 'grid'
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              Grid
-            </button>
-            <button
-              onClick={() => setView('map')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                view === 'map'
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Map className="w-3.5 h-3.5" />
-              Map
-            </button>
+        <div className="flex items-center gap-2">
+          {/* Search box */}
+          <div className="relative flex-1 sm:flex-initial">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search categories, restaurants..."
+              className="w-full sm:w-56 pl-8 pr-8 py-2 text-sm rounded-full border border-gray-200 bg-white text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-        )}
+          {/* View toggle */}
+          {hasMapPins && (
+            <div className="flex bg-white rounded-full border border-gray-200 p-0.5 flex-shrink-0">
+              <button
+                onClick={() => setView('grid')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                  view === 'grid'
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                Grid
+              </button>
+              <button
+                onClick={() => setView('map')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                  view === 'map'
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Map className="w-3.5 h-3.5" />
+                Map
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Grid View */}
       {view === 'grid' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Object.entries(byCategory).map(([, catMedals]) => (
-            <CategoryCard key={catMedals[0].foodCategory.id} catMedals={catMedals} isOwner={isOwner} />
-          ))}
-        </div>
+        filteredCategories.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-2xl border border-amber-100">
+            <p className="text-sm text-gray-400">No matches for &ldquo;{search}&rdquo;</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredCategories.map(([, catMedals]) => (
+              <CategoryCard key={catMedals[0].foodCategory.id} catMedals={catMedals} isOwner={isOwner} />
+            ))}
+          </div>
+        )
       )}
 
       {/* Map View */}

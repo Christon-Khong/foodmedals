@@ -6,7 +6,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getUserProfile } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
-import { CategoryIcon } from '@/components/CategoryIcon'
 import { ShareProfileButton } from '@/components/ShareProfileButton'
 import { CrownJewelCard } from '@/components/CrownJewelCard'
 import { TrophyCaseGrid } from '@/components/TrophyCaseGrid'
@@ -77,8 +76,6 @@ export default async function CriticProfilePage({ params }: Props) {
   // Achievement tier
   const achievementTier = getAchievementTier(categoriesVoted)
 
-  // Category list for pills
-  const categoryList = Object.values(byCategory).map(m => m[0].foodCategory)
 
   return (
     <div className="min-h-screen bg-amber-50">
@@ -184,24 +181,6 @@ export default async function CriticProfilePage({ params }: Props) {
                 />
               )}
             </div>
-
-            {/* Category pills */}
-            {categoryList.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-3 mb-5" style={{ scrollbarWidth: 'none' }}>
-                {categoryList.map(cat => (
-                  <a
-                    key={cat.slug}
-                    href={`#cat-${cat.slug}`}
-                    className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white border border-amber-100 rounded-full hover:border-yellow-300 hover:text-gray-900 transition-colors"
-                  >
-                    <span className="text-sm">
-                      <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} />
-                    </span>
-                    {cat.name}
-                  </a>
-                ))}
-              </div>
-            )}
 
             {/* Trophy Case Grid */}
             <TrophyCaseGrid
