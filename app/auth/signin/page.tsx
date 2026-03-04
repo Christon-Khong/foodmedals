@@ -43,10 +43,19 @@ function Divider() {
 
 /* ── Email/password form ───────────────────────────── */
 
+const OAUTH_ERRORS: Record<string, string> = {
+  OAuthAccountNotLinked: 'An account with this email already exists. Please sign in with your original method.',
+  OAuthCallback: 'Something went wrong during sign-in. Please try again.',
+  OAuthCreateAccount: 'Could not create your account. Please try again.',
+  Callback: 'Something went wrong. Please try again.',
+  Default: 'An error occurred. Please try again.',
+}
+
 function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') ?? '/'
+  const oauthError = searchParams.get('error')
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -75,6 +84,11 @@ function SignInForm() {
 
   return (
     <>
+      {oauthError && (
+        <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mb-4">
+          {OAUTH_ERRORS[oauthError] ?? OAUTH_ERRORS.Default}
+        </p>
+      )}
       <SocialButtons callbackUrl={callbackUrl} />
       <Divider />
 
