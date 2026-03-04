@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MapPin } from 'lucide-react'
 
 const RADIUS_OPTIONS = [5, 10, 25, 50] as const
@@ -27,6 +27,14 @@ export function NearMeToggle({
   const [radius, setRadius] = useState<Radius>(defaultRadius)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(initialCoords)
   const [errorMsg, setErrorMsg] = useState('')
+
+  // Sync when initialActive changes (e.g. auto-trigger geolocation completes)
+  useEffect(() => {
+    if (initialActive && state === 'idle') {
+      setState('active')
+      if (initialCoords) setCoords(initialCoords)
+    }
+  }, [initialActive, initialCoords])
 
   function requestLocation() {
     if (!navigator.geolocation) {
