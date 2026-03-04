@@ -2,10 +2,13 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getRestaurantBySlug, getRestaurantTrophies } from '@/lib/queries'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { getRestaurantBySlug, getRestaurantTrophies, getCategorySuggestions } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { CategoryIcon } from '@/components/CategoryIcon'
+import { CategorySuggest } from '@/components/CategorySuggest'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -39,11 +42,39 @@ export default async function RestaurantPage({
   const restaurant   = await getRestaurantBySlug(slug)
   if (!restaurant) notFound()
 
-  const trophies = await getRestaurantTrophies(restaurant.id)
-  const year     = new Date().getFullYear()
+  const session = await getServerSession(authOptions)
+  const isLoggedIn = !!session?.user
+
+  const [trophies, categorySuggestions, allCategories] = await Promise.all([
+    getRestaurantTrophies(restaurant.id),
+    getCategorySuggestions(restaurant.id),
+    prisma.foodCategory.findMany({
+      where: { status: 'active' },
+      select: { id: true, name: true, slug: true, iconEmoji: true, iconUrl: true },
+      orderBy: { sortOrder: 'asc' },
+    }),
+  ])
+
+  const year = new Date().getFullYear()
 
   const thisYearTrophies = trophies.filter(t => t.year === year)
   const pastTrophies     = trophies.filter(t => t.year < year)
+
+  // Which categories has the current user voted for?
+  const verifiedCategoryIds = restaurant.categories.map(rc => rc.foodCategory.id)
+  let userVotedCategoryIds: string[] = []
+  if (session?.user?.id) {
+    const votes = await prisma.categorySuggestionVote.findMany({
+      where: { restaurantId: restaurant.id, userId: session.user.id },
+      select: { foodCategoryId: true },
+    })
+    userVotedCategoryIds = votes.map(v => v.foodCategoryId)
+  }
+
+  const suggestionsWithVoted = categorySuggestions.map(s => ({
+    ...s,
+    voted: userVotedCategoryIds.includes(s.categoryId),
+  }))
 
   // JSON-LD
   const totalMedals = thisYearTrophies.reduce(
@@ -136,6 +167,15 @@ export default async function RestaurantPage({
               ))}
             </div>
           )}
+
+          <CategorySuggest
+            restaurantId={restaurant.id}
+            restaurantSlug={restaurant.slug}
+            allCategories={allCategories}
+            verifiedCategoryIds={verifiedCategoryIds}
+            suggestions={suggestionsWithVoted}
+            isLoggedIn={isLoggedIn}
+          />
         </div>
       </div>
 

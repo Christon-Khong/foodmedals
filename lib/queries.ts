@@ -659,6 +659,46 @@ export async function getTopRestaurantsPerCategoryNearMe(
   return Array.from(map.values())
 }
 
+// ─── Category suggestions for a restaurant ───────────────────────────────────
+
+export type CategorySuggestion = {
+  categoryId:   string
+  categoryName: string
+  categorySlug: string
+  iconEmoji:    string
+  iconUrl:      string | null
+  voteCount:    number
+}
+
+export async function getCategorySuggestions(restaurantId: string): Promise<CategorySuggestion[]> {
+  const rows = await prisma.restaurantCategory.findMany({
+    where: { restaurantId, verified: false },
+    include: {
+      foodCategory: { select: { id: true, name: true, slug: true, iconEmoji: true, iconUrl: true } },
+    },
+  })
+
+  // Get vote counts for each unverified category
+  const categoryIds = rows.map(r => r.foodCategoryId)
+  if (categoryIds.length === 0) return []
+
+  const voteCounts = await prisma.categorySuggestionVote.groupBy({
+    by: ['foodCategoryId'],
+    where: { restaurantId, foodCategoryId: { in: categoryIds } },
+    _count: true,
+  })
+  const countMap = new Map(voteCounts.map(v => [v.foodCategoryId, v._count]))
+
+  return rows.map(r => ({
+    categoryId:   r.foodCategory.id,
+    categoryName: r.foodCategory.name,
+    categorySlug: r.foodCategory.slug,
+    iconEmoji:    r.foodCategory.iconEmoji,
+    iconUrl:      r.foodCategory.iconUrl,
+    voteCount:    countMap.get(r.foodCategoryId) ?? 0,
+  }))
+}
+
 // ─── Search ───────────────────────────────────────────────────────────────────
 
 export async function searchAll(query: string) {

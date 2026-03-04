@@ -27,6 +27,7 @@ model User {
   submittedRestaurants Restaurant[]         @relation("SubmittedRestaurants")
   submittedLinks       RestaurantCategory[] @relation("SubmittedLinks")
   suggestionVotes      SuggestionVote[]
+  categorySuggVotes    CategorySuggestionVote[]
 
   @@map("users")
 }
@@ -72,7 +73,8 @@ model Restaurant {
   submitter       User?                @relation("SubmittedRestaurants", fields: [submittedBy], references: [id])
   categories      RestaurantCategory[]
   medals          Medal[]
-  suggestionVotes SuggestionVote[]
+  suggestionVotes    SuggestionVote[]
+  categorySuggVotes  CategorySuggestionVote[]
 
   @@map("restaurants")
 }
@@ -91,8 +93,9 @@ model FoodCategory {
 
   parent      FoodCategory?        @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    FoodCategory[]       @relation("CategoryHierarchy")
-  restaurants RestaurantCategory[]
-  medals      Medal[]
+  restaurants       RestaurantCategory[]
+  medals            Medal[]
+  categorySuggVotes CategorySuggestionVote[]
 
   @@map("food_categories")
 }
@@ -144,4 +147,19 @@ model SuggestionVote {
 
   @@unique([restaurantId, userId])
   @@map("suggestion_votes")
+}
+
+model CategorySuggestionVote {
+  id             String   @id @default(cuid())
+  restaurantId   String   @map("restaurant_id")
+  foodCategoryId String   @map("food_category_id")
+  userId         String   @map("user_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  foodCategory FoodCategory @relation(fields: [foodCategoryId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, foodCategoryId, userId])
+  @@map("category_suggestion_votes")
 }
