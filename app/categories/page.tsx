@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { isAdminEmail } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
 import { getAllActiveCategories } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
@@ -49,6 +50,7 @@ async function getPendingCategorySuggestions(userId?: string) {
 
 export default async function CategoriesPage() {
   const session = await getServerSession(authOptions)
+  const isAdmin = isAdminEmail(session?.user?.email)
   const [categories, categorySuggestions] = await Promise.all([
     getAllActiveCategories(),
     getPendingCategorySuggestions(session?.user?.id),
@@ -122,6 +124,7 @@ export default async function CategoriesPage() {
             <CategoryNominations
               suggestions={categorySuggestions}
               isLoggedIn={!!session}
+              isAdmin={isAdmin}
             />
           </div>
         )}

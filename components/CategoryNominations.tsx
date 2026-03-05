@@ -18,10 +18,22 @@ type CategorySuggestion = {
 type Props = {
   suggestions: CategorySuggestion[]
   isLoggedIn: boolean
+  isAdmin?: boolean
 }
 
-export function CategoryNominations({ suggestions, isLoggedIn }: Props) {
+export function CategoryNominations({ suggestions: initialSuggestions, isLoggedIn, isAdmin = false }: Props) {
+  const [suggestions, setSuggestions] = useState(initialSuggestions)
   const [voteStates, setVoteStates] = useState<Record<string, { count: number; activated: boolean }>>({})
+  const [approving, setApproving] = useState<string | null>(null)
+
+  async function handleApprove(id: string) {
+    setApproving(id)
+    const res = await fetch(`/api/admin/category-suggestions/${id}/approve`, { method: 'POST' })
+    if (res.ok) {
+      setSuggestions(prev => prev.filter(s => s.id !== id))
+    }
+    setApproving(null)
+  }
 
   return (
     <div className="mb-10">
@@ -100,6 +112,19 @@ export function CategoryNominations({ suggestions, isLoggedIn }: Props) {
                   Suggested by {s.submitter} · {new Date(s.createdAt).toLocaleDateString()}
                 </p>
               </div>
+
+              {/* Admin approve */}
+              {isAdmin && (
+                <div className="shrink-0 flex items-center">
+                  <button
+                    onClick={() => handleApprove(s.id)}
+                    disabled={approving === s.id}
+                    className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {approving === s.id ? 'Approving…' : 'Approve'}
+                  </button>
+                </div>
+              )}
             </div>
           )
         })}

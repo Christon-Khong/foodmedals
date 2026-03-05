@@ -35,6 +35,7 @@ type Suggestion = {
 type Props = {
   suggestions: Suggestion[]
   isLoggedIn: boolean
+  isAdmin?: boolean
 }
 
 function haversineDistance(
@@ -53,7 +54,8 @@ function haversineDistance(
 
 type Mode = 'all' | 'nearme' | 'location'
 
-export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
+export function NominationsWithFilters({ suggestions: initialSuggestions, isLoggedIn, isAdmin = false }: Props) {
+  const [allSuggestions, setAllSuggestions] = useState(initialSuggestions)
   const [mode, setMode] = useState<Mode>('all')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [radius, setRadius] = useState(25)
@@ -62,6 +64,20 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
   const [selectedCity, setSelectedCity] = useState<string | null>(null)
   const [selectedCityState, setSelectedCityState] = useState<string | null>(null)
   const [voteStates, setVoteStates] = useState<Record<string, { count: number; activated: boolean }>>({})
+  const [approving, setApproving] = useState<string | null>(null)
+
+  async function handleApprove(id: string) {
+    setApproving(id)
+    const res = await fetch(`/api/admin/restaurants/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'active' }),
+    })
+    if (res.ok) {
+      setAllSuggestions(prev => prev.filter(s => s.id !== id))
+    }
+    setApproving(null)
+  }
 
   // Auto-trigger Near Me on mount
   useEffect(() => {
@@ -84,17 +100,17 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
   // Derive state and city options from all suggestions
   const states: StateOption[] = useMemo(() => {
     const counts: Record<string, number> = {}
-    for (const s of suggestions) {
+    for (const s of allSuggestions) {
       counts[s.state] = (counts[s.state] ?? 0) + 1
     }
     return Object.entries(counts)
       .map(([state, count]) => ({ state, count }))
       .sort((a, b) => a.state.localeCompare(b.state))
-  }, [suggestions])
+  }, [allSuggestions])
 
   const cities: CityOption[] = useMemo(() => {
     const counts: Record<string, { city: string; state: string; count: number }> = {}
-    for (const s of suggestions) {
+    for (const s of allSuggestions) {
       const key = `${s.city}|${s.state}`
       if (!counts[key]) {
         counts[key] = { city: s.city, state: s.state, count: 0 }
@@ -102,7 +118,7 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
       counts[key].count++
     }
     return Object.values(counts).sort((a, b) => a.city.localeCompare(b.city))
-  }, [suggestions])
+  }, [allSuggestions])
 
   const filteredCities = useMemo(
     () => selectedState ? cities.filter(c => c.state === selectedState) : cities,
@@ -112,13 +128,13 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
   // Filter suggestions based on current mode
   const filtered = useMemo(() => {
     if (mode === 'nearme' && coords) {
-      return suggestions.filter(s => {
+      return allSuggestions.filter(s => {
         if (s.lat == null || s.lng == null) return false
         return haversineDistance(coords.lat, coords.lng, s.lat, s.lng) <= radius
       })
     }
     if (mode === 'location') {
-      return suggestions.filter(s => {
+      return allSuggestions.filter(s => {
         if (selectedCity && selectedCityState) {
           return s.city === selectedCity && s.state === selectedCityState
         }
@@ -128,8 +144,8 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
         return true
       })
     }
-    return suggestions
-  }, [suggestions, mode, coords, radius, selectedState, selectedCity, selectedCityState])
+    return allSuggestions
+  }, [allSuggestions, mode, coords, radius, selectedState, selectedCity, selectedCityState])
 
   const handleLocationChange = useCallback((lat: number, lng: number, r: number) => {
     setMode('nearme')
@@ -307,6 +323,19 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
                   Suggested by {s.submitter} · {new Date(s.createdAt).toLocaleDateString()}
                 </p>
               </div>
+
+              {/* Admin approve */}
+              {isAdmin && (
+                <div className="shrink-0 flex items-center">
+                  <button
+                    onClick={() => handleApprove(s.id)}
+                    disabled={approving === s.id}
+                    className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {approving === s.id ? 'Approving…' : 'Approve'}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

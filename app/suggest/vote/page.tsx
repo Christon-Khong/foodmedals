@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { isAdminEmail } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
@@ -90,6 +91,7 @@ async function getPendingCategorySuggestions(userId?: string) {
 
 export default async function CommunityNominationsPage() {
   const session = await getServerSession(authOptions)
+  const isAdmin = isAdminEmail(session?.user?.email)
   const [suggestions, categorySuggestions] = await Promise.all([
     getPendingSuggestions(session?.user?.id),
     getPendingCategorySuggestions(session?.user?.id),
@@ -113,6 +115,7 @@ export default async function CommunityNominationsPage() {
           <CategoryNominations
             suggestions={categorySuggestions}
             isLoggedIn={!!session}
+            isAdmin={isAdmin}
           />
         )}
 
@@ -133,6 +136,7 @@ export default async function CommunityNominationsPage() {
         <NominationsWithFilters
           suggestions={suggestions}
           isLoggedIn={!!session}
+          isAdmin={isAdmin}
         />
 
         <div className="mt-8 flex justify-center">
