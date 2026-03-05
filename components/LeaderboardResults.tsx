@@ -200,7 +200,7 @@ export function LeaderboardResults({
                   <th className="text-center px-2 py-3 text-gray-500 font-semibold">
                     <Image src="/medals/bronze.png" alt="Bronze" width={16} height={16} className="mx-auto" />
                   </th>
-                  <th className="text-right px-4 py-3 text-gray-500 font-semibold">Score</th>
+                  <th className="text-right px-4 py-3 text-gray-500 font-semibold whitespace-nowrap">Critic Score</th>
                   <th className="px-2 py-3 text-gray-500 font-semibold text-center whitespace-nowrap text-xs">Your Picks</th>
                 </tr>
               </thead>

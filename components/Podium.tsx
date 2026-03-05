@@ -109,10 +109,15 @@ function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
           </p>
         )}
 
-        {/* score */}
-        <p className="text-[11px] sm:text-xs text-gray-500 mt-1 font-medium">
-          <CountUp target={row.totalScore} delay={delay + 0.6} /> pts
-        </p>
+        {/* Critic Score */}
+        <div className="mt-1">
+          <p className="text-[11px] sm:text-xs text-gray-500 font-medium">
+            <CountUp target={row.totalScore} delay={delay + 0.6} />
+          </p>
+          <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-gray-400 mt-0.5">
+            Critic Score
+          </p>
+        </div>
 
         {/* medal breakdown pills */}
         <div className="flex justify-center gap-0.5 mt-1 flex-wrap">

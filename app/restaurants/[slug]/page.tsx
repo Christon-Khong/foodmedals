@@ -12,6 +12,7 @@ import { CategorySuggest } from '@/components/CategorySuggest'
 import { CategoryRankingBadges } from '@/components/CategoryRankingBadges'
 import { ReportAddressButton } from '@/components/ReportAddressButton'
 import { RestaurantHighlights } from '@/components/RestaurantHighlights'
+import { CriticScore } from '@/components/CriticScore'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -230,7 +231,7 @@ export default async function RestaurantPage({
 
         {/* ── Trophy Case ─────────────────────────────────────────────── */}
         <section>
-          <h2 className="text-xl font-extrabold text-gray-900 mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 mb-5 flex items-center gap-2">
             <span>🏆</span> Trophy Case — {year}
           </h2>
           {thisYearTrophies.length === 0 ? (
@@ -240,39 +241,84 @@ export default async function RestaurantPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {thisYearTrophies.map(t => (
-                <Link
-                  key={t.categoryId}
-                  href={`/categories/${t.categorySlug}`}
-                  className="bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 p-4 flex items-center gap-4 transition-all hover:shadow-sm"
-                >
-                  <div className="text-3xl"><CategoryIcon slug={t.categorySlug} iconEmoji={t.iconEmoji} iconUrl={t.iconUrl} /></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-800 text-sm truncate">{t.categoryName}</p>
-                    <div className="flex gap-2 mt-1">
-                      {t.goldCount   > 0 && (
-                        <span className="text-xs flex items-center gap-0.5">
-                          <Image src="/medals/gold.png" alt="gold" width={14} height={14} /> {t.goldCount}
-                        </span>
+              {thisYearTrophies.map(t => {
+                const hasMedals = t.goldCount > 0 || t.silverCount > 0 || t.bronzeCount > 0
+                // Determine the "hero" medal — the highest one earned
+                const heroMedal = t.goldCount > 0 ? 'gold' : t.silverCount > 0 ? 'silver' : 'bronze'
+                const heroSize = heroMedal === 'gold' ? 48 : 36
+
+                return (
+                  <Link
+                    key={t.categoryId}
+                    href={`/categories/${t.categorySlug}`}
+                    className="group bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 overflow-hidden transition-all hover:shadow-md"
+                  >
+                    {/* Top: Hero medal + category */}
+                    <div className="flex items-center gap-4 p-4 pb-3">
+                      {/* Hero medal — large and prominent */}
+                      {hasMedals && (
+                        <div className="relative flex-shrink-0">
+                          <div className={`rounded-full flex items-center justify-center ${
+                            heroMedal === 'gold'
+                              ? 'w-16 h-16 bg-gradient-to-br from-yellow-100 via-amber-50 to-yellow-100 ring-2 ring-yellow-300 shadow-[0_0_12px_rgba(234,179,8,0.3)]'
+                              : heroMedal === 'silver'
+                                ? 'w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-50 ring-2 ring-gray-300 shadow-sm'
+                                : 'w-14 h-14 bg-gradient-to-br from-orange-100 to-amber-50 ring-2 ring-amber-400 shadow-sm'
+                          }`}>
+                            <Image
+                              src={`/medals/${heroMedal}.png`}
+                              alt={heroMedal}
+                              width={heroSize}
+                              height={heroSize}
+                              className="drop-shadow-sm"
+                            />
+                          </div>
+                        </div>
                       )}
-                      {t.silverCount > 0 && (
-                        <span className="text-xs flex items-center gap-0.5">
-                          <Image src="/medals/silver.png" alt="silver" width={14} height={14} /> {t.silverCount}
-                        </span>
-                      )}
-                      {t.bronzeCount > 0 && (
-                        <span className="text-xs flex items-center gap-0.5">
-                          <Image src="/medals/bronze.png" alt="bronze" width={14} height={14} /> {t.bronzeCount}
-                        </span>
-                      )}
+
+                      {/* Category name + icon */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-xl">
+                            <CategoryIcon slug={t.categorySlug} iconEmoji={t.iconEmoji} iconUrl={t.iconUrl} />
+                          </span>
+                          <p className="font-bold text-gray-900 text-sm truncate group-hover:text-yellow-700 transition-colors">
+                            {t.categoryName}
+                          </p>
+                        </div>
+
+                        {/* Medal count pills */}
+                        <div className="flex gap-1.5 flex-wrap">
+                          {t.goldCount > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-full px-2 py-0.5">
+                              <Image src="/medals/gold.png" alt="" width={12} height={12} />
+                              {t.goldCount} Gold
+                            </span>
+                          )}
+                          {t.silverCount > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-gray-50 border border-gray-200 text-gray-600 rounded-full px-2 py-0.5">
+                              <Image src="/medals/silver.png" alt="" width={12} height={12} />
+                              {t.silverCount} Silver
+                            </span>
+                          )}
+                          {t.bronzeCount > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-orange-50 border border-orange-200 text-orange-700 rounded-full px-2 py-0.5">
+                              <Image src="/medals/bronze.png" alt="" width={12} height={12} />
+                              {t.bronzeCount} Bronze
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-lg font-bold text-gray-700">{t.totalScore}</span>
-                    <p className="text-xs text-gray-400">pts</p>
-                  </div>
-                </Link>
-              ))}
+
+                    {/* Bottom: Critic Score bar */}
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-50/50 to-yellow-50/30 border-t border-amber-100/60">
+                      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Critic Score</span>
+                      <CriticScore score={t.totalScore} size="sm" />
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           )}
         </section>
@@ -298,7 +344,7 @@ export default async function RestaurantPage({
                     <th className="text-center px-2 py-3 text-gray-500 font-semibold">
                       <Image src="/medals/bronze.png" alt="Bronze" width={16} height={16} className="mx-auto" />
                     </th>
-                    <th className="text-right px-4 py-3 text-gray-500 font-semibold">Score</th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-semibold">Critic Score</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-amber-50">
