@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { MessageSquare, Pencil } from 'lucide-react'
+import { MessageSquare, Pencil, Quote } from 'lucide-react'
 import { Podium } from '@/components/Podium'
 import { LeaderboardMap } from '@/components/LeaderboardMap'
 import type { LeaderboardRow } from '@/lib/queries'
@@ -21,6 +21,7 @@ type Props = {
   categorySlug?: string
   goldMedalId?: string | null
   goldHasComment?: boolean
+  goldCommentText?: string | null
   onOpenComment?: (restaurantName: string) => void
 }
 
@@ -153,6 +154,7 @@ export function LeaderboardResults({
   categorySlug,
   goldMedalId,
   goldHasComment,
+  goldCommentText,
   onOpenComment,
 }: Props) {
   if (loading) return <Skeleton />
@@ -265,6 +267,14 @@ export function LeaderboardResults({
                             </button>
                           )}
                         </span>
+                        {userMedal === 'gold' && goldCommentText && (
+                          <div className="flex items-start gap-1.5 mt-1.5">
+                            <Quote className="w-3 h-3 text-yellow-500 flex-shrink-0 mt-0.5 rotate-180" />
+                            <p className="text-xs text-gray-500 italic leading-relaxed line-clamp-2">
+                              {goldCommentText}
+                            </p>
+                          </div>
+                        )}
                       </td>
                       <td className="px-2 py-3 text-center text-gray-600">{row.goldCount   || '—'}</td>
                       <td className="px-2 py-3 text-center text-gray-600">{row.silverCount || '—'}</td>

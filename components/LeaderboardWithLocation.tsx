@@ -397,6 +397,7 @@ export function LeaderboardWithLocation({
         categorySlug={categorySlug}
         goldMedalId={goldMedalId}
         goldHasComment={goldHasComment}
+        goldCommentText={goldCommentText}
         onOpenComment={(restaurantName) => {
           if (goldMedalId) {
             setCommentPrompt({
