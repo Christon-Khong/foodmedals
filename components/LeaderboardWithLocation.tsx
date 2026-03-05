@@ -425,9 +425,10 @@ export function LeaderboardWithLocation({
           categoryName={categoryName}
           initialComment={commentPrompt.initialComment}
           onClose={() => setCommentPrompt(null)}
-          onSaved={() => {
+          onSaved={(commentText) => {
             setCommentPrompt(null)
             setGoldHasComment(true)
+            setGoldCommentText(commentText)
           }}
         />
       )}

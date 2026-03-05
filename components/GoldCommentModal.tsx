@@ -10,7 +10,7 @@ type Props = {
   categoryName: string
   initialComment?: string
   onClose: () => void
-  onSaved: () => void
+  onSaved: (commentText: string) => void
 }
 
 export function GoldCommentModal({ medalId, restaurantName, categoryName, initialComment, onClose, onSaved }: Props) {
@@ -38,7 +38,7 @@ export function GoldCommentModal({ medalId, restaurantName, categoryName, initia
         return
       }
 
-      onSaved()
+      onSaved(trimmed)
     } catch {
       setError('Network error. Please try again.')
     } finally {
