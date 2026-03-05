@@ -103,9 +103,10 @@ model FoodCategory {
 
   parent      FoodCategory?        @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    FoodCategory[]       @relation("CategoryHierarchy")
-  restaurants       RestaurantCategory[]
-  medals            Medal[]
-  categorySuggVotes CategorySuggestionVote[]
+  restaurants        RestaurantCategory[]
+  medals             Medal[]
+  categorySuggVotes  CategorySuggestionVote[]
+  goldMedalComments  GoldMedalComment[]
 
   @@map("food_categories")
 }
@@ -222,20 +223,24 @@ model AddressReport {
 }
 
 model GoldMedalComment {
-  id           String   @id @default(cuid())
-  medalId      String   @unique @map("medal_id")
-  userId       String   @map("user_id")
-  restaurantId String   @map("restaurant_id")
-  comment      String   @db.Text
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(cuid())
+  medalId        String?  @unique @map("medal_id")
+  userId         String   @map("user_id")
+  restaurantId   String   @map("restaurant_id")
+  foodCategoryId String   @map("food_category_id")
+  year           Int
+  comment        String   @db.Text
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  medal      Medal      @relation(fields: [medalId], references: [id], onDelete: Cascade)
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  upvotes    CommentUpvote[]
+  medal        Medal?       @relation(fields: [medalId], references: [id], onDelete: SetNull)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  foodCategory FoodCategory @relation(fields: [foodCategoryId], references: [id], onDelete: Cascade)
+  upvotes      CommentUpvote[]
 
+  @@unique([userId, foodCategoryId, restaurantId, year])
   @@index([restaurantId, active])
   @@index([userId])
   @@map("gold_medal_comments")

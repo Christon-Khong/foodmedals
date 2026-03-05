@@ -373,6 +373,26 @@ export async function getUserMedalsForCategory(
   })
 }
 
+/** Find a preserved (inactive) gold medal comment for re-award detection on page load */
+export async function getPreservedGoldComment(
+  userId: string,
+  foodCategoryId: string,
+  restaurantId: string,
+  year: number,
+) {
+  return prisma.goldMedalComment.findUnique({
+    where: {
+      userId_foodCategoryId_restaurantId_year: {
+        userId,
+        foodCategoryId,
+        restaurantId,
+        year,
+      },
+    },
+    select: { comment: true, active: true },
+  })
+}
+
 export async function getAllUserMedals(userId: string, year: number) {
   return prisma.medal.findMany({
     where:   { userId, year },
@@ -939,7 +959,7 @@ export async function getRestaurantHighlights(
         gmc.id,
         gmc.comment,
         gmc.created_at,
-        m.year,
+        gmc.year,
         fc.name  AS category_name,
         fc.slug  AS category_slug,
         fc.icon_emoji,
@@ -949,16 +969,16 @@ export async function getRestaurantHighlights(
         u.avatar_url,
         COUNT(cu.id) AS upvote_count,
         (SELECT COUNT(DISTINCT m2.food_category_id)
-         FROM medals m2 WHERE m2.user_id = gmc.user_id AND m2.year = m.year
+         FROM medals m2 WHERE m2.user_id = gmc.user_id AND m2.year = gmc.year
         ) AS user_category_count
       FROM gold_medal_comments gmc
-      JOIN medals m            ON m.id  = gmc.medal_id
       JOIN users u             ON u.id  = gmc.user_id
-      JOIN food_categories fc  ON fc.id = m.food_category_id
+      JOIN food_categories fc  ON fc.id = gmc.food_category_id
+      LEFT JOIN medals m       ON m.id  = gmc.medal_id
       LEFT JOIN comment_upvotes cu ON cu.comment_id = gmc.id
       WHERE gmc.restaurant_id = ${restaurantId}
         AND gmc.active = true
-      GROUP BY gmc.id, gmc.comment, gmc.created_at, m.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url, gmc.user_id
+      GROUP BY gmc.id, gmc.comment, gmc.created_at, gmc.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url, gmc.user_id
       ORDER BY ${orderClause}
       LIMIT ${limit}
       OFFSET ${offset}

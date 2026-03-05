@@ -26,7 +26,8 @@ export async function PUT(req: NextRequest) {
 
   const userId = session.user.id
 
-  // If reassigning a gold medal, deactivate any existing comment on the old gold medal
+  // If reassigning a gold medal, deactivate old comment & check for existing comment on new restaurant
+  let existingComment: string | null = null
   if (medalType === 'gold') {
     const existingGold = await prisma.medal.findUnique({
       where: {
@@ -41,11 +42,33 @@ export async function PUT(req: NextRequest) {
     })
 
     if (existingGold && existingGold.restaurantId !== restaurantId) {
-      // Gold is being moved to a different restaurant — deactivate old comment
+      // Gold is being moved to a different restaurant — deactivate old comment & disconnect from medal
       await prisma.goldMedalComment.updateMany({
-        where: { medalId: existingGold.id },
-        data: { active: false },
+        where: {
+          userId,
+          foodCategoryId,
+          restaurantId: existingGold.restaurantId,
+          year,
+        },
+        data: { active: false, medalId: null },
       })
+    }
+
+    // Check if there's a preserved comment for the new restaurant
+    const preserved = await prisma.goldMedalComment.findUnique({
+      where: {
+        userId_foodCategoryId_restaurantId_year: {
+          userId,
+          foodCategoryId,
+          restaurantId,
+          year,
+        },
+      },
+      select: { id: true, comment: true },
+    })
+
+    if (preserved) {
+      existingComment = preserved.comment
     }
   }
 
@@ -77,7 +100,25 @@ export async function PUT(req: NextRequest) {
     include: { restaurant: true },
   })
 
-  return NextResponse.json(medal)
+  // Re-link any preserved comment to this medal and reactivate it
+  if (medalType === 'gold' && existingComment !== null) {
+    await prisma.goldMedalComment.update({
+      where: {
+        userId_foodCategoryId_restaurantId_year: {
+          userId,
+          foodCategoryId,
+          restaurantId,
+          year,
+        },
+      },
+      data: { active: true, medalId: medal.id },
+    })
+  }
+
+  return NextResponse.json({
+    ...medal,
+    existingComment,
+  })
 }
 
 export async function DELETE(req: NextRequest) {
@@ -101,7 +142,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
   }
 
-  // If deleting a gold medal, deactivate its comment first
+  // If deleting a gold medal, disconnect & deactivate its comment (preserved for re-award)
   if (medalType === 'gold') {
     const existingGold = await prisma.medal.findUnique({
       where: {
@@ -112,13 +153,19 @@ export async function DELETE(req: NextRequest) {
           year,
         },
       },
-      select: { id: true },
+      select: { id: true, restaurantId: true },
     })
 
     if (existingGold) {
+      // Disconnect comment from medal (so cascade delete doesn't remove it) and deactivate
       await prisma.goldMedalComment.updateMany({
-        where: { medalId: existingGold.id },
-        data: { active: false },
+        where: {
+          userId: session.user.id,
+          foodCategoryId,
+          restaurantId: existingGold.restaurantId,
+          year,
+        },
+        data: { active: false, medalId: null },
       })
     }
   }

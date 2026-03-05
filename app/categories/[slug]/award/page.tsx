@@ -57,6 +57,7 @@ export default async function AwardPage({
     medalType:    m.medalType as 'gold' | 'silver' | 'bronze',
     restaurantId: m.restaurantId,
     hasComment:   !!(m.goldMedalComment),
+    commentText:  m.goldMedalComment?.comment ?? undefined,
   }))
 
   const backHref = `/categories/${slug}?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`

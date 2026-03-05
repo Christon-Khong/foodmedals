@@ -21,6 +21,7 @@ type InitialMedal = {
   medalType:    MedalType
   restaurantId: string
   hasComment:   boolean
+  commentText?: string
 }
 
 type AwardFormProps = {
@@ -52,9 +53,12 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
     bronze: initialMedals.find(m => m.medalType === 'bronze')?.id ?? null,
   }))
 
-  // Track whether gold medal already has a comment
+  // Track whether gold medal already has a comment + the text
   const [goldHasComment, setGoldHasComment] = useState(
     () => initialMedals.find(m => m.medalType === 'gold')?.hasComment ?? false
+  )
+  const [goldCommentText, setGoldCommentText] = useState<string>(
+    () => initialMedals.find(m => m.medalType === 'gold')?.commentText ?? ''
   )
 
   const [saving, setSaving]         = useState<string | null>(null) // `${restaurantId}-${medalType}`
@@ -63,6 +67,7 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
   const [commentPrompt, setCommentPrompt] = useState<{
     medalId: string
     restaurantName: string
+    initialComment?: string
   } | null>(null)
 
   // Use a ref to always have the latest medals for revert, avoiding stale closure
@@ -116,12 +121,24 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
         setMedalIds(prev => ({ ...prev, [medalType]: data.id }))
       }
 
-      // For gold medals, prompt user to add a comment
+      // For gold medals, prompt user to add/edit a comment
       if (medalType === 'gold' && data.id) {
-        setGoldHasComment(false)
+        const restored = data.existingComment ?? null
+        if (restored) {
+          // Comment was preserved from a previous award — mark as having comment
+          setGoldHasComment(true)
+          setGoldCommentText(restored)
+        } else {
+          setGoldHasComment(false)
+          setGoldCommentText('')
+        }
         const restaurant = restaurants.find(r => r.id === restaurantId)
         if (restaurant) {
-          setCommentPrompt({ medalId: data.id, restaurantName: restaurant.name })
+          setCommentPrompt({
+            medalId: data.id,
+            restaurantName: restaurant.name,
+            initialComment: restored ?? undefined,
+          })
         }
       }
     } catch {
@@ -140,9 +157,13 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
 
     const restaurant = restaurants.find(r => r.id === goldRestaurantId)
     if (restaurant) {
-      setCommentPrompt({ medalId: goldMedalId, restaurantName: restaurant.name })
+      setCommentPrompt({
+        medalId: goldMedalId,
+        restaurantName: restaurant.name,
+        initialComment: goldCommentText || undefined,
+      })
     }
-  }, [medalIds.gold, medals.gold, restaurants])
+  }, [medalIds.gold, medals.gold, restaurants, goldCommentText])
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -273,10 +294,12 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
           medalId={commentPrompt.medalId}
           restaurantName={commentPrompt.restaurantName}
           categoryName={category.name}
+          initialComment={commentPrompt.initialComment}
           onClose={() => setCommentPrompt(null)}
-          onSaved={() => {
+          onSaved={(text) => {
             setCommentPrompt(null)
             setGoldHasComment(true)
+            setGoldCommentText(text)
           }}
         />
       )}

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   // Verify medal belongs to user and is gold
   const medal = await prisma.medal.findUnique({
     where: { id: medalId },
-    select: { userId: true, medalType: true, restaurantId: true },
+    select: { userId: true, medalType: true, restaurantId: true, foodCategoryId: true, year: true },
   })
 
   if (!medal) {
@@ -38,14 +38,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Comments are only for gold medals' }, { status: 400 })
   }
 
-  // Upsert the comment (one per medal)
+  // Upsert by composite key (userId + categoryId + restaurantId + year)
+  // This preserves the comment identity across medal deletions and re-awards
   const goldComment = await prisma.goldMedalComment.upsert({
-    where: { medalId },
-    update: { comment: trimmed, active: true },
+    where: {
+      userId_foodCategoryId_restaurantId_year: {
+        userId: session.user.id,
+        foodCategoryId: medal.foodCategoryId,
+        restaurantId: medal.restaurantId,
+        year: medal.year,
+      },
+    },
+    update: { comment: trimmed, active: true, medalId },
     create: {
       medalId,
       userId: session.user.id,
       restaurantId: medal.restaurantId,
+      foodCategoryId: medal.foodCategoryId,
+      year: medal.year,
       comment: trimmed,
     },
   })
