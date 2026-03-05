@@ -207,23 +207,74 @@ export function BulkImportForm({ categories }: Props) {
               rows={10}
               className={inputClass}
             />
+            <p className="text-xs text-gray-500 mt-2">
+              One URL per line. Accepts full Google Maps URLs or shortened links (maps.app.goo.gl).
+              Categories selected below will apply to all URLs.
+            </p>
           </div>
         ) : (
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">CSV File</label>
-            <p className="text-xs text-gray-500 mb-2">
-              Required column: <code className="bg-gray-800 px-1 rounded">url</code>.
-              Optional column: <code className="bg-gray-800 px-1 rounded">categories</code> (semicolon-separated category slugs).
-            </p>
-            <input
-              type="file"
-              accept=".csv,.txt"
-              onChange={e => setCsvFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600 cursor-pointer"
-            />
-            {csvFile && (
-              <p className="text-xs text-gray-400 mt-1">{csvFile.name}</p>
-            )}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">CSV File</label>
+              <input
+                type="file"
+                accept=".csv,.txt"
+                onChange={e => setCsvFile(e.target.files?.[0] ?? null)}
+                className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600 cursor-pointer"
+              />
+              {csvFile && (
+                <p className="text-xs text-gray-400 mt-1">{csvFile.name}</p>
+              )}
+            </div>
+
+            {/* CSV format instructions */}
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">CSV Format</h3>
+              <div className="text-xs text-gray-400 space-y-1.5">
+                <p>
+                  <span className="text-gray-300 font-medium">Required column:</span>{' '}
+                  <code className="bg-gray-700 px-1.5 py-0.5 rounded text-yellow-300">url</code> — a Google Maps URL
+                </p>
+                <p>
+                  <span className="text-gray-300 font-medium">Optional column:</span>{' '}
+                  <code className="bg-gray-700 px-1.5 py-0.5 rounded text-yellow-300">categories</code> — category slugs separated by semicolons
+                </p>
+                <p className="text-gray-500">
+                  Rows without a <code className="bg-gray-700 px-1 rounded">categories</code> column will use the default categories selected below.
+                </p>
+              </div>
+
+              {/* Example table */}
+              <div className="overflow-x-auto rounded-lg border border-gray-700">
+                <table className="w-full text-xs font-mono">
+                  <thead>
+                    <tr className="bg-gray-700/50 text-gray-300">
+                      <th className="text-left px-3 py-2 font-semibold border-r border-gray-700">url</th>
+                      <th className="text-left px-3 py-2 font-semibold">categories</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-400">
+                    <tr className="border-t border-gray-700/50">
+                      <td className="px-3 py-1.5 border-r border-gray-700 text-gray-300">https://maps.app.goo.gl/abc123</td>
+                      <td className="px-3 py-1.5">burgers;fries</td>
+                    </tr>
+                    <tr className="border-t border-gray-700/50">
+                      <td className="px-3 py-1.5 border-r border-gray-700 text-gray-300">https://www.google.com/maps/place/...</td>
+                      <td className="px-3 py-1.5">pizza;pasta;wings</td>
+                    </tr>
+                    <tr className="border-t border-gray-700/50">
+                      <td className="px-3 py-1.5 border-r border-gray-700 text-gray-300">https://maps.app.goo.gl/xyz789</td>
+                      <td className="px-3 py-1.5 text-gray-600 italic">{'(empty — uses default categories)'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-[11px] text-gray-500">
+                Category slugs can be found in the URL of each category page (e.g., <code className="bg-gray-700 px-1 rounded">/categories/burgers</code> {'→'} slug is <code className="bg-gray-700 px-1 rounded">burgers</code>).
+                Use semicolons to separate multiple categories, not commas.
+              </p>
+            </div>
           </div>
         )}
       </div>
