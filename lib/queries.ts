@@ -887,6 +887,7 @@ export type HighlightRow = {
   userSlug:     string | null
   userAvatar:   string | null
   upvoteCount:  number
+  userCategoryCount: number
 }
 
 export async function getRestaurantHighlights(
@@ -916,6 +917,7 @@ export async function getRestaurantHighlights(
         user_slug:     string | null
         avatar_url:    string | null
         upvote_count:  bigint
+        user_category_count: bigint
       }>
     >`
       SELECT
@@ -930,7 +932,10 @@ export async function getRestaurantHighlights(
         u.display_name,
         u.slug   AS user_slug,
         u.avatar_url,
-        COUNT(cu.id) AS upvote_count
+        COUNT(cu.id) AS upvote_count,
+        (SELECT COUNT(DISTINCT m2.food_category_id)
+         FROM medals m2 WHERE m2.user_id = gmc.user_id AND m2.year = m.year
+        ) AS user_category_count
       FROM gold_medal_comments gmc
       JOIN medals m            ON m.id  = gmc.medal_id
       JOIN users u             ON u.id  = gmc.user_id
@@ -938,7 +943,7 @@ export async function getRestaurantHighlights(
       LEFT JOIN comment_upvotes cu ON cu.comment_id = gmc.id
       WHERE gmc.restaurant_id = ${restaurantId}
         AND gmc.active = true
-      GROUP BY gmc.id, gmc.comment, gmc.created_at, m.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url
+      GROUP BY gmc.id, gmc.comment, gmc.created_at, m.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url, gmc.user_id
       ORDER BY ${orderClause}
       LIMIT ${limit}
       OFFSET ${offset}
@@ -968,6 +973,7 @@ export async function getRestaurantHighlights(
       userSlug:     r.user_slug,
       userAvatar:   r.avatar_url,
       upvoteCount:  Number(r.upvote_count),
+      userCategoryCount: Number(r.user_category_count),
     })),
   }
 }

@@ -4,12 +4,12 @@ import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CategoryIcon } from '@/components/CategoryIcon'
-import { ThumbsUp, Sparkles, Loader2 } from 'lucide-react'
+import { Sparkles, Loader2, Quote, Award } from 'lucide-react'
 
 type Highlight = {
   id:           string
   comment:      string
-  createdAt:    string // serialized from server
+  createdAt:    string
   year:         number
   categoryName: string
   categorySlug: string
@@ -19,6 +19,7 @@ type Highlight = {
   userSlug:     string | null
   userAvatar:   string | null
   upvoteCount:  number
+  userCategoryCount: number
 }
 
 type Props = {
@@ -30,6 +31,30 @@ type Props = {
 }
 
 type SortMode = 'popular' | 'newest'
+
+// ─── Tier logic (shared with profile page) ─────────────────────────────────
+
+const TIERS = [
+  { min: 80, label: 'Oracle' },
+  { min: 60, label: 'Vanguard' },
+  { min: 45, label: 'The Palate' },
+  { min: 30, label: 'Grand Curator' },
+  { min: 20, label: 'Master Critic' },
+  { min: 12, label: 'Local Legend' },
+  { min:  7, label: 'Silver Spoon' },
+  { min:  4, label: 'Flavor Chaser' },
+  { min:  2, label: 'Food Scout' },
+  { min:  1, label: 'Taste Tester' },
+]
+
+function getTierLabel(categoryCount: number): string | null {
+  for (const tier of TIERS) {
+    if (categoryCount >= tier.min) return tier.label
+  }
+  return null
+}
+
+// ─── Sub-components ────────────────────────────────────────────────────────
 
 function UserAvatar({ name, avatarUrl, size }: { name: string; avatarUrl: string | null; size: number }) {
   if (avatarUrl) {
@@ -54,38 +79,36 @@ function UserAvatar({ name, avatarUrl, size }: { name: string; avatarUrl: string
   )
 }
 
-function HighlightCard({
-  highlight,
+function HighFiveButton({
+  commentId,
+  initialUpvoted,
+  initialCount,
   isLoggedIn,
-  upvoted: initialUpvoted,
 }: {
-  highlight: Highlight
+  commentId: string
+  initialUpvoted: boolean
+  initialCount: number
   isLoggedIn: boolean
-  upvoted: boolean
 }) {
   const [upvoted, setUpvoted] = useState(initialUpvoted)
-  const [count, setCount] = useState(highlight.upvoteCount)
+  const [count, setCount] = useState(initialCount)
   const [toggling, setToggling] = useState(false)
 
-  const handleUpvote = async () => {
+  const handleClick = async () => {
     if (!isLoggedIn || toggling) return
     setToggling(true)
 
-    // Optimistic update
     const wasUpvoted = upvoted
     setUpvoted(!wasUpvoted)
     setCount(prev => wasUpvoted ? prev - 1 : prev + 1)
 
     try {
-      const res = await fetch(`/api/comments/${highlight.id}/upvote`, {
-        method: 'POST',
-      })
+      const res = await fetch(`/api/comments/${commentId}/upvote`, { method: 'POST' })
       if (res.ok) {
         const data = await res.json()
         setUpvoted(data.upvoted)
         setCount(data.count)
       } else {
-        // Revert
         setUpvoted(wasUpvoted)
         setCount(prev => wasUpvoted ? prev + 1 : prev - 1)
       }
@@ -98,73 +121,114 @@ function HighlightCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-amber-100 p-4 hover:shadow-sm transition-shadow">
-      <div className="flex items-start gap-3">
-        {/* User avatar */}
-        <div className="flex-shrink-0 mt-0.5">
-          {highlight.userSlug ? (
-            <Link href={`/critics/${highlight.userSlug}`}>
-              <UserAvatar name={highlight.userName} avatarUrl={highlight.userAvatar} size={36} />
-            </Link>
-          ) : (
-            <UserAvatar name={highlight.userName} avatarUrl={highlight.userAvatar} size={36} />
-          )}
-        </div>
+    <button
+      onClick={handleClick}
+      disabled={!isLoggedIn}
+      title={isLoggedIn ? (upvoted ? 'Remove high five' : 'High five — you agree!') : 'Sign in to high five'}
+      className={`inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full border-2 transition-all duration-200 ${
+        upvoted
+          ? 'bg-yellow-100 border-yellow-400 text-yellow-800 scale-105 shadow-sm'
+          : 'bg-white border-gray-200 text-gray-500 hover:border-yellow-400 hover:text-yellow-700 hover:bg-yellow-50'
+      } ${!isLoggedIn ? 'opacity-60 cursor-default' : 'cursor-pointer active:scale-95'}`}
+    >
+      <span className="text-base leading-none">{upvoted ? '🙌' : '🖐️'}</span>
+      {count > 0 ? count : 'High Five'}
+    </button>
+  )
+}
 
-        <div className="flex-1 min-w-0">
-          {/* User name + badges */}
-          <div className="flex items-center gap-2 flex-wrap mb-1">
+function HighlightCard({
+  highlight,
+  isLoggedIn,
+  upvoted,
+}: {
+  highlight: Highlight
+  isLoggedIn: boolean
+  upvoted: boolean
+}) {
+  const tierLabel = getTierLabel(highlight.userCategoryCount)
+
+  return (
+    <div className="bg-white rounded-2xl border border-amber-100 overflow-hidden hover:shadow-md transition-shadow">
+      {/* Quote body — the hero */}
+      <div className="px-6 pt-6 pb-4">
+        <div className="flex items-start gap-1 mb-1">
+          <Quote className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5 rotate-180" />
+        </div>
+        <p className="font-[family-name:var(--font-lora)] italic text-gray-800 text-lg sm:text-xl leading-relaxed">
+          {highlight.comment}
+        </p>
+        <div className="flex justify-end mt-1">
+          <Quote className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+        </div>
+      </div>
+
+      {/* Attribution bar */}
+      <div className="flex items-center justify-between gap-3 px-6 py-3.5 bg-gradient-to-r from-amber-50/80 to-yellow-50/60 border-t border-amber-100">
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Avatar */}
+          <div className="flex-shrink-0">
             {highlight.userSlug ? (
-              <Link
-                href={`/critics/${highlight.userSlug}`}
-                className="text-sm font-semibold text-gray-800 hover:text-yellow-700 transition-colors"
-              >
-                {highlight.userName}
+              <Link href={`/critics/${highlight.userSlug}`}>
+                <UserAvatar name={highlight.userName} avatarUrl={highlight.userAvatar} size={40} />
               </Link>
             ) : (
-              <span className="text-sm font-semibold text-gray-800">{highlight.userName}</span>
+              <UserAvatar name={highlight.userName} avatarUrl={highlight.userAvatar} size={40} />
             )}
-
-            {/* Category badge */}
-            <Link
-              href={`/categories/${highlight.categorySlug}`}
-              className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 text-amber-700 hover:border-yellow-400 transition-colors"
-            >
-              <CategoryIcon slug={highlight.categorySlug} iconEmoji={highlight.iconEmoji} iconUrl={highlight.iconUrl} />
-              {highlight.categoryName}
-            </Link>
-
-            {/* Year badge */}
-            <span className="text-[10px] font-medium text-gray-400 flex items-center gap-0.5">
-              <Image src="/medals/gold.png" alt="gold" width={12} height={12} />
-              {highlight.year}
-            </span>
           </div>
 
-          {/* Comment text */}
-          <p className="text-sm text-gray-700 leading-relaxed">{highlight.comment}</p>
-
-          {/* Upvote button */}
-          <div className="mt-2">
-            <button
-              onClick={handleUpvote}
-              disabled={!isLoggedIn}
-              title={isLoggedIn ? (upvoted ? 'Remove upvote' : 'Upvote this highlight') : 'Sign in to upvote'}
-              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
-                upvoted
-                  ? 'bg-yellow-100 border-yellow-300 text-yellow-700'
-                  : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-yellow-300 hover:text-yellow-700'
-              } ${!isLoggedIn ? 'opacity-60 cursor-default' : 'cursor-pointer'}`}
-            >
-              <ThumbsUp className={`w-3 h-3 ${upvoted ? 'fill-yellow-500' : ''}`} />
-              {count > 0 && count}
-            </button>
+          {/* Name + badges */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {highlight.userSlug ? (
+                <Link
+                  href={`/critics/${highlight.userSlug}`}
+                  className="text-sm font-bold text-gray-900 hover:text-yellow-700 transition-colors truncate"
+                >
+                  {highlight.userName}
+                </Link>
+              ) : (
+                <span className="text-sm font-bold text-gray-900 truncate">{highlight.userName}</span>
+              )}
+              {tierLabel && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-yellow-200">
+                  <Award className="w-2.5 h-2.5" />
+                  {tierLabel}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <Link
+                href={`/categories/${highlight.categorySlug}`}
+                className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 hover:text-yellow-800 transition-colors"
+              >
+                <CategoryIcon slug={highlight.categorySlug} iconEmoji={highlight.iconEmoji} iconUrl={highlight.iconUrl} />
+                {highlight.categoryName}
+              </Link>
+              <span className="text-[10px] text-gray-400">·</span>
+              <span className="text-[10px] font-medium text-gray-400 flex items-center gap-0.5">
+                <Image src="/medals/gold.png" alt="gold" width={10} height={10} />
+                {highlight.year}
+              </span>
+            </div>
           </div>
+        </div>
+
+        {/* High Five */}
+        <div className="flex-shrink-0">
+          <HighFiveButton
+            commentId={highlight.id}
+            initialUpvoted={upvoted}
+            initialCount={highlight.upvoteCount}
+            isLoggedIn={isLoggedIn}
+          />
         </div>
       </div>
     </div>
   )
 }
+
+// ─── Main component ────────────────────────────────────────────────────────
 
 export function RestaurantHighlights({ highlights: initialHighlights, totalCount, restaurantId, isLoggedIn, userUpvotedIds }: Props) {
   const [sort, setSort] = useState<SortMode>('popular')
@@ -172,7 +236,6 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialHighlights.length < totalCount)
 
-  // When sort changes, reset to initial data and refetch with new sort
   const [currentSort, setCurrentSort] = useState<SortMode>('popular')
 
   const handleSortChange = useCallback(async (newSort: SortMode) => {
@@ -217,11 +280,8 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
     }
   }, [loading, allHighlights.length, restaurantId, currentSort])
 
-  // For the initial "popular" sort, data is already sorted from server.
-  // Client-side sorting is only needed if we want to re-sort loaded data.
   const displayed = useMemo(() => {
     if (sort === 'newest' && currentSort === 'popular') {
-      // If we haven't fetched newest from server yet, do client sort of current data
       return [...allHighlights].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
@@ -235,10 +295,10 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-yellow-500" />
-          Highlights
+          What people are saying
           {totalCount > 1 && (
             <span className="text-sm font-normal text-gray-400">({totalCount})</span>
           )}
@@ -266,7 +326,7 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {displayed.map(h => (
           <HighlightCard
             key={h.id}
@@ -279,7 +339,7 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
 
       {/* Load More */}
       {hasMore && (
-        <div className="mt-4 text-center">
+        <div className="mt-5 text-center">
           <button
             onClick={handleLoadMore}
             disabled={loading}
@@ -291,7 +351,7 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
                 Loading...
               </>
             ) : (
-              `Show more highlights (${remaining} remaining)`
+              `Show more (${remaining} remaining)`
             )}
           </button>
         </div>
