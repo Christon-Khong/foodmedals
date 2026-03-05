@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { geocode } from '@/lib/restaurant-utils'
 
 const ACTIVATION_THRESHOLD = 10
 
@@ -19,7 +20,7 @@ export async function POST(
   // Ensure restaurant exists and is pending
   const restaurant = await prisma.restaurant.findUnique({
     where: { id },
-    select: { status: true },
+    select: { status: true, address: true, city: true, state: true, zip: true, lat: true, lng: true },
   })
   if (!restaurant || restaurant.status !== 'pending_review') {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -43,10 +44,20 @@ export async function POST(
   // Auto-activate at threshold
   let activated = false
   if (count >= ACTIVATION_THRESHOLD) {
+    // Geocode if coordinates are missing before activating
+    const updateData: Record<string, unknown> = { status: 'active' }
+    if (restaurant.lat == null && restaurant.lng == null) {
+      const coords = await geocode(restaurant.address, restaurant.city, restaurant.state, restaurant.zip)
+      if (coords) {
+        updateData.lat = coords.lat
+        updateData.lng = coords.lng
+      }
+    }
+
     await prisma.$transaction([
       prisma.restaurant.update({
         where: { id },
-        data: { status: 'active' },
+        data: updateData,
       }),
       prisma.restaurantCategory.updateMany({
         where: { restaurantId: id },
