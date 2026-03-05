@@ -15,7 +15,7 @@ export function Navbar() {
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-1.5 font-bold text-gray-900 text-lg">
-          <Image src="/medals/gold.png" alt="medal" width={24} height={24} />
+          <Image src="/images/logo.png" alt="FoodMedals" width={28} height={28} />
           <span className="hidden sm:inline">FoodMedals</span>
         </Link>
 

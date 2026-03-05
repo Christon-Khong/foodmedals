@@ -6,7 +6,7 @@ export function Footer() {
     <footer className="border-t border-amber-100 bg-white">
       <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-400">
         <span className="flex items-center gap-1.5">
-          <Image src="/medals/gold.png" alt="" width={16} height={16} />
+          <Image src="/images/logo.png" alt="" width={18} height={18} />
           FoodMedals · Community Food Rankings
         </span>
         <div className="flex gap-4">
