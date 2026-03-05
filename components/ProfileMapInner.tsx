@@ -56,7 +56,7 @@ export default function ProfileMapInner({ pins }: { pins: MedalPin[] }) {
   if (pins.length === 0 || !bounds) return null
 
   return (
-    <div className="rounded-xl overflow-hidden border border-amber-200 shadow-sm">
+    <div className="rounded-xl overflow-hidden border border-amber-200 shadow-sm relative z-0">
       <MapContainer
         bounds={bounds}
         scrollWheelZoom={false}

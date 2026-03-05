@@ -48,7 +48,7 @@ export default function LeaderboardMapInner({ rows }: { rows: LeaderboardRow[] }
   if (mappableRows.length === 0 || !bounds) return null
 
   return (
-    <div className="rounded-xl overflow-hidden border border-amber-200 shadow-sm mb-4">
+    <div className="rounded-xl overflow-hidden border border-amber-200 shadow-sm mb-4 relative z-0">
       <MapContainer
         bounds={bounds}
         scrollWheelZoom={false}
