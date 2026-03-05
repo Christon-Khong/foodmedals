@@ -46,6 +46,7 @@ export function ReportActions({
 
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'success' | 'failed'>('idle')
   const [lookupError, setLookupError] = useState<string | null>(null)
+  const [partial, setPartial] = useState(false)
 
   // Auto-lookup the Google Maps URL on mount
   useEffect(() => {
@@ -62,13 +63,14 @@ export function ReportActions({
         })
         if (cancelled) return
         if (res.ok) {
-          const data: LookupResult = await res.json()
+          const data = await res.json()
           if (data.address) setAddress(data.address)
           if (data.city) setCity(data.city)
           if (data.state) setState(data.state)
           if (data.zip) setZip(data.zip)
           if (data.lat != null) setLat(data.lat.toFixed(6))
           if (data.lng != null) setLng(data.lng.toFixed(6))
+          if (data.partial) setPartial(true)
           setLookupStatus('success')
         } else {
           const err = await res.json().catch(() => null)
@@ -163,10 +165,16 @@ export function ReportActions({
                 Looking up...
               </span>
             )}
-            {lookupStatus === 'success' && (
+            {lookupStatus === 'success' && !partial && (
               <span className="inline-flex items-center gap-1 text-[10px] text-green-400">
                 <CheckCircle2 className="w-3 h-3" />
                 Extracted from Google Maps
+              </span>
+            )}
+            {lookupStatus === 'success' && partial && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-yellow-400">
+                <AlertCircle className="w-3 h-3" />
+                Partial — street number may be missing, please verify
               </span>
             )}
             {lookupStatus === 'failed' && (
