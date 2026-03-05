@@ -86,13 +86,19 @@ export async function parseGoogleMapsUrl(url: string): Promise<ParsedMapsResult>
     name = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
   }
 
-  // Parse lat/lng from /@lat,lng
+  // Parse lat/lng — prefer !3d/!4d (actual place marker) over @ (viewport center)
   let lat: number | null = null
   let lng: number | null = null
-  const coordMatch = resolvedUrl.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/)
-  if (coordMatch) {
-    lat = parseFloat(coordMatch[1])
-    lng = parseFloat(coordMatch[2])
+  const placeCoordMatch = resolvedUrl.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/)
+  if (placeCoordMatch) {
+    lat = parseFloat(placeCoordMatch[1])
+    lng = parseFloat(placeCoordMatch[2])
+  } else {
+    const viewportMatch = resolvedUrl.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/)
+    if (viewportMatch) {
+      lat = parseFloat(viewportMatch[1])
+      lng = parseFloat(viewportMatch[2])
+    }
   }
 
   // Reverse geocode with Nominatim

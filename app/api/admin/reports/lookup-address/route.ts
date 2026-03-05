@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
+import { STATE_ABBREV } from '@/lib/parse-maps-url'
 
 export async function POST(req: NextRequest) {
   const session = await getAdminSession()
@@ -21,21 +22,23 @@ export async function POST(req: NextRequest) {
     }
 
     // Try to extract coordinates from the URL
-    // Patterns: @lat,lng / !3dlat!4dlng / q=lat,lng
+    // !3d/!4d = actual place marker (preferred), @ = viewport center (fallback)
     let lat: number | null = null
     let lng: number | null = null
 
-    const atMatch = resolvedUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
-    if (atMatch) {
-      lat = parseFloat(atMatch[1])
-      lng = parseFloat(atMatch[2])
+    // Prefer !3d/!4d — these are the actual place coordinates
+    const dMatch = resolvedUrl.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)
+    if (dMatch) {
+      lat = parseFloat(dMatch[1])
+      lng = parseFloat(dMatch[2])
     }
 
+    // Fall back to @ coordinates (viewport center, less accurate)
     if (lat == null) {
-      const dMatch = resolvedUrl.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)
-      if (dMatch) {
-        lat = parseFloat(dMatch[1])
-        lng = parseFloat(dMatch[2])
+      const atMatch = resolvedUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+      if (atMatch) {
+        lat = parseFloat(atMatch[1])
+        lng = parseFloat(atMatch[2])
       }
     }
 
@@ -58,7 +61,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({
             address: streetAddress || null,
             city: addr.city ?? addr.town ?? addr.village ?? null,
-            state: addr.state ?? null,
+            state: (addr.state ? STATE_ABBREV[addr.state] ?? addr.state : null),
             zip: addr.postcode ?? null,
             lat,
             lng,
@@ -100,7 +103,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({
             address: streetAddress || null,
             city: addr.city ?? addr.town ?? addr.village ?? null,
-            state: addr.state ?? null,
+            state: (addr.state ? STATE_ABBREV[addr.state] ?? addr.state : null),
             zip: addr.postcode ?? null,
             lat: parseFloat(results[0].lat),
             lng: parseFloat(results[0].lon),
