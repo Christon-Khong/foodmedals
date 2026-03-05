@@ -40,8 +40,8 @@ export default async function AddressReportsPage() {
               key={r.id}
               className="bg-gray-900 border border-gray-800 rounded-2xl p-5"
             >
+              {/* Header row: info + edit link */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-white font-bold text-base">{r.restaurant.name}</h3>
@@ -84,25 +84,24 @@ export default async function AddressReportsPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex flex-col gap-2 shrink-0">
-                  <ReportActions
-                    reportId={r.id}
-                    restaurantId={r.restaurant.id}
-                    currentAddress={r.restaurant.address}
-                    currentCity={r.restaurant.city}
-                    currentState={r.restaurant.state}
-                    currentZip={r.restaurant.zip}
-                    googleMapsUrl={r.googleMapsUrl}
-                  />
-                  <Link
-                    href={`/admin/restaurants/${r.restaurant.id}/edit`}
-                    className="text-xs text-center text-gray-500 hover:text-yellow-400 transition-colors"
-                  >
-                    Edit restaurant
-                  </Link>
-                </div>
+                <Link
+                  href={`/admin/restaurants/${r.restaurant.id}/edit`}
+                  className="text-xs text-gray-500 hover:text-yellow-400 transition-colors shrink-0"
+                >
+                  Edit restaurant
+                </Link>
               </div>
+
+              {/* Suggested address + actions (full width) */}
+              <ReportActions
+                reportId={r.id}
+                restaurantId={r.restaurant.id}
+                currentAddress={r.restaurant.address}
+                currentCity={r.restaurant.city}
+                currentState={r.restaurant.state}
+                currentZip={r.restaurant.zip}
+                googleMapsUrl={r.googleMapsUrl}
+              />
             </div>
           ))}
         </div>

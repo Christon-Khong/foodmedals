@@ -14,13 +14,13 @@ export async function PATCH(
 
   const { id } = await params
   const body = await req.json()
-  const { status, restaurantId, address, city, state, zip } = body
+  const { status, restaurantId, address, city, state, zip, lat, lng } = body
 
   if (!['resolved', 'dismissed'].includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
   }
 
-  // If resolving with updated address, update the restaurant first
+  // If resolving with updated address, update the restaurant
   if (status === 'resolved' && restaurantId && address) {
     const existing = await prisma.restaurant.findUnique({ where: { id: restaurantId } })
     if (existing) {
@@ -41,16 +41,21 @@ export async function PATCH(
         }
       }
 
-      // Re-geocode with new address
-      const coords = await geocode(
-        data.address as string,
-        data.city as string,
-        data.state as string,
-        data.zip as string,
-      )
-      if (coords) {
-        data.lat = coords.lat
-        data.lng = coords.lng
+      // Use provided lat/lng if given, otherwise re-geocode
+      if (typeof lat === 'number' && typeof lng === 'number') {
+        data.lat = lat
+        data.lng = lng
+      } else {
+        const coords = await geocode(
+          data.address as string,
+          data.city as string,
+          data.state as string,
+          data.zip as string,
+        )
+        if (coords) {
+          data.lat = coords.lat
+          data.lng = coords.lng
+        }
       }
 
       await prisma.restaurant.update({ where: { id: restaurantId }, data })

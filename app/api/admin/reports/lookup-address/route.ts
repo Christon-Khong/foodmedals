@@ -60,9 +60,21 @@ export async function POST(req: NextRequest) {
             city: addr.city ?? addr.town ?? addr.village ?? null,
             state: addr.state ?? null,
             zip: addr.postcode ?? null,
+            lat,
+            lng,
           })
         }
       }
+
+      // Even if reverse geocoding failed, return the coordinates
+      return NextResponse.json({
+        address: null,
+        city: null,
+        state: null,
+        zip: null,
+        lat,
+        lng,
+      })
     }
 
     // Try extracting a place name query from the URL for forward geocoding
@@ -90,6 +102,8 @@ export async function POST(req: NextRequest) {
             city: addr.city ?? addr.town ?? addr.village ?? null,
             state: addr.state ?? null,
             zip: addr.postcode ?? null,
+            lat: parseFloat(results[0].lat),
+            lng: parseFloat(results[0].lon),
           })
         }
       }
