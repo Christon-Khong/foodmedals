@@ -1,48 +1,139 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { StatusBadge } from '../StatusBadge'
 import { BulkStatusSelect } from '../BulkStatusSelect'
 import { RestaurantSearch } from './RestaurantSearch'
+import { RestaurantFilters } from './RestaurantFilters'
+import { Pagination } from './Pagination'
 
 export const dynamic = 'force-dynamic'
 
 const STATUS_FILTERS = ['all', 'active', 'pending_review', 'inactive'] as const
 type StatusFilter = typeof STATUS_FILTERS[number]
 
-async function getRestaurants(status: StatusFilter, query?: string) {
+const SORT_OPTIONS: Record<string, { orderBy: object }> = {
+  'name-asc':    { orderBy: { name: 'asc' } },
+  'name-desc':   { orderBy: { name: 'desc' } },
+  'newest':      { orderBy: { createdAt: 'desc' } },
+  'oldest':      { orderBy: { createdAt: 'asc' } },
+  'most-medals': { orderBy: { medals: { _count: 'desc' } } },
+}
+
+interface Params {
+  status?: string
+  q?: string
+  page?: string
+  perPage?: string
+  city?: string
+  state?: string
+  category?: string
+  sort?: string
+}
+
+async function getRestaurants(params: Params) {
+  const status: StatusFilter =
+    STATUS_FILTERS.includes(params.status as StatusFilter) ? (params.status as StatusFilter) : 'all'
+  const query = typeof params.q === 'string' ? params.q.trim() : ''
+  const page = Math.max(1, parseInt(params.page ?? '1', 10) || 1)
+  const perPage = [50, 100, 250].includes(Number(params.perPage)) ? Number(params.perPage) : 50
+  const city = params.city ?? ''
+  const state = params.state ?? ''
+  const categorySlug = params.category ?? ''
+  const sortKey = params.sort ?? ''
+
+  // Build where clause
   const where: Record<string, unknown> = {}
   if (status !== 'all') where.status = status
-  if (query) {
-    where.name = { contains: query, mode: 'insensitive' }
+  if (query) where.name = { contains: query, mode: 'insensitive' }
+  if (city) where.city = city
+  if (state) where.state = state
+  if (categorySlug) {
+    where.categories = {
+      some: { foodCategory: { slug: categorySlug } },
+    }
   }
-  return prisma.restaurant.findMany({
-    where,
-    orderBy: [{ status: 'asc' }, { name: 'asc' }],
-    include: {
-      _count:    { select: { medals: true, categories: true } },
-      submitter: { select: { displayName: true } },
-    },
-  })
+
+  // Build orderBy
+  const sortOption = SORT_OPTIONS[sortKey]
+  const orderBy = sortOption
+    ? sortOption.orderBy
+    : [{ status: 'asc' as const }, { name: 'asc' as const }]
+
+  const [restaurants, total] = await Promise.all([
+    prisma.restaurant.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * perPage,
+      take: perPage,
+      include: {
+        _count: { select: { medals: true, categories: true } },
+        submitter: { select: { displayName: true } },
+      },
+    }),
+    prisma.restaurant.count({ where }),
+  ])
+
+  return { restaurants, total, page, perPage, status, query }
+}
+
+async function getFilterOptions() {
+  const [cityRows, stateRows, categories] = await Promise.all([
+    prisma.restaurant.findMany({
+      distinct: ['city'],
+      select: { city: true },
+      orderBy: { city: 'asc' },
+    }),
+    prisma.restaurant.findMany({
+      distinct: ['state'],
+      select: { state: true },
+      orderBy: { state: 'asc' },
+    }),
+    prisma.foodCategory.findMany({
+      where: { status: 'active' },
+      select: { slug: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+  ])
+  return {
+    cities: cityRows.map(r => r.city),
+    states: stateRows.map(r => r.state),
+    categories,
+  }
 }
 
 export default async function AllRestaurantsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>
+  searchParams: Promise<Params>
 }) {
-  const { status: rawStatus, q } = await searchParams
-  const status: StatusFilter =
-    STATUS_FILTERS.includes(rawStatus as StatusFilter) ? (rawStatus as StatusFilter) : 'all'
-  const query = typeof q === 'string' ? q.trim() : ''
+  const params = await searchParams
+  const [{ restaurants, total, page, perPage, status, query }, filterOptions] =
+    await Promise.all([getRestaurants(params), getFilterOptions()])
 
-  const restaurants = await getRestaurants(status, query || undefined)
+  const totalPages = Math.ceil(total / perPage)
+
+  // Build URL preserving all params except the one being changed
+  function statusHref(s: string) {
+    const p = new URLSearchParams()
+    if (s !== 'all') p.set('status', s)
+    if (query) p.set('q', query)
+    // Preserve filters but reset page
+    if (params.city) p.set('city', params.city)
+    if (params.state) p.set('state', params.state)
+    if (params.category) p.set('category', params.category)
+    if (params.sort) p.set('sort', params.sort)
+    if (params.perPage) p.set('perPage', params.perPage)
+    const qs = p.toString()
+    return `/admin/restaurants/all${qs ? `?${qs}` : ''}`
+  }
 
   return (
     <div className="max-w-6xl">
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">All Restaurants</h1>
-          <p className="text-gray-400 text-sm mt-1">{restaurants.length} shown</p>
+          <p className="text-gray-400 text-sm mt-1">{total} total</p>
         </div>
 
         {/* Status filter tabs */}
@@ -50,10 +141,7 @@ export default async function AllRestaurantsPage({
           {STATUS_FILTERS.map(s => (
             <Link
               key={s}
-              href={`/admin/restaurants/all?${new URLSearchParams({
-                ...(s !== 'all' ? { status: s } : {}),
-                ...(query ? { q: query } : {}),
-              }).toString()}`}
+              href={statusHref(s)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 s === status
                   ? 'bg-gray-700 text-white'
@@ -66,9 +154,18 @@ export default async function AllRestaurantsPage({
         </div>
       </div>
 
-      {/* Search */}
-      <div className="mb-4">
-        <RestaurantSearch defaultValue={query} status={status} />
+      {/* Search + Filters */}
+      <div className="mb-4 flex flex-col sm:flex-row gap-3">
+        <Suspense>
+          <RestaurantSearch defaultValue={query} />
+        </Suspense>
+        <Suspense>
+          <RestaurantFilters
+            cities={filterOptions.cities}
+            states={filterOptions.states}
+            categories={filterOptions.categories}
+          />
+        </Suspense>
       </div>
 
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
@@ -126,6 +223,11 @@ export default async function AllRestaurantsPage({
           <div className="py-16 text-center text-gray-500">No restaurants match this filter.</div>
         )}
       </div>
+
+      {/* Pagination */}
+      <Suspense>
+        <Pagination page={page} totalPages={totalPages} total={total} perPage={perPage} />
+      </Suspense>
     </div>
   )
 }
