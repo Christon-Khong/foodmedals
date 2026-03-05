@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
@@ -18,6 +18,22 @@ export default function SuggestCategoryPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  const [categoryMatch, setCategoryMatch] = useState<{
+    name: string; type: 'category' | 'suggestion'; slug?: string; id?: string
+  } | null>(null)
+
+  // Debounced duplicate check on name change
+  useEffect(() => {
+    if (name.trim().length < 2) { setCategoryMatch(null); return }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/categories/check-duplicate?name=${encodeURIComponent(name.trim())}`)
+        const data = await res.json()
+        setCategoryMatch(data.match)
+      } catch { /* ignore */ }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [name])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -104,6 +120,34 @@ export default function SuggestCategoryPage() {
               placeholder="e.g. Birria Tacos"
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
+            {/* Duplicate warning */}
+            {categoryMatch && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mt-2">
+                {categoryMatch.type === 'category' ? (
+                  <p className="text-sm text-amber-800">
+                    <strong>{categoryMatch.name}</strong> already exists as a category.{' '}
+                    <a
+                      href={`/categories/${categoryMatch.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium underline hover:text-amber-900"
+                    >
+                      Browse category →
+                    </a>
+                  </p>
+                ) : (
+                  <p className="text-sm text-amber-800">
+                    <strong>{categoryMatch.name}</strong> has already been suggested — vote for it instead!{' '}
+                    <a
+                      href="/suggest/vote"
+                      className="font-medium underline hover:text-amber-900"
+                    >
+                      Vote for it →
+                    </a>
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Emoji picker */}
@@ -172,7 +216,7 @@ export default function SuggestCategoryPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !!categoryMatch}
             className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 rounded-xl transition-colors disabled:opacity-50"
           >
             {loading ? 'Submitting…' : 'Submit for community vote'}

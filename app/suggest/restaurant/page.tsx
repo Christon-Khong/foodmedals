@@ -27,6 +27,9 @@ export default function SuggestRestaurantPage() {
   const [mapsUrl, setMapsUrl] = useState('')
   const [parsing, setParsing] = useState(false)
   const [parseMsg, setParseMsg] = useState('')
+  const [duplicateMatch, setDuplicateMatch] = useState<{
+    name: string; slug: string; city: string; state: string; status: string
+  } | null>(null)
 
   useEffect(() => {
     fetch('/api/categories/list')
@@ -36,8 +39,19 @@ export default function SuggestRestaurantPage() {
   }, [])
 
   function update(field: string) {
-    return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setForm(prev => ({ ...prev, [field]: e.target.value }))
+      if (field === 'name' || field === 'city') setDuplicateMatch(null)
+    }
+  }
+
+  async function checkRestaurantDuplicate(name: string, city: string) {
+    if (!name.trim() || !city.trim()) { setDuplicateMatch(null); return }
+    try {
+      const res = await fetch(`/api/restaurants/check-duplicate?name=${encodeURIComponent(name.trim())}&city=${encodeURIComponent(city.trim())}`)
+      const data = await res.json()
+      setDuplicateMatch(data.match)
+    } catch { /* ignore */ }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -80,6 +94,8 @@ export default function SuggestRestaurantPage() {
       if (!res.ok) {
         setParseMsg(data.error ?? 'Could not parse URL')
       } else {
+        const newName = data.name || form.name
+        const newCity = data.city || form.city
         setForm(prev => ({
           ...prev,
           name:    data.name    || prev.name,
@@ -89,6 +105,7 @@ export default function SuggestRestaurantPage() {
           zip:     data.zip     || prev.zip,
         }))
         setParseMsg('Fields auto-filled — please verify and correct if needed.')
+        checkRestaurantDuplicate(newName, newCity)
       }
     } catch {
       setParseMsg('Could not parse URL')
@@ -195,12 +212,39 @@ export default function SuggestRestaurantPage() {
                 type={type}
                 value={form[field as keyof typeof form]}
                 onChange={update(field)}
+                onBlur={(field === 'name' || field === 'city') ? () => checkRestaurantDuplicate(form.name, form.city) : undefined}
                 required={required}
                 placeholder={placeholder}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
           ))}
+
+          {/* Duplicate warning */}
+          {duplicateMatch && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 space-y-2">
+              <p className="text-sm text-amber-800">
+                <strong>{duplicateMatch.name}</strong> in {duplicateMatch.city}, {duplicateMatch.state} already exists.
+              </p>
+              <div className="flex gap-3">
+                <a
+                  href={`/restaurants/${duplicateMatch.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-amber-700 hover:text-amber-900 underline"
+                >
+                  View restaurant →
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setDuplicateMatch(null)}
+                  className="text-xs font-medium text-gray-500 hover:text-gray-700"
+                >
+                  Submit anyway
+                </button>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
