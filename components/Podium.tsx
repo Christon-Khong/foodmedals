@@ -17,8 +17,8 @@ const MEDAL_CONFIG = {
     shadowColor: '#8B6508',
     shineColor:  'rgba(255,255,255,0.55)',
     textColor:   '#78530A',
-    badgeBg:     'bg-yellow-400',
-    ringColor:   'ring-yellow-500',
+    auraGlow:    '0 0 18px 6px rgba(234,179,8,0.45), 0 0 36px 12px rgba(245,158,11,0.2)',
+    auraGlowDim: '0 0 10px 4px rgba(234,179,8,0.2), 0 0 22px 8px rgba(245,158,11,0.08)',
   },
   2: {
     src:         '/medals/silver.png',
@@ -28,8 +28,8 @@ const MEDAL_CONFIG = {
     shadowColor: '#606060',
     shineColor:  'rgba(255,255,255,0.5)',
     textColor:   '#505050',
-    badgeBg:     'bg-gray-300',
-    ringColor:   'ring-gray-400',
+    auraGlow:    '0 0 14px 5px rgba(148,163,184,0.35), 0 0 28px 10px rgba(100,116,139,0.15)',
+    auraGlowDim: '0 0 8px 3px rgba(148,163,184,0.15), 0 0 18px 6px rgba(100,116,139,0.06)',
   },
   3: {
     src:         '/medals/bronze.png',
@@ -39,8 +39,8 @@ const MEDAL_CONFIG = {
     shadowColor: '#5C2E08',
     shineColor:  'rgba(255,255,255,0.3)',
     textColor:   '#5C2E08',
-    badgeBg:     'bg-amber-600',
-    ringColor:   'ring-amber-700',
+    auraGlow:    '0 0 12px 4px rgba(205,127,50,0.35), 0 0 24px 8px rgba(180,100,20,0.15)',
+    auraGlowDim: '0 0 7px 3px rgba(205,127,50,0.15), 0 0 16px 5px rgba(180,100,20,0.06)',
   },
 } as const
 
@@ -87,19 +87,26 @@ function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: delay + 0.35, duration: 0.5, ease: 'easeOut' }}
-        className="text-center mb-3 px-1 w-24 sm:w-32"
+        className="text-center mb-3 px-1 w-28 sm:w-36"
       >
-        {/* medal image */}
+        {/* medal image with aura glow */}
+        <style>{`
+          @keyframes podium-aura-${place} {
+            0%, 100% { box-shadow: ${cfg.auraGlow}; }
+            50% { box-shadow: ${cfg.auraGlowDim}; }
+          }
+        `}</style>
         <div
-          className={`mx-auto w-10 h-10 sm:w-12 sm:h-12 rounded-full ${cfg.badgeBg} ring-2 ${cfg.ringColor} flex items-center justify-center shadow-md mb-2`}
+          className="mx-auto w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center mb-2"
+          style={{ animation: `podium-aura-${place} 3s ease-in-out infinite` }}
         >
-          <Image src={cfg.src} alt={cfg.label} width={28} height={28} />
+          <Image src={cfg.src} alt={cfg.label} width={place === 1 ? 40 : 32} height={place === 1 ? 40 : 32} className="drop-shadow-md" />
         </div>
 
         {/* restaurant name */}
         <Link
           href={`/restaurants/${row.restaurantSlug}`}
-          className="block text-[11px] sm:text-xs font-bold text-gray-800 hover:text-yellow-700 leading-tight line-clamp-2 transition-colors"
+          className="block text-xs sm:text-sm font-extrabold text-gray-900 hover:text-yellow-700 leading-tight line-clamp-2 transition-colors font-[family-name:var(--font-lora)]"
         >
           {row.restaurantName}
         </Link>
@@ -186,8 +193,8 @@ function EmptySlot({ place }: { place: 1 | 2 | 3 }) {
   return (
     <div className="flex flex-col items-center opacity-30">
       <div className="w-24 sm:w-32 text-center mb-3">
-        <div className={`mx-auto w-10 h-10 rounded-full ${cfg.badgeBg} ring-2 ${cfg.ringColor} flex items-center justify-center shadow-md mb-2`}>
-          <Image src={cfg.src} alt={cfg.label} width={24} height={24} />
+        <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-2">
+          <Image src={cfg.src} alt={cfg.label} width={28} height={28} />
         </div>
         <p className="text-xs text-gray-400">—</p>
       </div>

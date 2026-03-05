@@ -544,7 +544,9 @@ export function TrophyCaseGrid({ byCategory, year, isOwner, isAdmin, totalCatego
 
       {/* Owner engagement features */}
       {isOwner && totalCategories != null && rankedCount != null && (
-        <CategoryProgressBar rankedCount={rankedCount} totalCategories={totalCategories} />
+        <div className="mt-6">
+          <CategoryProgressBar rankedCount={rankedCount} totalCategories={totalCategories} />
+        </div>
       )}
 
       {isOwner && unrankedCategories && unrankedCategories.length > 0 && (
