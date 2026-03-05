@@ -8,5 +8,7 @@ export async function GET() {
     orderBy: { sortOrder: 'asc' },
   })
 
-  return NextResponse.json(categories)
+  return NextResponse.json(categories, {
+    headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
+  })
 }

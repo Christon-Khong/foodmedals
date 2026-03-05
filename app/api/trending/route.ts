@@ -17,6 +17,6 @@ export async function GET(req: NextRequest) {
 
   const categories = await getTopRestaurantsPerCategoryNearMe(year, lat, lng, radius)
   return NextResponse.json(categories, {
-    headers: { 'Cache-Control': 'no-store' },
+    headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' },
   })
 }

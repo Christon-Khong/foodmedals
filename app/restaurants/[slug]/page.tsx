@@ -71,7 +71,7 @@ export default async function RestaurantPage({
   let hasReportedAddress = false
   let userUpvotedCommentIds: string[] = []
   if (session?.user?.id) {
-    const highlightIds = highlights.map(h => h.id)
+    const highlightIds = highlights.highlights.map(h => h.id)
     const [votes, existingReport, upvotes] = await Promise.all([
       prisma.categorySuggestionVote.findMany({
         where: { restaurantId: restaurant.id, userId: session.user.id },
@@ -215,12 +215,14 @@ export default async function RestaurantPage({
         )}
 
         {/* ── Highlights ────────────────────────────────────────────── */}
-        {highlights.length > 0 && (
+        {highlights.total > 0 && (
           <RestaurantHighlights
-            highlights={highlights.map(h => ({
+            highlights={highlights.highlights.map(h => ({
               ...h,
               createdAt: h.createdAt.toISOString(),
             }))}
+            totalCount={highlights.total}
+            restaurantId={restaurant.id}
             isLoggedIn={isLoggedIn}
             userUpvotedIds={userUpvotedCommentIds}
           />

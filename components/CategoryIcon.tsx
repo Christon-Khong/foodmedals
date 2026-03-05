@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import Image from 'next/image'
 
 const CUSTOM_ICONS: Record<string, string> = {
@@ -24,7 +25,7 @@ type CategoryIconProps = {
   size?: number
 }
 
-export function CategoryIcon({ slug, iconEmoji, iconUrl, size }: CategoryIconProps) {
+export const CategoryIcon = memo(function CategoryIcon({ slug, iconEmoji, iconUrl, size }: CategoryIconProps) {
   const src = iconUrl || CUSTOM_ICONS[slug]
   if (src) {
     if (size) {
@@ -49,4 +50,4 @@ export function CategoryIcon({ slug, iconEmoji, iconUrl, size }: CategoryIconPro
     )
   }
   return <>{iconEmoji}</>
-}
+})

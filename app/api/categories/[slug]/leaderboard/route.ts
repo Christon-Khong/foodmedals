@@ -33,7 +33,7 @@ export async function GET(
     const rows = await getLeaderboardNearMe(category.id, year, lat, lng, radius)
     return NextResponse.json(
       { category, year, rows, nearMe: true, radius },
-      { headers: { 'Cache-Control': 'no-store' } },
+      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' } },
     )
   }
 
@@ -49,5 +49,8 @@ export async function GET(
   }
 
   const rows = await getLeaderboard(category.id, year, city, state)
-  return NextResponse.json({ category, year, rows })
+  return NextResponse.json(
+    { category, year, rows },
+    { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' } },
+  )
 }

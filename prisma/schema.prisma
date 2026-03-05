@@ -85,6 +85,7 @@ model Restaurant {
   addressReports     AddressReport[]
   goldMedalComments  GoldMedalComment[]
 
+  @@index([status, city, state])
   @@map("restaurants")
 }
 
@@ -122,6 +123,7 @@ model RestaurantCategory {
   submitter    User?        @relation("SubmittedLinks", fields: [submittedBy], references: [id])
 
   @@unique([restaurantId, foodCategoryId])
+  @@index([foodCategoryId, verified])
   @@map("restaurant_categories")
 }
 
@@ -143,6 +145,7 @@ model Medal {
   @@unique([userId, foodCategoryId, medalType, year])
   @@index([foodCategoryId, year])
   @@index([restaurantId, year])
+  @@index([userId, year])
   @@map("medals")
 }
 

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CategoryIcon } from '@/components/CategoryIcon'
-import { ThumbsUp, Sparkles } from 'lucide-react'
+import { ThumbsUp, Sparkles, Loader2 } from 'lucide-react'
 
 type Highlight = {
   id:           string
@@ -23,6 +23,8 @@ type Highlight = {
 
 type Props = {
   highlights: Highlight[]
+  totalCount: number
+  restaurantId: string
   isLoggedIn: boolean
   userUpvotedIds: string[]
 }
@@ -164,20 +166,72 @@ function HighlightCard({
   )
 }
 
-export function RestaurantHighlights({ highlights, isLoggedIn, userUpvotedIds }: Props) {
+export function RestaurantHighlights({ highlights: initialHighlights, totalCount, restaurantId, isLoggedIn, userUpvotedIds }: Props) {
   const [sort, setSort] = useState<SortMode>('popular')
+  const [allHighlights, setAllHighlights] = useState<Highlight[]>(initialHighlights)
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(initialHighlights.length < totalCount)
 
-  const sorted = useMemo(() => {
-    if (sort === 'newest') {
-      return [...highlights].sort(
+  // When sort changes, reset to initial data and refetch with new sort
+  const [currentSort, setCurrentSort] = useState<SortMode>('popular')
+
+  const handleSortChange = useCallback(async (newSort: SortMode) => {
+    if (newSort === currentSort) return
+    setSort(newSort)
+    setCurrentSort(newSort)
+    setLoading(true)
+
+    try {
+      const res = await fetch(
+        `/api/restaurants/${restaurantId}/highlights?limit=10&offset=0&sort=${newSort}`
+      )
+      if (res.ok) {
+        const data = await res.json()
+        setAllHighlights(data.highlights)
+        setHasMore(data.hasMore)
+      }
+    } catch {
+      // Keep current data on error
+    } finally {
+      setLoading(false)
+    }
+  }, [currentSort, restaurantId])
+
+  const handleLoadMore = useCallback(async () => {
+    if (loading) return
+    setLoading(true)
+
+    try {
+      const res = await fetch(
+        `/api/restaurants/${restaurantId}/highlights?limit=10&offset=${allHighlights.length}&sort=${currentSort}`
+      )
+      if (res.ok) {
+        const data = await res.json()
+        setAllHighlights(prev => [...prev, ...data.highlights])
+        setHasMore(data.hasMore)
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setLoading(false)
+    }
+  }, [loading, allHighlights.length, restaurantId, currentSort])
+
+  // For the initial "popular" sort, data is already sorted from server.
+  // Client-side sorting is only needed if we want to re-sort loaded data.
+  const displayed = useMemo(() => {
+    if (sort === 'newest' && currentSort === 'popular') {
+      // If we haven't fetched newest from server yet, do client sort of current data
+      return [...allHighlights].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
     }
-    // popular (default) — already sorted by upvote count from server
-    return highlights
-  }, [highlights, sort])
+    return allHighlights
+  }, [allHighlights, sort, currentSort])
 
-  if (highlights.length === 0) return null
+  if (totalCount === 0) return null
+
+  const remaining = totalCount - allHighlights.length
 
   return (
     <section>
@@ -185,12 +239,15 @@ export function RestaurantHighlights({ highlights, isLoggedIn, userUpvotedIds }:
         <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-yellow-500" />
           Highlights
+          {totalCount > 1 && (
+            <span className="text-sm font-normal text-gray-400">({totalCount})</span>
+          )}
         </h2>
 
-        {highlights.length > 1 && (
+        {totalCount > 1 && (
           <div className="flex bg-white rounded-full border border-gray-200 p-0.5">
             <button
-              onClick={() => setSort('popular')}
+              onClick={() => handleSortChange('popular')}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
                 sort === 'popular' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'
               }`}
@@ -198,7 +255,7 @@ export function RestaurantHighlights({ highlights, isLoggedIn, userUpvotedIds }:
               Popular
             </button>
             <button
-              onClick={() => setSort('newest')}
+              onClick={() => handleSortChange('newest')}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
                 sort === 'newest' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'
               }`}
@@ -210,7 +267,7 @@ export function RestaurantHighlights({ highlights, isLoggedIn, userUpvotedIds }:
       </div>
 
       <div className="space-y-3">
-        {sorted.map(h => (
+        {displayed.map(h => (
           <HighlightCard
             key={h.id}
             highlight={h}
@@ -219,6 +276,26 @@ export function RestaurantHighlights({ highlights, isLoggedIn, userUpvotedIds }:
           />
         ))}
       </div>
+
+      {/* Load More */}
+      {hasMore && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={handleLoadMore}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-yellow-700 bg-white border border-yellow-300 rounded-full hover:bg-yellow-50 hover:border-yellow-400 transition-colors disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              `Show more highlights (${remaining} remaining)`
+            )}
+          </button>
+        </div>
+      )}
     </section>
   )
 }

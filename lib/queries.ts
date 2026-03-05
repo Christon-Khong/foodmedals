@@ -1,13 +1,15 @@
+import { cache } from 'react'
 import { prisma } from './prisma'
 import { Prisma } from '@/app/generated/prisma/client'
 
 // ─── Categories ───────────────────────────────────────────────────────────────
 
-export async function getCategoryBySlug(slug: string) {
+// React cache deduplicates within a single request (metadata + page component)
+export const getCategoryBySlug = cache(async (slug: string) => {
   return prisma.foodCategory.findUnique({
     where: { slug, status: 'active' },
   })
-}
+})
 
 export async function getAllActiveCategories() {
   return prisma.foodCategory.findMany({
@@ -195,7 +197,7 @@ export async function getLeaderboardNearMe(
 
 // ─── Restaurants ─────────────────────────────────────────────────────────────
 
-export async function getRestaurantBySlug(slug: string) {
+export const getRestaurantBySlug = cache(async (slug: string) => {
   return prisma.restaurant.findUnique({
     where: { slug, status: 'active' },
     include: {
@@ -206,7 +208,7 @@ export async function getRestaurantBySlug(slug: string) {
       },
     },
   })
-}
+})
 
 export async function getRestaurantsForCategory(
   foodCategoryId: string,
@@ -830,7 +832,7 @@ export async function generateUserSlug(displayName: string): Promise<string> {
   return slug
 }
 
-export async function getUserProfile(slug: string) {
+export const getUserProfile = cache(async (slug: string) => {
   const user = await prisma.user.findUnique({
     where: { slug },
     select: {
@@ -868,7 +870,7 @@ export async function getUserProfile(slug: string) {
   })
 
   return { user, medals, year }
-}
+})
 
 // ─── Restaurant Highlights (Gold Medal Comments) ────────────────────────────
 
@@ -887,61 +889,87 @@ export type HighlightRow = {
   upvoteCount:  number
 }
 
-export async function getRestaurantHighlights(restaurantId: string): Promise<HighlightRow[]> {
-  const rows = await prisma.$queryRaw<
-    Array<{
-      id:            string
-      comment:       string
-      created_at:    Date
-      year:          number
-      category_name: string
-      category_slug: string
-      icon_emoji:    string
-      icon_url:      string | null
-      display_name:  string
-      user_slug:     string | null
-      avatar_url:    string | null
-      upvote_count:  bigint
-    }>
-  >`
-    SELECT
-      gmc.id,
-      gmc.comment,
-      gmc.created_at,
-      m.year,
-      fc.name  AS category_name,
-      fc.slug  AS category_slug,
-      fc.icon_emoji,
-      fc.icon_url,
-      u.display_name,
-      u.slug   AS user_slug,
-      u.avatar_url,
-      COUNT(cu.id) AS upvote_count
-    FROM gold_medal_comments gmc
-    JOIN medals m            ON m.id  = gmc.medal_id
-    JOIN users u             ON u.id  = gmc.user_id
-    JOIN food_categories fc  ON fc.id = m.food_category_id
-    LEFT JOIN comment_upvotes cu ON cu.comment_id = gmc.id
-    WHERE gmc.restaurant_id = ${restaurantId}
-      AND gmc.active = true
-    GROUP BY gmc.id, gmc.comment, gmc.created_at, m.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url
-    ORDER BY upvote_count DESC, gmc.created_at DESC
-  `
+export async function getRestaurantHighlights(
+  restaurantId: string,
+  options?: { limit?: number; offset?: number; sort?: 'popular' | 'newest' },
+): Promise<{ highlights: HighlightRow[]; total: number }> {
+  const limit  = options?.limit  ?? 10
+  const offset = options?.offset ?? 0
+  const sort   = options?.sort   ?? 'popular'
 
-  return rows.map(r => ({
-    id:           r.id,
-    comment:      r.comment,
-    createdAt:    r.created_at,
-    year:         r.year,
-    categoryName: r.category_name,
-    categorySlug: r.category_slug,
-    iconEmoji:    r.icon_emoji,
-    iconUrl:      r.icon_url,
-    userName:     r.display_name,
-    userSlug:     r.user_slug,
-    userAvatar:   r.avatar_url,
-    upvoteCount:  Number(r.upvote_count),
-  }))
+  const orderClause = sort === 'newest'
+    ? Prisma.sql`gmc.created_at DESC`
+    : Prisma.sql`upvote_count DESC, gmc.created_at DESC`
+
+  const [rows, countResult] = await Promise.all([
+    prisma.$queryRaw<
+      Array<{
+        id:            string
+        comment:       string
+        created_at:    Date
+        year:          number
+        category_name: string
+        category_slug: string
+        icon_emoji:    string
+        icon_url:      string | null
+        display_name:  string
+        user_slug:     string | null
+        avatar_url:    string | null
+        upvote_count:  bigint
+      }>
+    >`
+      SELECT
+        gmc.id,
+        gmc.comment,
+        gmc.created_at,
+        m.year,
+        fc.name  AS category_name,
+        fc.slug  AS category_slug,
+        fc.icon_emoji,
+        fc.icon_url,
+        u.display_name,
+        u.slug   AS user_slug,
+        u.avatar_url,
+        COUNT(cu.id) AS upvote_count
+      FROM gold_medal_comments gmc
+      JOIN medals m            ON m.id  = gmc.medal_id
+      JOIN users u             ON u.id  = gmc.user_id
+      JOIN food_categories fc  ON fc.id = m.food_category_id
+      LEFT JOIN comment_upvotes cu ON cu.comment_id = gmc.id
+      WHERE gmc.restaurant_id = ${restaurantId}
+        AND gmc.active = true
+      GROUP BY gmc.id, gmc.comment, gmc.created_at, m.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url
+      ORDER BY ${orderClause}
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `,
+    prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(*) as count
+      FROM gold_medal_comments
+      WHERE restaurant_id = ${restaurantId}
+        AND active = true
+    `,
+  ])
+
+  const total = Number(countResult[0].count)
+
+  return {
+    total,
+    highlights: rows.map(r => ({
+      id:           r.id,
+      comment:      r.comment,
+      createdAt:    r.created_at,
+      year:         r.year,
+      categoryName: r.category_name,
+      categorySlug: r.category_slug,
+      iconEmoji:    r.icon_emoji,
+      iconUrl:      r.icon_url,
+      userName:     r.display_name,
+      userSlug:     r.user_slug,
+      userAvatar:   r.avatar_url,
+      upvoteCount:  Number(r.upvote_count),
+    })),
+  }
 }
 
 // ─── Restaurant Category Rankings ────────────────────────────────────────────
