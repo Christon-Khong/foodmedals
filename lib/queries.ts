@@ -857,3 +857,104 @@ export async function getUserProfile(slug: string) {
 
   return { user, medals, year }
 }
+
+// ─── Restaurant Category Rankings ────────────────────────────────────────────
+
+export type CategoryRankingRow = {
+  categoryId:   string
+  categoryName: string
+  categorySlug: string
+  iconEmoji:    string
+  iconUrl:      string | null
+  cityRank:     number
+  stateRank:    number
+  city:         string
+  state:        string
+  totalScore:   number
+}
+
+export async function getRestaurantCategoryRankings(
+  restaurantId: string,
+  year: number,
+): Promise<CategoryRankingRow[]> {
+  const rows = await prisma.$queryRaw<
+    Array<{
+      food_category_id: string
+      category_name:    string
+      category_slug:    string
+      icon_emoji:       string
+      icon_url:         string | null
+      city_rank:        bigint
+      state_rank:       bigint
+      city:             string
+      state:            string
+      total_score:      bigint
+    }>
+  >`
+    WITH scored AS (
+      SELECT
+        m.restaurant_id,
+        m.food_category_id,
+        r.city,
+        r.state,
+        (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
+         COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
+         COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
+         COUNT(*) FILTER (WHERE m.id = u.crown_jewel_medal_id)) AS total_score
+      FROM medals m
+      JOIN restaurants r ON r.id = m.restaurant_id AND r.status = 'active'
+      LEFT JOIN users u ON u.id = m.user_id
+      WHERE m.year = ${year}
+      GROUP BY m.restaurant_id, m.food_category_id, r.city, r.state
+      HAVING (COUNT(*) FILTER (WHERE m.medal_type IS NOT NULL)) > 0
+    ),
+    city_ranked AS (
+      SELECT *,
+        RANK() OVER (
+          PARTITION BY food_category_id, city, state
+          ORDER BY total_score DESC
+        ) AS city_rank
+      FROM scored
+    ),
+    state_ranked AS (
+      SELECT restaurant_id, food_category_id,
+        RANK() OVER (
+          PARTITION BY food_category_id, state
+          ORDER BY total_score DESC
+        ) AS state_rank
+      FROM scored
+    )
+    SELECT
+      c.food_category_id,
+      fc.name  AS category_name,
+      fc.slug  AS category_slug,
+      fc.icon_emoji,
+      fc.icon_url,
+      c.city_rank,
+      s.state_rank,
+      c.city,
+      c.state,
+      c.total_score
+    FROM city_ranked c
+    JOIN state_ranked s
+      ON  s.restaurant_id    = c.restaurant_id
+      AND s.food_category_id = c.food_category_id
+    JOIN food_categories fc ON fc.id = c.food_category_id
+    WHERE c.restaurant_id = ${restaurantId}
+      AND (c.city_rank <= 3 OR s.state_rank <= 3)
+    ORDER BY c.city_rank ASC, s.state_rank ASC
+  `
+
+  return rows.map(r => ({
+    categoryId:   r.food_category_id,
+    categoryName: r.category_name,
+    categorySlug: r.category_slug,
+    iconEmoji:    r.icon_emoji,
+    iconUrl:      r.icon_url,
+    cityRank:     Number(r.city_rank),
+    stateRank:    Number(r.state_rank),
+    city:         r.city,
+    state:        r.state,
+    totalScore:   Number(r.total_score),
+  }))
+}

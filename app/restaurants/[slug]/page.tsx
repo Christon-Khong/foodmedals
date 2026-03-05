@@ -4,11 +4,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getRestaurantBySlug, getRestaurantTrophies, getCategorySuggestions } from '@/lib/queries'
+import { getRestaurantBySlug, getRestaurantTrophies, getCategorySuggestions, getRestaurantCategoryRankings } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { CategorySuggest } from '@/components/CategorySuggest'
+import { CategoryRankingBadges } from '@/components/CategoryRankingBadges'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -45,7 +46,9 @@ export default async function RestaurantPage({
   const session = await getServerSession(authOptions)
   const isLoggedIn = !!session?.user
 
-  const [trophies, categorySuggestions, allCategories] = await Promise.all([
+  const year = new Date().getFullYear()
+
+  const [trophies, categorySuggestions, allCategories, rankings] = await Promise.all([
     getRestaurantTrophies(restaurant.id),
     getCategorySuggestions(restaurant.id),
     prisma.foodCategory.findMany({
@@ -53,9 +56,8 @@ export default async function RestaurantPage({
       select: { id: true, name: true, slug: true, iconEmoji: true, iconUrl: true },
       orderBy: { sortOrder: 'asc' },
     }),
+    getRestaurantCategoryRankings(restaurant.id, year),
   ])
-
-  const year = new Date().getFullYear()
 
   const thisYearTrophies = trophies.filter(t => t.year === year)
   const pastTrophies     = trophies.filter(t => t.year < year)
@@ -180,6 +182,11 @@ export default async function RestaurantPage({
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
+        {/* ── Top Rankings ──────────────────────────────────────────── */}
+        {rankings.length > 0 && (
+          <CategoryRankingBadges rankings={rankings} year={year} />
+        )}
+
         {/* ── Trophy Case ─────────────────────────────────────────────── */}
         <section>
           <h2 className="text-xl font-extrabold text-gray-900 mb-4 flex items-center gap-2">
