@@ -302,7 +302,10 @@ export function BulkImportForm({ categories }: Props) {
                 }`}
               >
                 <CategoryIcon slug={cat.slug} iconEmoji={cat.iconEmoji} iconUrl={cat.iconUrl} />
-                <span className="truncate">{cat.name}</span>
+                <span className="min-w-0">
+                  <span className="block truncate">{cat.name}</span>
+                  <span className={`block truncate text-[10px] ${selected ? 'text-yellow-500/60' : 'text-gray-600'}`}>{cat.slug}</span>
+                </span>
               </button>
             )
           })}
