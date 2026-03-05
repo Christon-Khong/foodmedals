@@ -22,19 +22,20 @@ export async function getAllActiveCategories() {
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
 
 export type LeaderboardRow = {
-  restaurantId:   string
-  restaurantName: string
-  restaurantSlug: string
-  goldCount:      number
-  silverCount:    number
-  bronzeCount:    number
-  totalScore:     number
-  distanceMiles?: number
-  lat?:           number | null
-  lng?:           number | null
-  address?:       string | null
-  city?:          string | null
-  state?:         string | null
+  restaurantId:     string
+  restaurantName:   string
+  restaurantSlug:   string
+  goldCount:        number
+  silverCount:      number
+  bronzeCount:      number
+  commentCount:     number
+  totalScore:       number
+  distanceMiles?:   number
+  lat?:             number | null
+  lng?:             number | null
+  address?:         string | null
+  city?:            string | null
+  state?:           string | null
 }
 
 export async function getLeaderboard(
@@ -54,15 +55,16 @@ export async function getLeaderboard(
       restaurant_id:   string
       restaurant_name: string
       restaurant_slug: string
-      gold_count:   bigint
-      silver_count: bigint
-      bronze_count: bigint
-      total_score:  bigint
-      lat:          number | null
-      lng:          number | null
-      address:      string | null
-      city:         string | null
-      state:        string | null
+      gold_count:    bigint
+      silver_count:  bigint
+      bronze_count:  bigint
+      comment_count: bigint
+      total_score:   bigint
+      lat:           number | null
+      lng:           number | null
+      address:       string | null
+      city:          string | null
+      state:         string | null
     }>
   >`
     SELECT
@@ -77,6 +79,7 @@ export async function getLeaderboard(
       COUNT(*) FILTER (WHERE m.medal_type = 'gold')   AS gold_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'silver') AS silver_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'bronze') AS bronze_count,
+      COUNT(DISTINCT gmc.id)                           AS comment_count,
       (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
        COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
        COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
@@ -104,6 +107,7 @@ export async function getLeaderboard(
     goldCount:      Number(row.gold_count),
     silverCount:    Number(row.silver_count),
     bronzeCount:    Number(row.bronze_count),
+    commentCount:   Number(row.comment_count),
     totalScore:     Number(row.total_score),
     lat:            row.lat,
     lng:            row.lng,
@@ -128,6 +132,7 @@ export async function getLeaderboardNearMe(
       gold_count:      bigint
       silver_count:    bigint
       bronze_count:    bigint
+      comment_count:   bigint
       total_score:     bigint
       distance_miles:  number
       lat:             number | null
@@ -165,6 +170,7 @@ export async function getLeaderboardNearMe(
       COUNT(*) FILTER (WHERE m.medal_type = 'gold')                     AS gold_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'silver')                   AS silver_count,
       COUNT(*) FILTER (WHERE m.medal_type = 'bronze')                   AS bronze_count,
+      COUNT(DISTINCT gmc.id)                                            AS comment_count,
       (COUNT(*) FILTER (WHERE m.medal_type = 'gold')   * 3 +
        COUNT(*) FILTER (WHERE m.medal_type = 'silver') * 2 +
        COUNT(*) FILTER (WHERE m.medal_type = 'bronze') * 1 +
@@ -189,6 +195,7 @@ export async function getLeaderboardNearMe(
     goldCount:      Number(row.gold_count),
     silverCount:    Number(row.silver_count),
     bronzeCount:    Number(row.bronze_count),
+    commentCount:   Number(row.comment_count),
     totalScore:     Number(row.total_score),
     distanceMiles:  Number(row.distance_miles),
     lat:            row.lat,

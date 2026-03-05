@@ -200,6 +200,9 @@ export function LeaderboardResults({
                   <th className="text-center px-2 py-3 text-gray-500 font-semibold">
                     <Image src="/medals/bronze.png" alt="Bronze" width={16} height={16} className="mx-auto" />
                   </th>
+                  <th className="text-center px-2 py-3 text-gray-500 font-semibold" title="Gold medal comments">
+                    <MessageSquare className="w-4 h-4 mx-auto text-gray-400" />
+                  </th>
                   <th className="text-right px-4 py-3 text-gray-500 font-semibold whitespace-nowrap">Community Score</th>
                   <th className="px-2 py-3 text-gray-500 font-semibold text-center whitespace-nowrap text-xs">Your Picks</th>
                 </tr>
@@ -280,6 +283,18 @@ export function LeaderboardResults({
                       <td className="px-2 py-3 text-center text-gray-600">{row.goldCount   || '—'}</td>
                       <td className="px-2 py-3 text-center text-gray-600">{row.silverCount || '—'}</td>
                       <td className="px-2 py-3 text-center text-gray-600">{row.bronzeCount || '—'}</td>
+                      <td className="px-2 py-3 text-center text-gray-600">
+                        {row.commentCount ? (
+                          <Link
+                            href={`/restaurants/${row.restaurantSlug}#highlights`}
+                            className="inline-flex items-center gap-0.5 text-yellow-700 hover:text-yellow-900 transition-colors font-semibold"
+                            title={`${row.commentCount} comment${row.commentCount !== 1 ? 's' : ''} — view highlights`}
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                            {row.commentCount}
+                          </Link>
+                        ) : '—'}
+                      </td>
                       <td className="px-4 py-3 text-right font-bold text-gray-800">{row.totalScore}</td>
                       <td className="px-2 py-3 text-center">
                         <MedalButtons
