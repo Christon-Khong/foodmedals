@@ -3,7 +3,8 @@ import Image from 'next/image'
 import { Trophy } from 'lucide-react'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { StateRankBadge } from '@/components/StateRankBadge'
-import { CommunityScore, getTierCardAura } from '@/components/CommunityScore'
+import { CommunityScore } from '@/components/CommunityScore'
+import { getTierCardAura } from '@/lib/tiers'
 import type { CategoryRankingRow } from '@/lib/queries'
 
 const RANK_LABELS: Record<number, string> = { 1: '1st', 2: '2nd', 3: '3rd' }

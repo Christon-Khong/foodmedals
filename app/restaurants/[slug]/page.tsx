@@ -12,7 +12,8 @@ import { CategorySuggest } from '@/components/CategorySuggest'
 import { CategoryRankingBadges } from '@/components/CategoryRankingBadges'
 import { ReportAddressButton } from '@/components/ReportAddressButton'
 import { RestaurantHighlights } from '@/components/RestaurantHighlights'
-import { CommunityScore, getTierCardAura } from '@/components/CommunityScore'
+import { CommunityScore } from '@/components/CommunityScore'
+import { getTierCardAura } from '@/lib/tiers'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
