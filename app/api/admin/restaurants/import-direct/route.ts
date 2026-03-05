@@ -114,14 +114,17 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      // Geocode to get lat/lng
-      let lat: number | null = null
-      let lng: number | null = null
+      // Geocode to validate address and get lat/lng
       const geo = await geocode(address, city, state, zip)
-      if (geo) {
-        lat = geo.lat
-        lng = geo.lng
+      if (!geo) {
+        results[index] = {
+          name,
+          status: 'error',
+          error: `Address could not be verified: ${address}, ${city}, ${state} ${zip}`,
+        }
+        continue
       }
+      const { lat, lng } = geo
 
       // Generate slug with collision handling
       let slug = toSlug(name, city)

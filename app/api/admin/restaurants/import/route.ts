@@ -118,6 +118,17 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Reject if address could not be verified (no coordinates from either source)
+      if (lat == null || lng == null) {
+        results[resultIndex] = {
+          url: entry.url,
+          status: 'error',
+          name: parsed.name,
+          error: `Address could not be verified: ${parsed.address}, ${parsed.city}, ${parsed.state} ${parsed.zip}`,
+        }
+        continue
+      }
+
       // Check for duplicates (name + city, case-insensitive)
       const duplicate = await prisma.restaurant.findFirst({
         where: {
