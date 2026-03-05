@@ -209,7 +209,9 @@ export function LeaderboardWithLocation({
         const row = updated.find(r => r.restaurantId === restaurantId)
         if (row) {
           row[COUNT_KEY[medalType]] = Math.max(0, row[COUNT_KEY[medalType]] - 1)
-          row.totalScore = Math.max(0, row.totalScore - WEIGHT[medalType])
+          // If removing a gold medal that had a comment, also subtract the comment bonus point
+          const commentBonus = medalType === 'gold' && goldHasComment ? 1 : 0
+          row.totalScore = Math.max(0, row.totalScore - WEIGHT[medalType] - commentBonus)
         }
       } else {
         // If another restaurant had this medal type, decrement it
@@ -217,7 +219,9 @@ export function LeaderboardWithLocation({
           const oldRow = updated.find(r => r.restaurantId === prevHolderOfMedalType)
           if (oldRow) {
             oldRow[COUNT_KEY[medalType]] = Math.max(0, oldRow[COUNT_KEY[medalType]] - 1)
-            oldRow.totalScore = Math.max(0, oldRow.totalScore - WEIGHT[medalType])
+            // If reassigning gold and old restaurant had a comment, also subtract the comment bonus point
+            const commentBonus = medalType === 'gold' && goldHasComment ? 1 : 0
+            oldRow.totalScore = Math.max(0, oldRow.totalScore - WEIGHT[medalType] - commentBonus)
           }
         }
         // If this restaurant had a different medal from user, decrement that
@@ -290,7 +294,7 @@ export function LeaderboardWithLocation({
       setUserMedals(prevMedals)
       setRows(prevRows)
     }
-  }, [userMedals, rows, isLoggedIn, categoryId, year])
+  }, [userMedals, rows, isLoggedIn, categoryId, year, goldHasComment])
 
   const handleLocationChange = useCallback((lat: number, lng: number, radius: number) => {
     setMode('nearme')
@@ -426,9 +430,23 @@ export function LeaderboardWithLocation({
           initialComment={commentPrompt.initialComment}
           onClose={() => setCommentPrompt(null)}
           onSaved={(commentText) => {
+            const isNewComment = !commentPrompt.initialComment
             setCommentPrompt(null)
             setGoldHasComment(true)
             setGoldCommentText(commentText)
+
+            // Optimistic +1 bonus point for new comments
+            if (isNewComment && userMedals.gold) {
+              setRows(current => {
+                const updated = current.map(r => ({ ...r }))
+                const row = updated.find(r => r.restaurantId === userMedals.gold)
+                if (row) {
+                  row.totalScore += 1
+                }
+                updated.sort((a, b) => b.totalScore - a.totalScore || b.goldCount - a.goldCount)
+                return updated
+              })
+            }
           }}
         />
       )}

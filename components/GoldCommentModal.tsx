@@ -65,10 +65,19 @@ export function GoldCommentModal({ medalId, restaurantName, categoryName, initia
           </button>
         </div>
 
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-600 mb-2">
           Why is <span className="font-semibold text-gray-800">{restaurantName}</span> your #1 pick?
           Share a menu item you recommend or what makes this place special.
         </p>
+
+        {!initialComment && (
+          <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-xl px-3 py-2 mb-4">
+            <span className="text-base">+1</span>
+            <p className="text-xs text-yellow-800">
+              Sharing a comment adds <span className="font-bold">+1 bonus point</span> to {restaurantName}&apos;s Community Score!
+            </p>
+          </div>
+        )}
 
         {/* Textarea */}
         <div className="relative mb-3">

@@ -109,13 +109,13 @@ function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
           </p>
         )}
 
-        {/* Critic Score */}
+        {/* Community Score */}
         <div className="mt-1">
           <p className="text-[11px] sm:text-xs text-gray-500 font-medium">
             <CountUp target={row.totalScore} delay={delay + 0.6} />
           </p>
           <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-gray-400 mt-0.5">
-            Critic Score
+            Community Score
           </p>
         </div>
 

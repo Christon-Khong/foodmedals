@@ -26,7 +26,7 @@ function getScoreTier(score: number): { color: string; gradient: string; label: 
   return { color: 'text-gray-500', gradient: 'from-gray-300 to-gray-400', label: 'New' }
 }
 
-export function CriticScore({ score, maxScore, size = 'md' }: Props) {
+export function CommunityScore({ score, maxScore, size = 'md' }: Props) {
   const [showTooltip, setShowTooltip] = useState(false)
   const s = SIZES[size]
   const tier = getScoreTier(score)
@@ -68,12 +68,13 @@ export function CriticScore({ score, maxScore, size = 'md' }: Props) {
 
       {/* Tooltip */}
       {showTooltip && (
-        <div className="absolute bottom-full right-0 mb-2 w-52 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-50 leading-relaxed">
-          <p className="font-bold mb-1">Critic Score</p>
+        <div className="absolute bottom-full right-0 mb-2 w-56 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-50 leading-relaxed">
+          <p className="font-bold mb-1">Community Score</p>
           <p className="text-gray-300">
             Earned from community medals.
             Gold = 3 pts, Silver = 2 pts, Bronze = 1 pt.
-            Crown Jewel picks add a bonus point.
+            Sharing a gold medal comment adds +1 bonus point.
+            Crown Jewel picks also add +1.
           </p>
           <div className="absolute bottom-0 right-4 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900" />
         </div>

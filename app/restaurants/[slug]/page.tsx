@@ -12,7 +12,7 @@ import { CategorySuggest } from '@/components/CategorySuggest'
 import { CategoryRankingBadges } from '@/components/CategoryRankingBadges'
 import { ReportAddressButton } from '@/components/ReportAddressButton'
 import { RestaurantHighlights } from '@/components/RestaurantHighlights'
-import { CriticScore } from '@/components/CriticScore'
+import { CommunityScore } from '@/components/CommunityScore'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -311,10 +311,10 @@ export default async function RestaurantPage({
                       </div>
                     </div>
 
-                    {/* Bottom: Critic Score bar */}
+                    {/* Bottom: Community Score bar */}
                     <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-50/50 to-yellow-50/30 border-t border-amber-100/60">
-                      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Critic Score</span>
-                      <CriticScore score={t.totalScore} size="sm" />
+                      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Community Score</span>
+                      <CommunityScore score={t.totalScore} size="sm" />
                     </div>
                   </Link>
                 )
@@ -344,7 +344,7 @@ export default async function RestaurantPage({
                     <th className="text-center px-2 py-3 text-gray-500 font-semibold">
                       <Image src="/medals/bronze.png" alt="Bronze" width={16} height={16} className="mx-auto" />
                     </th>
-                    <th className="text-right px-4 py-3 text-gray-500 font-semibold">Critic Score</th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-semibold">Community Score</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-amber-50">
