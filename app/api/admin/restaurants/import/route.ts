@@ -21,9 +21,17 @@ type ImportResult = {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getAdminSession()
-  if (!session) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // Dual auth: admin session cookie OR ADMIN_API_KEY bearer token
+  const apiKey = process.env.ADMIN_API_KEY
+  const authHeader = req.headers.get('authorization')
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+
+  const isApiKeyAuth = apiKey && bearerToken && bearerToken === apiKey
+  if (!isApiKeyAuth) {
+    const session = await getAdminSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
   }
 
   let body: { urls?: UrlEntry[]; sharedCategoryIds?: string[] }
