@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Confetti } from './Confetti'
+import { GoldCommentModal } from './GoldCommentModal'
+import { MessageSquare, Pencil } from 'lucide-react'
 
 type MedalType = 'gold' | 'silver' | 'bronze'
 
@@ -15,8 +17,10 @@ type Restaurant = {
 }
 
 type InitialMedal = {
+  id:           string
   medalType:    MedalType
   restaurantId: string
+  hasComment:   boolean
 }
 
 type AwardFormProps = {
@@ -41,9 +45,29 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
     bronze: initialMedals.find(m => m.medalType === 'bronze')?.restaurantId ?? null,
   }))
 
+  // Track medal IDs (needed for comment API)
+  const [medalIds, setMedalIds] = useState<Record<MedalType, string | null>>(() => ({
+    gold:   initialMedals.find(m => m.medalType === 'gold')?.id   ?? null,
+    silver: initialMedals.find(m => m.medalType === 'silver')?.id ?? null,
+    bronze: initialMedals.find(m => m.medalType === 'bronze')?.id ?? null,
+  }))
+
+  // Track whether gold medal already has a comment
+  const [goldHasComment, setGoldHasComment] = useState(
+    () => initialMedals.find(m => m.medalType === 'gold')?.hasComment ?? false
+  )
+
   const [saving, setSaving]         = useState<string | null>(null) // `${restaurantId}-${medalType}`
   const [goldConfetti, setConfetti] = useState(false)
   const [error, setError]           = useState<string | null>(null)
+  const [commentPrompt, setCommentPrompt] = useState<{
+    medalId: string
+    restaurantName: string
+  } | null>(null)
+
+  // Use a ref to always have the latest medals for revert, avoiding stale closure
+  const medalsRef = useRef(medals)
+  medalsRef.current = medals
 
   const handleAward = useCallback(async (restaurantId: string, medalType: MedalType) => {
     // No-op if already assigned
@@ -52,6 +76,9 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
     const key = `${restaurantId}-${medalType}`
     setSaving(key)
     setError(null)
+
+    // Snapshot current state for revert
+    const prevMedals = { ...medals }
 
     // Optimistic update: clear this restaurant from any other medal slot,
     // then assign the new medal
@@ -76,16 +103,46 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
         body:    JSON.stringify({ foodCategoryId: category.id, restaurantId, medalType, year }),
       })
       if (!res.ok) {
-        setMedals(medals) // revert
+        setMedals(prevMedals) // revert using snapshot
         setError('Failed to save. Please try again.')
+        return
+      }
+
+      // Parse response to get the medal ID
+      const data = await res.json()
+
+      // Update medal ID tracking
+      if (data.id) {
+        setMedalIds(prev => ({ ...prev, [medalType]: data.id }))
+      }
+
+      // For gold medals, prompt user to add a comment
+      if (medalType === 'gold' && data.id) {
+        setGoldHasComment(false)
+        const restaurant = restaurants.find(r => r.id === restaurantId)
+        if (restaurant) {
+          setCommentPrompt({ medalId: data.id, restaurantName: restaurant.name })
+        }
       }
     } catch {
-      setMedals(medals)
+      setMedals(prevMedals) // revert using snapshot
       setError('Network error. Please try again.')
     } finally {
       setSaving(null)
     }
-  }, [medals, category.id, year])
+  }, [medals, category.id, year, restaurants])
+
+  // Open comment modal for existing gold medal
+  const handleOpenCommentForGold = useCallback(() => {
+    const goldMedalId = medalIds.gold
+    const goldRestaurantId = medals.gold
+    if (!goldMedalId || !goldRestaurantId) return
+
+    const restaurant = restaurants.find(r => r.id === goldRestaurantId)
+    if (restaurant) {
+      setCommentPrompt({ medalId: goldMedalId, restaurantName: restaurant.name })
+    }
+  }, [medalIds.gold, medals.gold, restaurants])
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -109,6 +166,25 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
                 </p>
               ) : (
                 <p className="text-xs text-gray-400 italic">Not yet picked</p>
+              )}
+              {/* Add/edit comment button for gold */}
+              {mt === 'gold' && restaurant && medalIds.gold && (
+                <button
+                  onClick={handleOpenCommentForGold}
+                  className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-yellow-700 hover:text-yellow-900 transition-colors"
+                >
+                  {goldHasComment ? (
+                    <>
+                      <Pencil className="w-2.5 h-2.5" />
+                      Edit comment
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare className="w-2.5 h-2.5" />
+                      Share your pick
+                    </>
+                  )}
+                </button>
               )}
             </div>
           )
@@ -190,6 +266,20 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
           </Link>
         </div>
       ) : null}
+
+      {/* ── Gold medal comment prompt ── */}
+      {commentPrompt && (
+        <GoldCommentModal
+          medalId={commentPrompt.medalId}
+          restaurantName={commentPrompt.restaurantName}
+          categoryName={category.name}
+          onClose={() => setCommentPrompt(null)}
+          onSaved={() => {
+            setCommentPrompt(null)
+            setGoldHasComment(true)
+          }}
+        />
+      )}
     </div>
   )
 }

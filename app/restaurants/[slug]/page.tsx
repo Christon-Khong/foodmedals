@@ -4,13 +4,14 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getRestaurantBySlug, getRestaurantTrophies, getCategorySuggestions, getRestaurantCategoryRankings } from '@/lib/queries'
+import { getRestaurantBySlug, getRestaurantTrophies, getCategorySuggestions, getRestaurantCategoryRankings, getRestaurantHighlights } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { CategorySuggest } from '@/components/CategorySuggest'
 import { CategoryRankingBadges } from '@/components/CategoryRankingBadges'
 import { ReportAddressButton } from '@/components/ReportAddressButton'
+import { RestaurantHighlights } from '@/components/RestaurantHighlights'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -49,7 +50,7 @@ export default async function RestaurantPage({
 
   const year = new Date().getFullYear()
 
-  const [trophies, categorySuggestions, allCategories, rankings] = await Promise.all([
+  const [trophies, categorySuggestions, allCategories, rankings, highlights] = await Promise.all([
     getRestaurantTrophies(restaurant.id),
     getCategorySuggestions(restaurant.id),
     prisma.foodCategory.findMany({
@@ -58,6 +59,7 @@ export default async function RestaurantPage({
       orderBy: { sortOrder: 'asc' },
     }),
     getRestaurantCategoryRankings(restaurant.id, year),
+    getRestaurantHighlights(restaurant.id),
   ])
 
   const thisYearTrophies = trophies.filter(t => t.year === year)
@@ -67,8 +69,10 @@ export default async function RestaurantPage({
   const verifiedCategoryIds = restaurant.categories.map(rc => rc.foodCategory.id)
   let userVotedCategoryIds: string[] = []
   let hasReportedAddress = false
+  let userUpvotedCommentIds: string[] = []
   if (session?.user?.id) {
-    const [votes, existingReport] = await Promise.all([
+    const highlightIds = highlights.map(h => h.id)
+    const [votes, existingReport, upvotes] = await Promise.all([
       prisma.categorySuggestionVote.findMany({
         where: { restaurantId: restaurant.id, userId: session.user.id },
         select: { foodCategoryId: true },
@@ -77,9 +81,16 @@ export default async function RestaurantPage({
         where: { restaurantId_userId: { restaurantId: restaurant.id, userId: session.user.id } },
         select: { id: true },
       }),
+      highlightIds.length > 0
+        ? prisma.commentUpvote.findMany({
+            where: { userId: session.user.id, commentId: { in: highlightIds } },
+            select: { commentId: true },
+          })
+        : Promise.resolve([]),
     ])
     userVotedCategoryIds = votes.map(v => v.foodCategoryId)
     hasReportedAddress = !!existingReport
+    userUpvotedCommentIds = upvotes.map(u => u.commentId)
   }
 
   const suggestionsWithVoted = categorySuggestions.map(s => ({
@@ -201,6 +212,18 @@ export default async function RestaurantPage({
         {/* ── Top Rankings ──────────────────────────────────────────── */}
         {rankings.length > 0 && (
           <CategoryRankingBadges rankings={rankings} year={year} />
+        )}
+
+        {/* ── Highlights ────────────────────────────────────────────── */}
+        {highlights.length > 0 && (
+          <RestaurantHighlights
+            highlights={highlights.map(h => ({
+              ...h,
+              createdAt: h.createdAt.toISOString(),
+            }))}
+            isLoggedIn={isLoggedIn}
+            userUpvotedIds={userUpvotedCommentIds}
+          />
         )}
 
         {/* ── Trophy Case ─────────────────────────────────────────────── */}

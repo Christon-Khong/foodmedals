@@ -355,7 +355,13 @@ export async function getUserMedalsForCategory(
 ) {
   return prisma.medal.findMany({
     where:   { userId, foodCategoryId, year },
-    include: { restaurant: true },
+    include: {
+      restaurant: true,
+      goldMedalComment: {
+        where: { active: true },
+        select: { id: true, comment: true },
+      },
+    },
   })
 }
 
@@ -849,11 +855,93 @@ export async function getUserProfile(slug: string) {
       restaurant: {
         select: { name: true, slug: true, city: true, state: true, address: true, lat: true, lng: true },
       },
+      goldMedalComment: {
+        where: { active: true },
+        select: {
+          id: true,
+          comment: true,
+          _count: { select: { upvotes: true } },
+        },
+      },
     },
     orderBy: [{ foodCategory: { sortOrder: 'asc' } }, { medalType: 'asc' }],
   })
 
   return { user, medals, year }
+}
+
+// ─── Restaurant Highlights (Gold Medal Comments) ────────────────────────────
+
+export type HighlightRow = {
+  id:           string
+  comment:      string
+  createdAt:    Date
+  year:         number
+  categoryName: string
+  categorySlug: string
+  iconEmoji:    string
+  iconUrl:      string | null
+  userName:     string
+  userSlug:     string | null
+  userAvatar:   string | null
+  upvoteCount:  number
+}
+
+export async function getRestaurantHighlights(restaurantId: string): Promise<HighlightRow[]> {
+  const rows = await prisma.$queryRaw<
+    Array<{
+      id:            string
+      comment:       string
+      created_at:    Date
+      year:          number
+      category_name: string
+      category_slug: string
+      icon_emoji:    string
+      icon_url:      string | null
+      display_name:  string
+      user_slug:     string | null
+      avatar_url:    string | null
+      upvote_count:  bigint
+    }>
+  >`
+    SELECT
+      gmc.id,
+      gmc.comment,
+      gmc.created_at,
+      m.year,
+      fc.name  AS category_name,
+      fc.slug  AS category_slug,
+      fc.icon_emoji,
+      fc.icon_url,
+      u.display_name,
+      u.slug   AS user_slug,
+      u.avatar_url,
+      COUNT(cu.id) AS upvote_count
+    FROM gold_medal_comments gmc
+    JOIN medals m            ON m.id  = gmc.medal_id
+    JOIN users u             ON u.id  = gmc.user_id
+    JOIN food_categories fc  ON fc.id = m.food_category_id
+    LEFT JOIN comment_upvotes cu ON cu.comment_id = gmc.id
+    WHERE gmc.restaurant_id = ${restaurantId}
+      AND gmc.active = true
+    GROUP BY gmc.id, gmc.comment, gmc.created_at, m.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url
+    ORDER BY upvote_count DESC, gmc.created_at DESC
+  `
+
+  return rows.map(r => ({
+    id:           r.id,
+    comment:      r.comment,
+    createdAt:    r.created_at,
+    year:         r.year,
+    categoryName: r.category_name,
+    categorySlug: r.category_slug,
+    iconEmoji:    r.icon_emoji,
+    iconUrl:      r.icon_url,
+    userName:     r.display_name,
+    userSlug:     r.user_slug,
+    userAvatar:   r.avatar_url,
+    upvoteCount:  Number(r.upvote_count),
+  }))
 }
 
 // ─── Restaurant Category Rankings ────────────────────────────────────────────

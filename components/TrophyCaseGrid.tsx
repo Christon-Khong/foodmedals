@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { CategoryIcon } from '@/components/CategoryIcon'
-import { LayoutGrid, Map, Lock, Search, X, Plus, Lightbulb, TrendingUp } from 'lucide-react'
+import { LayoutGrid, Map, Lock, Search, X, Plus, Lightbulb, TrendingUp, Quote, ThumbsUp } from 'lucide-react'
 
 const ProfileMapInner = dynamic(() => import('./ProfileMapInner'), {
   ssr: false,
@@ -39,6 +39,11 @@ type Medal = {
     iconUrl: string | null
     sortOrder: number
   }
+  goldMedalComment?: {
+    id: string
+    comment: string
+    _count: { upvotes: number }
+  } | null
 }
 
 type UnrankedCategory = {
@@ -161,6 +166,22 @@ function CategoryCard({ catMedals, isOwner }: { catMedals: Medal[]; isOwner: boo
           </Link>
         ) : (
           <EmptyMedalSlot type="gold" awardHref={isOwner ? `/categories/${cat.slug}/award` : undefined} />
+        )}
+
+        {/* Gold medal comment — subtle quote */}
+        {gold?.goldMedalComment && (
+          <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50/50">
+            <Quote className="w-3 h-3 text-yellow-500 flex-shrink-0 mt-0.5 rotate-180" />
+            <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 flex-1 italic">
+              {gold.goldMedalComment.comment}
+            </p>
+            {gold.goldMedalComment._count.upvotes > 0 && (
+              <span className="flex items-center gap-0.5 text-[10px] text-gray-400 flex-shrink-0">
+                <ThumbsUp className="w-2.5 h-2.5" />
+                {gold.goldMedalComment._count.upvotes}
+              </span>
+            )}
+          </div>
         )}
 
         {/* Silver & Bronze — compact rows */}

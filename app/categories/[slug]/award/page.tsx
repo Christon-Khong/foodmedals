@@ -53,8 +53,10 @@ export default async function AwardPage({
   ])
 
   const initialMedals = userMedals.map(m => ({
+    id:           m.id,
     medalType:    m.medalType as 'gold' | 'silver' | 'bronze',
     restaurantId: m.restaurantId,
+    hasComment:   !!(m.goldMedalComment),
   }))
 
   const backHref = `/categories/${slug}?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`

@@ -26,6 +26,29 @@ export async function PUT(req: NextRequest) {
 
   const userId = session.user.id
 
+  // If reassigning a gold medal, deactivate any existing comment on the old gold medal
+  if (medalType === 'gold') {
+    const existingGold = await prisma.medal.findUnique({
+      where: {
+        userId_foodCategoryId_medalType_year: {
+          userId,
+          foodCategoryId,
+          medalType: 'gold',
+          year,
+        },
+      },
+      select: { id: true, restaurantId: true },
+    })
+
+    if (existingGold && existingGold.restaurantId !== restaurantId) {
+      // Gold is being moved to a different restaurant — deactivate old comment
+      await prisma.goldMedalComment.updateMany({
+        where: { medalId: existingGold.id },
+        data: { active: false },
+      })
+    }
+  }
+
   // Business rule: user cannot give two different medals to the same restaurant
   // in the same category+year. If they already have a different medal for this
   // restaurant, remove it first.
@@ -76,6 +99,28 @@ export async function DELETE(req: NextRequest) {
   const currentYear = new Date().getFullYear()
   if (typeof year !== 'number' || year < 2020 || year > currentYear + 1) {
     return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
+  }
+
+  // If deleting a gold medal, deactivate its comment first
+  if (medalType === 'gold') {
+    const existingGold = await prisma.medal.findUnique({
+      where: {
+        userId_foodCategoryId_medalType_year: {
+          userId: session.user.id,
+          foodCategoryId,
+          medalType: 'gold',
+          year,
+        },
+      },
+      select: { id: true },
+    })
+
+    if (existingGold) {
+      await prisma.goldMedalComment.updateMany({
+        where: { medalId: existingGold.id },
+        data: { active: false },
+      })
+    }
   }
 
   await prisma.medal.deleteMany({

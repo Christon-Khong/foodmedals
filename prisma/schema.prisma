@@ -33,6 +33,8 @@ model User {
   newCategorySuggestions     NewCategorySuggestion[]      @relation("NewCategorySuggestions")
   newCategorySuggestionVotes NewCategorySuggestionVote[]
   addressReports             AddressReport[]
+  goldMedalComments          GoldMedalComment[]
+  commentUpvotes             CommentUpvote[]
 
   @@map("users")
 }
@@ -81,6 +83,7 @@ model Restaurant {
   suggestionVotes    SuggestionVote[]
   categorySuggVotes  CategorySuggestionVote[]
   addressReports     AddressReport[]
+  goldMedalComments  GoldMedalComment[]
 
   @@map("restaurants")
 }
@@ -132,9 +135,10 @@ model Medal {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  user         User         @relation(fields: [userId], references: [id])
-  foodCategory FoodCategory @relation(fields: [foodCategoryId], references: [id])
-  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id])
+  user              User              @relation(fields: [userId], references: [id])
+  foodCategory      FoodCategory      @relation(fields: [foodCategoryId], references: [id])
+  restaurant        Restaurant        @relation(fields: [restaurantId], references: [id])
+  goldMedalComment  GoldMedalComment?
 
   @@unique([userId, foodCategoryId, medalType, year])
   @@index([foodCategoryId, year])
@@ -212,4 +216,37 @@ model AddressReport {
 
   @@unique([restaurantId, userId])
   @@map("address_reports")
+}
+
+model GoldMedalComment {
+  id           String   @id @default(cuid())
+  medalId      String   @unique @map("medal_id")
+  userId       String   @map("user_id")
+  restaurantId String   @map("restaurant_id")
+  comment      String   @db.Text
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  medal      Medal      @relation(fields: [medalId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  upvotes    CommentUpvote[]
+
+  @@index([restaurantId, active])
+  @@index([userId])
+  @@map("gold_medal_comments")
+}
+
+model CommentUpvote {
+  id        String   @id @default(cuid())
+  commentId String   @map("comment_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comment GoldMedalComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("comment_upvotes")
 }

@@ -9,6 +9,7 @@ import { Navbar } from '@/components/Navbar'
 import { ShareProfileButton } from '@/components/ShareProfileButton'
 import { CrownJewelCard } from '@/components/CrownJewelCard'
 import { TrophyCaseGrid } from '@/components/TrophyCaseGrid'
+import { ProfileAvatarUpload } from '@/components/ProfileAvatarUpload'
 import { Trophy, LayoutGrid, Calendar, Award } from 'lucide-react'
 
 type Props = { params: Promise<{ slug: string }> }
@@ -159,7 +160,12 @@ export default async function CriticProfilePage({ params }: Props) {
               className={`flex-shrink-0 rounded-full ${achievementTier?.animated ? 'aura-animated' : ''}`}
               style={achievementTier?.glow && !achievementTier.animated ? { boxShadow: achievementTier.glow } : undefined}
             >
-              {user.avatarUrl ? (
+              {isOwner ? (
+                <ProfileAvatarUpload
+                  currentAvatarUrl={user.avatarUrl}
+                  displayName={user.displayName}
+                />
+              ) : user.avatarUrl ? (
                 <Image
                   src={user.avatarUrl}
                   alt={user.displayName}
