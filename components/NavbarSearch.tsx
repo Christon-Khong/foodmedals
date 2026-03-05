@@ -151,7 +151,7 @@ export function NavbarSearch() {
             onChange={e => handleChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search..."
-            className="w-44 focus:w-60 transition-all pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:border-amber-300 focus:outline-none focus:ring-1 focus:ring-amber-200 bg-gray-50 focus:bg-white placeholder:text-gray-400"
+            className="w-44 focus:w-60 transition-all pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:border-amber-300 focus:outline-none focus:ring-1 focus:ring-amber-200 bg-gray-50 focus:bg-white text-gray-900 placeholder:text-gray-400"
           />
           {query && (
             <button onClick={close} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -183,7 +183,7 @@ export function NavbarSearch() {
                 onChange={e => handleChange(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Search restaurants, categories, cities..."
-                className="flex-1 text-sm py-2 outline-none bg-transparent placeholder:text-gray-400"
+                className="flex-1 text-sm py-2 outline-none bg-transparent text-gray-900 placeholder:text-gray-400"
                 autoFocus
               />
               <button onClick={close} className="p-1.5 text-gray-500 hover:text-gray-700">
