@@ -8,6 +8,7 @@ import { Navbar } from '@/components/Navbar'
 import { TrendingCarousel } from '@/components/TrendingCarousel'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { HeroSearch } from '@/components/HeroSearch'
+import { HeroVideo } from '@/components/HeroVideo'
 import { Footer } from '@/components/Footer'
 
 export const metadata: Metadata = {
@@ -47,19 +48,10 @@ export default async function HomePage() {
       />
       <Navbar />
 
-      {/* ── Hero with background image ────────────────────────────────────── */}
+      {/* ── Hero with background video ────────────────────────────────────── */}
       <section className="relative border-b border-amber-100 z-10">
-        {/* Background image + overlay (clipped to section bounds) */}
-        <div className="absolute inset-0 overflow-hidden">
-          <Image
-            src="/images/hero.png"
-            alt="A spread of delicious food dishes"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/50" />
-        </div>
+        {/* Poster image + lazy-loaded video + dark overlay */}
+        <HeroVideo />
 
         <div className="relative max-w-4xl mx-auto px-4 py-20 sm:py-28 text-center">
           <div className="flex justify-center gap-3 mb-6">
