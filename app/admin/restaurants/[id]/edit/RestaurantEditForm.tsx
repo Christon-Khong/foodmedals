@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { MapPin, Loader2 } from 'lucide-react'
 import { CategoryIcon } from '@/components/CategoryIcon'
 
 type Category = { id: string; name: string; iconEmoji: string; iconUrl: string | null; slug: string }
@@ -49,6 +50,49 @@ export function RestaurantEditForm({ restaurant, allCategories, currentCategoryI
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [mapsUrl, setMapsUrl] = useState('')
+  const [parsingMaps, setParsingMaps] = useState(false)
+  const [mapsError, setMapsError] = useState('')
+  const [mapsSuccess, setMapsSuccess] = useState('')
+
+  async function handleParseMapsUrl() {
+    const url = mapsUrl.trim()
+    if (!url) return
+    setParsingMaps(true)
+    setMapsError('')
+    setMapsSuccess('')
+
+    try {
+      const res = await fetch('/api/restaurants/parse-maps-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setMapsError(data.error ?? 'Failed to parse URL')
+        return
+      }
+
+      // Fill in fields from parsed data (only overwrite non-empty values)
+      setForm(prev => ({
+        ...prev,
+        ...(data.name ? { name: data.name } : {}),
+        ...(data.address ? { address: data.address } : {}),
+        ...(data.city ? { city: data.city } : {}),
+        ...(data.state ? { state: data.state } : {}),
+        ...(data.zip ? { zip: data.zip } : {}),
+      }))
+      setMapsSuccess('Address fields updated from Google Maps!')
+      setMapsUrl('')
+      setTimeout(() => setMapsSuccess(''), 3000)
+    } catch {
+      setMapsError('Network error. Please try again.')
+    } finally {
+      setParsingMaps(false)
+    }
+  }
 
   function update(field: string) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -137,6 +181,35 @@ export function RestaurantEditForm({ restaurant, allCategories, currentCategoryI
       </div>
 
       <form onSubmit={handleSave} className="space-y-5">
+        {/* Google Maps import */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-blue-400" />
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Import from Google Maps</h2>
+          </div>
+          <p className="text-xs text-gray-500">Paste a Google Maps link to auto-fill name, address, city, state, and ZIP.</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={mapsUrl}
+              onChange={(e) => setMapsUrl(e.target.value)}
+              placeholder="https://maps.google.com/... or https://maps.app.goo.gl/..."
+              className={`${inputClass} flex-1`}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleParseMapsUrl() } }}
+            />
+            <button
+              type="button"
+              onClick={handleParseMapsUrl}
+              disabled={parsingMaps || !mapsUrl.trim()}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+            >
+              {parsingMaps ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Parsing…</> : 'Fill fields'}
+            </button>
+          </div>
+          {mapsError && <p className="text-xs text-red-400">{mapsError}</p>}
+          {mapsSuccess && <p className="text-xs text-green-400">{mapsSuccess}</p>}
+        </div>
+
         {/* Basic info */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Details</h2>
