@@ -17,6 +17,8 @@ type Props = {
     city: string
     state: string
     zip: string
+    lat: number | null
+    lng: number | null
     description: string | null
     websiteUrl: string | null
     status: string
@@ -30,6 +32,7 @@ const STATUSES = [
   { value: 'active', label: 'Active', color: 'bg-green-500/15 text-green-400 border-green-500/30' },
   { value: 'pending_review', label: 'Pending', color: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30' },
   { value: 'inactive', label: 'Inactive', color: 'bg-gray-700/50 text-gray-400 border-gray-600/30' },
+  { value: 'closed', label: 'Closed', color: 'bg-red-500/15 text-red-400 border-red-500/30' },
 ] as const
 
 export function RestaurantEditForm({ restaurant, allCategories, currentCategoryIds, medalCount }: Props) {
@@ -41,6 +44,8 @@ export function RestaurantEditForm({ restaurant, allCategories, currentCategoryI
     city: restaurant.city,
     state: restaurant.state,
     zip: restaurant.zip,
+    lat: restaurant.lat != null ? String(restaurant.lat) : '',
+    lng: restaurant.lng != null ? String(restaurant.lng) : '',
     websiteUrl: restaurant.websiteUrl ?? '',
     description: restaurant.description ?? '',
     status: restaurant.status,
@@ -83,6 +88,8 @@ export function RestaurantEditForm({ restaurant, allCategories, currentCategoryI
         ...(data.city ? { city: data.city } : {}),
         ...(data.state ? { state: data.state } : {}),
         ...(data.zip ? { zip: data.zip } : {}),
+        ...(data.lat != null ? { lat: String(data.lat) } : {}),
+        ...(data.lng != null ? { lng: String(data.lng) } : {}),
       }))
       setMapsSuccess('Address fields updated from Google Maps!')
       setMapsUrl('')
@@ -124,6 +131,8 @@ export function RestaurantEditForm({ restaurant, allCategories, currentCategoryI
         city: form.city.trim(),
         state: form.state.trim(),
         zip: form.zip.trim(),
+        lat: form.lat.trim() ? parseFloat(form.lat) : undefined,
+        lng: form.lng.trim() ? parseFloat(form.lng) : undefined,
         description: form.description.trim() || null,
         websiteUrl: form.websiteUrl.trim() || null,
         status: form.status,
@@ -239,6 +248,32 @@ export function RestaurantEditForm({ restaurant, allCategories, currentCategoryI
               </div>
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Latitude</label>
+              <input
+                type="text"
+                value={form.lat}
+                onChange={update('lat')}
+                placeholder="e.g. 40.7608"
+                className={`${inputClass} font-mono text-xs`}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Longitude</label>
+              <input
+                type="text"
+                value={form.lng}
+                onChange={update('lng')}
+                placeholder="e.g. -111.8910"
+                className={`${inputClass} font-mono text-xs`}
+              />
+            </div>
+          </div>
+          {!form.lat.trim() && !form.lng.trim() && (
+            <p className="text-[10px] text-yellow-400">No coordinates set. Will be auto-geocoded on save if address is provided.</p>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Website</label>

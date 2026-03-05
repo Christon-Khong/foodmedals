@@ -42,6 +42,8 @@ export default async function EditRestaurantPage({
           city: restaurant.city,
           state: restaurant.state,
           zip: restaurant.zip,
+          lat: restaurant.lat,
+          lng: restaurant.lng,
           description: restaurant.description,
           websiteUrl: restaurant.websiteUrl,
           status: restaurant.status,
