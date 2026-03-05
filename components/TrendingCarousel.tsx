@@ -8,6 +8,16 @@ import { CategoryIcon } from '@/components/CategoryIcon'
 import { MapPin } from 'lucide-react'
 
 const MEDAL_IMG = ['/medals/gold.png', '/medals/silver.png', '/medals/bronze.png']
+const MEDAL_ALT = ['1st', '2nd', '3rd']
+
+const ROW_STYLE = [
+  // Gold — larger, warm highlight
+  { bg: 'bg-yellow-50/70', text: 'text-gray-900', size: 'text-sm', weight: 'font-extrabold', medal: 22, pts: 'text-yellow-700 font-bold' },
+  // Silver — normal, subtle gray
+  { bg: 'bg-gray-50/50', text: 'text-gray-700', size: 'text-[13px]', weight: 'font-bold', medal: 18, pts: 'text-gray-400 font-semibold' },
+  // Bronze — normal, subtle amber
+  { bg: 'bg-amber-50/40', text: 'text-gray-700', size: 'text-[13px]', weight: 'font-bold', medal: 18, pts: 'text-gray-400 font-semibold' },
+]
 
 type Props = { categories: TrendingCategory[]; year: number }
 
@@ -15,6 +25,9 @@ function CategoryCard({ cat, nearMe }: { cat: TrendingCategory; nearMe: boolean 
   const href = nearMe
     ? `/categories/${cat.categorySlug}?nearme=1`
     : `/categories/${cat.categorySlug}`
+
+  // Pad to 3 slots so we can show placeholders
+  const slots = [0, 1, 2]
 
   return (
     <Link
@@ -31,36 +44,48 @@ function CategoryCard({ cat, nearMe }: { cat: TrendingCategory; nearMe: boolean 
           <h3 className="font-bold text-gray-900 text-sm leading-tight truncate">
             {cat.categoryName}
           </h3>
-          <span className="text-[11px] text-gray-400 uppercase tracking-wide font-semibold">
-            Top {cat.topRestaurants.length}
-          </span>
         </div>
       </div>
 
-      {/* Top restaurants */}
-      <div className="space-y-2.5 flex-1">
-        {cat.topRestaurants.map((r, i) => (
-          <div key={r.restaurantSlug} className="flex items-center gap-2.5">
-            <Image
-              src={MEDAL_IMG[i]}
-              alt={['1st', '2nd', '3rd'][i]}
-              width={20}
-              height={20}
-              className="flex-shrink-0"
-            />
-            <span className="text-sm text-gray-800 font-bold truncate flex-1">
-              {r.restaurantName}
-              {r.city && (
-                <span className="text-xs text-gray-400 font-normal ml-1">
-                  {r.city}{r.state ? `, ${r.state}` : ''}
-                </span>
-              )}
-            </span>
-            <span className="text-xs text-gray-400 font-semibold tabular-nums flex-shrink-0">
-              {r.totalScore} pts
-            </span>
-          </div>
-        ))}
+      {/* Top restaurants with medal hierarchy */}
+      <div className="space-y-1.5 flex-1">
+        {slots.map(i => {
+          const r = cat.topRestaurants[i]
+          const style = ROW_STYLE[i]
+
+          if (!r) {
+            // Empty placeholder slot
+            return (
+              <div
+                key={`empty-${i}`}
+                className="flex items-center gap-2.5 rounded-lg border border-dashed border-gray-200 px-2 py-1.5"
+              >
+                <Image src={MEDAL_IMG[i]} alt={MEDAL_ALT[i]} width={style.medal} height={style.medal} className="flex-shrink-0 opacity-30" />
+                <span className="text-xs text-gray-300 italic">+ Add your medals</span>
+              </div>
+            )
+          }
+
+          return (
+            <div
+              key={r.restaurantSlug}
+              className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 ${style.bg}`}
+            >
+              <Image src={MEDAL_IMG[i]} alt={MEDAL_ALT[i]} width={style.medal} height={style.medal} className="flex-shrink-0" />
+              <span className={`${style.size} ${style.text} ${style.weight} truncate flex-1`}>
+                {r.restaurantName}
+                {r.city && (
+                  <span className="text-[11px] text-gray-400 font-normal ml-1">
+                    {r.city}{r.state ? `, ${r.state}` : ''}
+                  </span>
+                )}
+              </span>
+              <span className={`text-xs ${style.pts} tabular-nums flex-shrink-0`}>
+                {r.totalScore}
+              </span>
+            </div>
+          )
+        })}
       </div>
 
       {/* Footer */}
@@ -274,6 +299,13 @@ export function TrendingCarousel({ categories, year }: Props) {
         {items.map((cat, i) => (
           <CategoryCard key={`${cat.categoryId}-${i}`} cat={cat} nearMe={locationActive} />
         ))}
+      </div>
+
+      {/* Category count indicator */}
+      <div className="text-center pb-5">
+        <span className="text-xs text-gray-400">
+          {count} categories · Scroll to explore
+        </span>
       </div>
     </section>
   )
