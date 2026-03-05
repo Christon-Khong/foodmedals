@@ -79,6 +79,20 @@ export async function PATCH(
     }
   }
 
+  // When approving a restaurant that has no coordinates, geocode it now
+  if (data.status === 'active' && existing.lat == null && existing.lng == null && !data.lat && !data.lng) {
+    const coords = await geocode(
+      existing.address,
+      existing.city,
+      existing.state,
+      existing.zip,
+    )
+    if (coords) {
+      data.lat = coords.lat
+      data.lng = coords.lng
+    }
+  }
+
   // Explicit lat/lng overrides
   if (typeof body.lat === 'number') data.lat = body.lat
   if (typeof body.lng === 'number') data.lng = body.lng

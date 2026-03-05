@@ -419,6 +419,18 @@ export function LeaderboardWithLocation({
         isAdmin={isAdmin}
         isLoggedIn={isLoggedIn}
         categorySlug={categorySlug}
+        onApproved={() => {
+          // Refetch leaderboard so newly approved restaurant appears in standings
+          if (mode === 'nearme' && nearMeCoords) {
+            fetchLeaderboard({ lat: String(nearMeCoords.lat), lng: String(nearMeCoords.lng), radius: '25' })
+          } else if (selectedCity && selectedState) {
+            fetchLeaderboard({ city: selectedCity, state: selectedState })
+          } else if (stateFilter) {
+            fetchLeaderboard({ state: stateFilter })
+          } else {
+            fetchLeaderboard({})
+          }
+        }}
       />
 
       {/* Gold medal comment modal */}

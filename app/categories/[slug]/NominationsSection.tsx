@@ -21,11 +21,13 @@ export function NominationsSection({
   isAdmin,
   isLoggedIn,
   categorySlug,
+  onApproved,
 }: {
   nominations: Nomination[]
   isAdmin: boolean
   isLoggedIn: boolean
   categorySlug: string
+  onApproved?: () => void
 }) {
   const [nominations, setNominations] = useState(initialNominations)
   const [approving, setApproving] = useState<string | null>(null)
@@ -40,6 +42,7 @@ export function NominationsSection({
     })
     if (res.ok) {
       setNominations(prev => prev.filter(n => n.id !== id))
+      onApproved?.()
     }
     setApproving(null)
   }
