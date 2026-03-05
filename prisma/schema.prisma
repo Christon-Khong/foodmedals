@@ -33,6 +33,7 @@ model User {
   newCategorySuggestions     NewCategorySuggestion[]      @relation("NewCategorySuggestions")
   newCategorySuggestionVotes NewCategorySuggestionVote[]
   addressReports             AddressReport[]
+  closureReports             ClosureReport[]
   goldMedalComments          GoldMedalComment[]
   commentUpvotes             CommentUpvote[]
 
@@ -72,7 +73,7 @@ model Restaurant {
   description String?
   websiteUrl  String?  @map("website_url")
   imageUrl    String?  @map("image_url")
-  status      String   @default("active") // active | pending_review | inactive
+  status      String   @default("active") // active | pending_review | inactive | closed
   submittedBy String?  @map("submitted_by")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -83,6 +84,7 @@ model Restaurant {
   suggestionVotes    SuggestionVote[]
   categorySuggVotes  CategorySuggestionVote[]
   addressReports     AddressReport[]
+  closureReports     ClosureReport[]
   goldMedalComments  GoldMedalComment[]
 
   @@index([status, city, state])
@@ -220,6 +222,21 @@ model AddressReport {
 
   @@unique([restaurantId, userId])
   @@map("address_reports")
+}
+
+model ClosureReport {
+  id            String   @id @default(cuid())
+  restaurantId  String   @map("restaurant_id")
+  userId        String   @map("user_id")
+  note          String?
+  status        String   @default("pending") // pending | resolved | dismissed
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, userId])
+  @@map("closure_reports")
 }
 
 model GoldMedalComment {

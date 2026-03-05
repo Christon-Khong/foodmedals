@@ -29,6 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <NavLink href="/admin/restaurants/import">Bulk Import</NavLink>
           <NavLink href="/admin/restaurants/geocode">Missing Geocodes</NavLink>
           <NavLink href="/admin/reports">Address Reports</NavLink>
+          <NavLink href="/admin/closure-reports">Closure Reports</NavLink>
 
           <p className="px-2 text-[10px] uppercase tracking-widest text-gray-600 font-semibold mt-4 mb-2">Data</p>
           <NavLink href="/admin/categories">Categories</NavLink>

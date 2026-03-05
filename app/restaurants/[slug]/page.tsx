@@ -11,6 +11,7 @@ import { CategoryIcon } from '@/components/CategoryIcon'
 import { CategorySuggest } from '@/components/CategorySuggest'
 import { CategoryRankingBadges } from '@/components/CategoryRankingBadges'
 import { ReportAddressButton } from '@/components/ReportAddressButton'
+import { ReportClosedButton } from '@/components/ReportClosedButton'
 import { RestaurantHighlights } from '@/components/RestaurantHighlights'
 import { CommunityScore } from '@/components/CommunityScore'
 import { getTierCardAura } from '@/lib/tiers'
@@ -73,15 +74,20 @@ export default async function RestaurantPage({
   const verifiedCategoryIds = restaurant.categories.map(rc => rc.foodCategory.id)
   let userVotedCategoryIds: string[] = []
   let hasReportedAddress = false
+  let hasReportedClosed = false
   let userUpvotedCommentIds: string[] = []
   if (session?.user?.id) {
     const highlightIds = highlights.highlights.map(h => h.id)
-    const [votes, existingReport, upvotes] = await Promise.all([
+    const [votes, existingReport, existingClosure, upvotes] = await Promise.all([
       prisma.categorySuggestionVote.findMany({
         where: { restaurantId: restaurant.id, userId: session.user.id },
         select: { foodCategoryId: true },
       }),
       prisma.addressReport.findUnique({
+        where: { restaurantId_userId: { restaurantId: restaurant.id, userId: session.user.id } },
+        select: { id: true },
+      }),
+      prisma.closureReport.findUnique({
         where: { restaurantId_userId: { restaurantId: restaurant.id, userId: session.user.id } },
         select: { id: true },
       }),
@@ -94,6 +100,7 @@ export default async function RestaurantPage({
     ])
     userVotedCategoryIds = votes.map(v => v.foodCategoryId)
     hasReportedAddress = !!existingReport
+    hasReportedClosed = !!existingClosure
     userUpvotedCommentIds = upvotes.map(u => u.commentId)
   }
 
@@ -175,11 +182,18 @@ export default async function RestaurantPage({
             )}
           </div>
 
-          <ReportAddressButton
-            restaurantId={restaurant.id}
-            isLoggedIn={isLoggedIn}
-            hasReported={hasReportedAddress}
-          />
+          <div className="flex items-center gap-3 flex-wrap">
+            <ReportAddressButton
+              restaurantId={restaurant.id}
+              isLoggedIn={isLoggedIn}
+              hasReported={hasReportedAddress}
+            />
+            <ReportClosedButton
+              restaurantId={restaurant.id}
+              isLoggedIn={isLoggedIn}
+              hasReported={hasReportedClosed}
+            />
+          </div>
 
           {restaurant.description && (
             <p className="text-sm text-gray-600 mt-3 max-w-xl">{restaurant.description}</p>

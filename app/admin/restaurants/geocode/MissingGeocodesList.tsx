@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { MapPin, RotateCcw, CheckCircle2, XCircle, Loader2, Trash2 } from 'lucide-react'
+import { MapPin, RotateCcw, CheckCircle2, XCircle, Loader2, Trash2, ChevronDown, Save } from 'lucide-react'
 
 type Restaurant = {
   id: string
@@ -19,11 +19,15 @@ type FixResult = { id: string; name: string; status: 'fixed' | 'failed' }
 export function MissingGeocodesList() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [loading, setLoading] = useState(true)
-  const [fixing, setFixing] = useState<string | null>(null) // single ID being fixed
+  const [fixing, setFixing] = useState<string | null>(null)
   const [batchFixing, setBatchFixing] = useState(false)
   const [results, setResults] = useState<Record<string, 'fixed' | 'failed'>>({})
   const [batchSummary, setBatchSummary] = useState<{ fixed: number; failed: number } | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [manualLat, setManualLat] = useState('')
+  const [manualLng, setManualLng] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const fetchMissing = useCallback(async () => {
     setLoading(true)
@@ -53,7 +57,6 @@ export function MissingGeocodesList() {
         if (result) {
           setResults(prev => ({ ...prev, [id]: result.status }))
           if (result.status === 'fixed') {
-            // Remove from list after a brief delay so user sees the success
             setTimeout(() => {
               setRestaurants(prev => prev.filter(r => r.id !== id))
               setResults(prev => { const n = { ...prev }; delete n[id]; return n })
@@ -87,7 +90,6 @@ export function MissingGeocodesList() {
         setResults(newResults)
         setBatchSummary(data.summary)
 
-        // Remove fixed restaurants from list after delay
         const fixedIds = new Set(
           (data.results as FixResult[]).filter(r => r.status === 'fixed').map(r => r.id),
         )
@@ -116,6 +118,40 @@ export function MissingGeocodesList() {
       }
     } catch { /* ignore */ }
     setRemoving(null)
+  }
+
+  function openManualEdit(id: string) {
+    if (editingId === id) {
+      setEditingId(null)
+      return
+    }
+    setEditingId(id)
+    setManualLat('')
+    setManualLng('')
+  }
+
+  async function handleManualSave(id: string) {
+    const lat = parseFloat(manualLat)
+    const lng = parseFloat(manualLng)
+    if (isNaN(lat) || isNaN(lng)) return
+
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/admin/restaurants/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lng }),
+      })
+      if (res.ok) {
+        setResults(prev => ({ ...prev, [id]: 'fixed' }))
+        setEditingId(null)
+        setTimeout(() => {
+          setRestaurants(prev => prev.filter(r => r.id !== id))
+          setResults(prev => { const n = { ...prev }; delete n[id]; return n })
+        }, 1500)
+      }
+    } catch { /* ignore */ }
+    setSaving(false)
   }
 
   if (loading) {
@@ -207,6 +243,7 @@ export function MissingGeocodesList() {
           <tbody className="divide-y divide-gray-800/60">
             {restaurants.map(r => {
               const status = results[r.id]
+              const isEditing = editingId === r.id
               return (
                 <tr
                   key={r.id}
@@ -218,67 +255,138 @@ export function MissingGeocodesList() {
                         : 'hover:bg-gray-800/40'
                   }`}
                 >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/restaurants/${r.slug}`}
-                      target="_blank"
-                      className="font-medium text-white hover:text-yellow-400 transition-colors"
-                    >
-                      {r.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 hidden sm:table-cell text-xs">
-                    {r.address}
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 hidden md:table-cell">
-                    {r.city}, {r.state} {r.zip}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {status === 'fixed' ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-400 font-semibold">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Fixed
-                        </span>
-                      ) : status === 'failed' ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-red-400 font-semibold">
-                          <XCircle className="w-3.5 h-3.5" />
-                          Failed
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleFixOne(r.id)}
-                          disabled={fixing !== null || batchFixing}
-                          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
-                        >
-                          {fixing === r.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <MapPin className="w-3 h-3" />
-                          )}
-                          Fix
-                        </button>
-                      )}
+                  <td className="px-4 py-3" colSpan={isEditing ? 4 : 1}>
+                    <div className="flex items-center gap-2">
                       <Link
-                        href={`/admin/restaurants/${r.id}/edit`}
-                        className="text-xs text-gray-500 hover:text-yellow-400 transition-colors"
+                        href={`/restaurants/${r.slug}`}
+                        target="_blank"
+                        className="font-medium text-white hover:text-yellow-400 transition-colors"
                       >
-                        Edit
+                        {r.name}
                       </Link>
-                      <button
-                        onClick={() => handleRemove(r.id, r.name)}
-                        disabled={removing === r.id || batchFixing}
-                        className="px-2 py-1.5 text-gray-500 hover:text-red-400 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
-                        title="Delete restaurant"
-                      >
-                        {removing === r.id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-3 h-3" />
-                        )}
-                      </button>
                     </div>
+
+                    {isEditing && (
+                      <div className="mt-3 bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+                        <p className="text-xs text-gray-400 mb-2">
+                          {r.address}, {r.city}, {r.state} {r.zip}
+                        </p>
+                        <div className="flex items-end gap-3">
+                          <div>
+                            <label className="block text-[10px] text-gray-400 mb-0.5">Latitude</label>
+                            <input
+                              value={manualLat}
+                              onChange={e => setManualLat(e.target.value)}
+                              placeholder="e.g. 40.7608"
+                              className="w-36 px-3 py-1.5 text-xs bg-gray-900 border border-gray-700 rounded-lg text-white placeholder:text-gray-600 focus:outline-none focus:border-yellow-500 font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-gray-400 mb-0.5">Longitude</label>
+                            <input
+                              value={manualLng}
+                              onChange={e => setManualLng(e.target.value)}
+                              placeholder="e.g. -111.8910"
+                              className="w-36 px-3 py-1.5 text-xs bg-gray-900 border border-gray-700 rounded-lg text-white placeholder:text-gray-600 focus:outline-none focus:border-yellow-500 font-mono"
+                            />
+                          </div>
+                          <button
+                            onClick={() => handleManualSave(r.id)}
+                            disabled={saving || !manualLat.trim() || !manualLng.trim()}
+                            className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                          >
+                            {saving ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Save className="w-3 h-3" />
+                            )}
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </td>
+                  {!isEditing && (
+                    <>
+                      <td className="px-4 py-3 text-gray-400 hidden sm:table-cell text-xs">
+                        {r.address}
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 hidden md:table-cell">
+                        {r.city}, {r.state} {r.zip}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {status === 'fixed' ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-green-400 font-semibold">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Fixed
+                            </span>
+                          ) : status === 'failed' ? (
+                            <>
+                              <span className="inline-flex items-center gap-1 text-xs text-red-400 font-semibold">
+                                <XCircle className="w-3.5 h-3.5" />
+                                Failed
+                              </span>
+                              <button
+                                onClick={() => openManualEdit(r.id)}
+                                className="px-2 py-1.5 text-gray-500 hover:text-yellow-400 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+                                title="Enter coordinates manually"
+                              >
+                                <ChevronDown className="w-3 h-3" />
+                                Manual
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleFixOne(r.id)}
+                                disabled={fixing !== null || batchFixing}
+                                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                              >
+                                {fixing === r.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <MapPin className="w-3 h-3" />
+                                )}
+                                Fix
+                              </button>
+                              <button
+                                onClick={() => openManualEdit(r.id)}
+                                className="px-2 py-1.5 text-gray-500 hover:text-yellow-400 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+                                title="Enter coordinates manually"
+                              >
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                            </>
+                          )}
+                          <Link
+                            href={`/admin/restaurants/${r.id}/edit`}
+                            className="text-xs text-gray-500 hover:text-yellow-400 transition-colors"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            onClick={() => handleRemove(r.id, r.name)}
+                            disabled={removing === r.id || batchFixing}
+                            className="px-2 py-1.5 text-gray-500 hover:text-red-400 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                            title="Delete restaurant"
+                          >
+                            {removing === r.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3 h-3" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </>
+                  )}
                 </tr>
               )
             })}
