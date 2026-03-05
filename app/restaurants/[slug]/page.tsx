@@ -12,7 +12,7 @@ import { CategorySuggest } from '@/components/CategorySuggest'
 import { CategoryRankingBadges } from '@/components/CategoryRankingBadges'
 import { ReportAddressButton } from '@/components/ReportAddressButton'
 import { RestaurantHighlights } from '@/components/RestaurantHighlights'
-import { CommunityScore } from '@/components/CommunityScore'
+import { CommunityScore, getTierCardAura } from '@/components/CommunityScore'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -246,12 +246,13 @@ export default async function RestaurantPage({
                 // Determine the "hero" medal — the highest one earned
                 const heroMedal = t.goldCount > 0 ? 'gold' : t.silverCount > 0 ? 'silver' : 'bronze'
                 const heroSize = heroMedal === 'gold' ? 48 : 36
+                const cardAura = getTierCardAura(t.totalScore)
 
                 return (
                   <Link
                     key={t.categoryId}
                     href={`/categories/${t.categorySlug}`}
-                    className="group bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 overflow-hidden transition-all hover:shadow-md"
+                    className={`group bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 overflow-hidden transition-all hover:shadow-md ${cardAura}`}
                   >
                     {/* Top: Hero medal + category */}
                     <div className="flex items-center gap-4 p-4 pb-3">

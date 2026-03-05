@@ -115,3 +115,77 @@ h1, h2, h3, h4, h5, h6 {
 .medal-hover:hover {
   animation: medal-shine 0.6s ease-in-out, medal-jiggle 0.4s ease-in-out;
 }
+
+/* ── Tier aura pulse animations ──────────────────────────────────────────── */
+@keyframes aura-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes aura-glow {
+  0%, 100% { box-shadow: var(--aura-shadow-min); }
+  50% { box-shadow: var(--aura-shadow-max); }
+}
+
+@keyframes bar-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Tier aura classes — applied to score containers */
+.tier-aura-legendary {
+  --aura-shadow-min: 0 0 8px rgba(234, 179, 8, 0.25), 0 0 20px rgba(234, 179, 8, 0.1);
+  --aura-shadow-max: 0 0 14px rgba(234, 179, 8, 0.5), 0 0 32px rgba(234, 179, 8, 0.2);
+  animation: aura-glow 2.5s ease-in-out infinite;
+}
+
+.tier-aura-outstanding {
+  --aura-shadow-min: 0 0 6px rgba(217, 119, 6, 0.2), 0 0 16px rgba(217, 119, 6, 0.08);
+  --aura-shadow-max: 0 0 12px rgba(217, 119, 6, 0.4), 0 0 28px rgba(217, 119, 6, 0.15);
+  animation: aura-glow 2.8s ease-in-out infinite;
+}
+
+.tier-aura-excellent {
+  --aura-shadow-min: 0 0 5px rgba(234, 88, 12, 0.18), 0 0 14px rgba(234, 88, 12, 0.06);
+  --aura-shadow-max: 0 0 10px rgba(234, 88, 12, 0.35), 0 0 24px rgba(234, 88, 12, 0.12);
+  animation: aura-glow 3s ease-in-out infinite;
+}
+
+.tier-aura-great {
+  --aura-shadow-min: 0 0 4px rgba(225, 29, 72, 0.15), 0 0 12px rgba(225, 29, 72, 0.05);
+  --aura-shadow-max: 0 0 8px rgba(225, 29, 72, 0.3), 0 0 20px rgba(225, 29, 72, 0.1);
+  animation: aura-glow 3.2s ease-in-out infinite;
+}
+
+
+/* Bar shimmer overlay for active tiers */
+.tier-bar-shimmer {
+  background-size: 200% 100%;
+  animation: bar-shimmer 3s ease-in-out infinite;
+}
+
+/* Card-level tier aura — subtle border glow for trophy/ranking cards */
+.tier-card-legendary {
+  --aura-shadow-min: 0 0 6px rgba(234, 179, 8, 0.15), 0 0 16px rgba(234, 179, 8, 0.05);
+  --aura-shadow-max: 0 0 12px rgba(234, 179, 8, 0.35), 0 0 28px rgba(234, 179, 8, 0.12);
+  animation: aura-glow 2.5s ease-in-out infinite;
+}
+
+.tier-card-outstanding {
+  --aura-shadow-min: 0 0 4px rgba(217, 119, 6, 0.12), 0 0 12px rgba(217, 119, 6, 0.04);
+  --aura-shadow-max: 0 0 10px rgba(217, 119, 6, 0.3), 0 0 24px rgba(217, 119, 6, 0.1);
+  animation: aura-glow 2.8s ease-in-out infinite;
+}
+
+.tier-card-excellent {
+  --aura-shadow-min: 0 0 3px rgba(234, 88, 12, 0.1), 0 0 10px rgba(234, 88, 12, 0.03);
+  --aura-shadow-max: 0 0 8px rgba(234, 88, 12, 0.25), 0 0 20px rgba(234, 88, 12, 0.08);
+  animation: aura-glow 3s ease-in-out infinite;
+}
+
+.tier-card-great {
+  --aura-shadow-min: 0 0 2px rgba(225, 29, 72, 0.08), 0 0 8px rgba(225, 29, 72, 0.02);
+  --aura-shadow-max: 0 0 6px rgba(225, 29, 72, 0.2), 0 0 16px rgba(225, 29, 72, 0.06);
+  animation: aura-glow 3.2s ease-in-out infinite;
+}
+
