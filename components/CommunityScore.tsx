@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import { Info } from 'lucide-react'
-import { getScoreTier } from '@/lib/tiers'
+import { getScoreTier, DEFAULT_MAX_COMMUNITY_SCORE } from '@/lib/tiers'
 
 // Re-export for backwards compatibility with client component imports
 export { getTierCardAura } from '@/lib/tiers'
 
 type Props = {
   score: number
-  /** Maximum possible score for the bar fill — defaults to score × 2 for a ~50% fill feel */
+  /** Maximum possible score for the bar fill — defaults to DEFAULT_MAX_COMMUNITY_SCORE */
   maxScore?: number
   size?: 'sm' | 'md' | 'lg'
 }
@@ -25,8 +25,8 @@ export function CommunityScore({ score, maxScore, size = 'md' }: Props) {
   const s = SIZES[size]
   const tier = getScoreTier(score)
 
-  // Fill percentage — cap at 100%
-  const max = maxScore ?? Math.max(score * 2, 10)
+  // Fill percentage — bar fills to 100% at the top tier threshold, capped at 100%
+  const max = maxScore ?? DEFAULT_MAX_COMMUNITY_SCORE
   const pct = Math.min((score / max) * 100, 100)
 
   return (

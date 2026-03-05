@@ -132,29 +132,53 @@ h1, h2, h3, h4, h5, h6 {
   100% { background-position: 200% 0; }
 }
 
-/* Tier aura classes — applied to score containers */
+/* Tier aura classes — applied to score containers (top 8 tiers) */
 .tier-aura-legendary {
   --aura-shadow-min: 0 0 8px rgba(234, 179, 8, 0.25), 0 0 20px rgba(234, 179, 8, 0.1);
   --aura-shadow-max: 0 0 14px rgba(234, 179, 8, 0.5), 0 0 32px rgba(234, 179, 8, 0.2);
   animation: aura-glow 2.5s ease-in-out infinite;
 }
 
+.tier-aura-mythic {
+  --aura-shadow-min: 0 0 7px rgba(245, 158, 11, 0.22), 0 0 18px rgba(245, 158, 11, 0.09);
+  --aura-shadow-max: 0 0 13px rgba(245, 158, 11, 0.45), 0 0 30px rgba(245, 158, 11, 0.18);
+  animation: aura-glow 2.6s ease-in-out infinite;
+}
+
+.tier-aura-iconic {
+  --aura-shadow-min: 0 0 6px rgba(249, 115, 22, 0.2), 0 0 16px rgba(249, 115, 22, 0.08);
+  --aura-shadow-max: 0 0 12px rgba(249, 115, 22, 0.4), 0 0 28px rgba(249, 115, 22, 0.15);
+  animation: aura-glow 2.7s ease-in-out infinite;
+}
+
 .tier-aura-outstanding {
-  --aura-shadow-min: 0 0 6px rgba(217, 119, 6, 0.2), 0 0 16px rgba(217, 119, 6, 0.08);
-  --aura-shadow-max: 0 0 12px rgba(217, 119, 6, 0.4), 0 0 28px rgba(217, 119, 6, 0.15);
+  --aura-shadow-min: 0 0 6px rgba(234, 88, 12, 0.18), 0 0 15px rgba(234, 88, 12, 0.07);
+  --aura-shadow-max: 0 0 11px rgba(234, 88, 12, 0.38), 0 0 26px rgba(234, 88, 12, 0.14);
   animation: aura-glow 2.8s ease-in-out infinite;
 }
 
-.tier-aura-excellent {
-  --aura-shadow-min: 0 0 5px rgba(234, 88, 12, 0.18), 0 0 14px rgba(234, 88, 12, 0.06);
-  --aura-shadow-max: 0 0 10px rgba(234, 88, 12, 0.35), 0 0 24px rgba(234, 88, 12, 0.12);
+.tier-aura-exceptional {
+  --aura-shadow-min: 0 0 5px rgba(239, 68, 68, 0.18), 0 0 14px rgba(239, 68, 68, 0.06);
+  --aura-shadow-max: 0 0 10px rgba(239, 68, 68, 0.35), 0 0 24px rgba(239, 68, 68, 0.12);
+  animation: aura-glow 2.9s ease-in-out infinite;
+}
+
+.tier-aura-superb {
+  --aura-shadow-min: 0 0 4px rgba(244, 63, 94, 0.16), 0 0 12px rgba(244, 63, 94, 0.05);
+  --aura-shadow-max: 0 0 9px rgba(244, 63, 94, 0.32), 0 0 22px rgba(244, 63, 94, 0.11);
   animation: aura-glow 3s ease-in-out infinite;
 }
 
-.tier-aura-great {
-  --aura-shadow-min: 0 0 4px rgba(225, 29, 72, 0.15), 0 0 12px rgba(225, 29, 72, 0.05);
+.tier-aura-excellent {
+  --aura-shadow-min: 0 0 4px rgba(225, 29, 72, 0.15), 0 0 11px rgba(225, 29, 72, 0.05);
   --aura-shadow-max: 0 0 8px rgba(225, 29, 72, 0.3), 0 0 20px rgba(225, 29, 72, 0.1);
-  animation: aura-glow 3.2s ease-in-out infinite;
+  animation: aura-glow 3s ease-in-out infinite;
+}
+
+.tier-aura-impressive {
+  --aura-shadow-min: 0 0 4px rgba(236, 72, 153, 0.14), 0 0 10px rgba(236, 72, 153, 0.04);
+  --aura-shadow-max: 0 0 8px rgba(236, 72, 153, 0.28), 0 0 18px rgba(236, 72, 153, 0.09);
+  animation: aura-glow 3.1s ease-in-out infinite;
 }
 
 
@@ -164,28 +188,52 @@ h1, h2, h3, h4, h5, h6 {
   animation: bar-shimmer 3s ease-in-out infinite;
 }
 
-/* Card-level tier aura — subtle border glow for trophy/ranking cards */
+/* Card-level tier aura — subtle border glow for trophy/ranking cards (top 8 tiers) */
 .tier-card-legendary {
   --aura-shadow-min: 0 0 6px rgba(234, 179, 8, 0.15), 0 0 16px rgba(234, 179, 8, 0.05);
   --aura-shadow-max: 0 0 12px rgba(234, 179, 8, 0.35), 0 0 28px rgba(234, 179, 8, 0.12);
   animation: aura-glow 2.5s ease-in-out infinite;
 }
 
+.tier-card-mythic {
+  --aura-shadow-min: 0 0 5px rgba(245, 158, 11, 0.13), 0 0 14px rgba(245, 158, 11, 0.04);
+  --aura-shadow-max: 0 0 11px rgba(245, 158, 11, 0.32), 0 0 26px rgba(245, 158, 11, 0.11);
+  animation: aura-glow 2.6s ease-in-out infinite;
+}
+
+.tier-card-iconic {
+  --aura-shadow-min: 0 0 4px rgba(249, 115, 22, 0.11), 0 0 12px rgba(249, 115, 22, 0.03);
+  --aura-shadow-max: 0 0 10px rgba(249, 115, 22, 0.28), 0 0 24px rgba(249, 115, 22, 0.09);
+  animation: aura-glow 2.7s ease-in-out infinite;
+}
+
 .tier-card-outstanding {
-  --aura-shadow-min: 0 0 4px rgba(217, 119, 6, 0.12), 0 0 12px rgba(217, 119, 6, 0.04);
-  --aura-shadow-max: 0 0 10px rgba(217, 119, 6, 0.3), 0 0 24px rgba(217, 119, 6, 0.1);
+  --aura-shadow-min: 0 0 4px rgba(234, 88, 12, 0.1), 0 0 11px rgba(234, 88, 12, 0.03);
+  --aura-shadow-max: 0 0 9px rgba(234, 88, 12, 0.27), 0 0 22px rgba(234, 88, 12, 0.09);
   animation: aura-glow 2.8s ease-in-out infinite;
 }
 
-.tier-card-excellent {
-  --aura-shadow-min: 0 0 3px rgba(234, 88, 12, 0.1), 0 0 10px rgba(234, 88, 12, 0.03);
-  --aura-shadow-max: 0 0 8px rgba(234, 88, 12, 0.25), 0 0 20px rgba(234, 88, 12, 0.08);
+.tier-card-exceptional {
+  --aura-shadow-min: 0 0 3px rgba(239, 68, 68, 0.09), 0 0 10px rgba(239, 68, 68, 0.03);
+  --aura-shadow-max: 0 0 8px rgba(239, 68, 68, 0.24), 0 0 20px rgba(239, 68, 68, 0.08);
+  animation: aura-glow 2.9s ease-in-out infinite;
+}
+
+.tier-card-superb {
+  --aura-shadow-min: 0 0 3px rgba(244, 63, 94, 0.08), 0 0 9px rgba(244, 63, 94, 0.02);
+  --aura-shadow-max: 0 0 7px rgba(244, 63, 94, 0.21), 0 0 17px rgba(244, 63, 94, 0.07);
   animation: aura-glow 3s ease-in-out infinite;
 }
 
-.tier-card-great {
-  --aura-shadow-min: 0 0 2px rgba(225, 29, 72, 0.08), 0 0 8px rgba(225, 29, 72, 0.02);
+.tier-card-excellent {
+  --aura-shadow-min: 0 0 2px rgba(225, 29, 72, 0.07), 0 0 8px rgba(225, 29, 72, 0.02);
   --aura-shadow-max: 0 0 6px rgba(225, 29, 72, 0.2), 0 0 16px rgba(225, 29, 72, 0.06);
-  animation: aura-glow 3.2s ease-in-out infinite;
+  animation: aura-glow 3s ease-in-out infinite;
+}
+
+.tier-card-impressive {
+  --aura-shadow-min: 0 0 2px rgba(236, 72, 153, 0.07), 0 0 8px rgba(236, 72, 153, 0.02);
+  --aura-shadow-max: 0 0 6px rgba(236, 72, 153, 0.18), 0 0 14px rgba(236, 72, 153, 0.06);
+  animation: aura-glow 3.1s ease-in-out infinite;
 }
 
