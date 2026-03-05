@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { ApproveRejectButtons } from './ApproveRejectButtons'
+import { GeocodeFixInline } from './GeocodeFixInline'
 import { CategoryIcon } from '@/components/CategoryIcon'
 
 export const dynamic = 'force-dynamic'
@@ -68,6 +69,15 @@ export default async function ModerationQueuePage() {
                   <p className="text-gray-400 text-sm mt-1">
                     {r.address}, {r.city}, {r.state} {r.zip}
                   </p>
+
+                  <GeocodeFixInline
+                    restaurantId={r.id}
+                    address={r.address}
+                    city={r.city}
+                    state={r.state}
+                    zip={r.zip}
+                    hasCoords={r.lat != null && r.lng != null}
+                  />
 
                   {r.categories.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
