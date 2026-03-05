@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     cats.forEach(c => slugToId.set(c.slug, c.id))
   }
 
-  // Process entries sequentially (geocoding has rate limits)
+  // Process entries sequentially
   for (let i = 0; i < validEntries.length; i++) {
     const { index, entry } = validEntries[i]
     const name = entry.name.trim()
@@ -178,10 +178,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Rate limit delay for Nominatim geocoding (1 req/sec)
-    if (i < validEntries.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 1100))
-    }
   }
 
   const summary = {

@@ -224,8 +224,7 @@ export function MissingGeocodesList() {
 
       {batchFixing && (
         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 mb-4 text-xs text-yellow-400">
-          Geocoding in progress — this takes ~1 second per restaurant due to rate limits.
-          Please don&apos;t navigate away.
+          Geocoding in progress — please don&apos;t navigate away.
         </div>
       )}
 

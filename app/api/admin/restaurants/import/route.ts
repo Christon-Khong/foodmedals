@@ -113,8 +113,6 @@ export async function POST(req: NextRequest) {
             lat = geo.lat
             lng = geo.lng
           }
-          // Rate limit delay after forward geocode
-          await delay(1100)
         }
       }
 
@@ -201,10 +199,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Rate limit delay between Nominatim calls (1 req/sec policy)
-    if (i < validEntries.length - 1) {
-      await delay(1100)
-    }
   }
 
   const summary = {
@@ -215,8 +209,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ results, summary })
-}
-
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
 }

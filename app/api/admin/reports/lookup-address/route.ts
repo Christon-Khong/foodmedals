@@ -1,42 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
-import { STATE_ABBREV } from '@/lib/parse-maps-url'
 
-function formatAddress(addr: Record<string, string | undefined>) {
-  const houseNumber = addr.house_number ?? ''
-  const road = addr.road ?? ''
-  return [houseNumber, road].filter(Boolean).join(' ')
+type AddressComponent = { types: string[]; long_name: string; short_name: string }
+type GeoResult = {
+  address_components: AddressComponent[]
+  geometry: { location: { lat: number; lng: number } }
 }
 
-function formatResult(addr: Record<string, string | undefined>, lat: number, lng: number) {
-  const streetAddress = formatAddress(addr)
+function extractFromComponents(components: AddressComponent[]) {
+  const get = (type: string) => components.find(c => c.types.includes(type))
+  const streetNumber = get('street_number')?.long_name ?? ''
+  const route = get('route')?.long_name ?? ''
   return {
-    address: streetAddress || null,
-    city: addr.city ?? addr.town ?? addr.village ?? null,
-    state: (addr.state ? STATE_ABBREV[addr.state] ?? addr.state : null),
-    zip: addr.postcode ?? null,
-    lat,
-    lng,
-    partial: !addr.house_number,
+    address: `${streetNumber} ${route}`.trim() || null,
+    city: get('locality')?.long_name ?? get('sublocality')?.long_name ?? null,
+    state: get('administrative_area_level_1')?.short_name ?? null,
+    zip: get('postal_code')?.long_name ?? null,
+    hasStreetNumber: !!streetNumber,
   }
 }
 
-async function nominatimReverse(lat: number, lng: number) {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
-    { headers: { 'User-Agent': 'FoodMedals/1.0' } },
-  )
-  if (!res.ok) return null
-  return res.json()
+function formatResult(result: GeoResult) {
+  const { address, city, state, zip, hasStreetNumber } = extractFromComponents(result.address_components)
+  return {
+    address,
+    city,
+    state,
+    zip,
+    lat: result.geometry.location.lat,
+    lng: result.geometry.location.lng,
+    partial: !hasStreetNumber,
+  }
 }
 
-async function nominatimSearch(query: string) {
+async function googleReverse(lat: number, lng: number): Promise<GeoResult | null> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY
+  if (!apiKey) return null
   const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=1`,
-    { headers: { 'User-Agent': 'FoodMedals/1.0' } },
+    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`,
+  )
+  if (!res.ok) return null
+  const data = await res.json()
+  if (data.status !== 'OK' || !data.results?.length) return null
+  return data.results[0]
+}
+
+async function googleSearch(query: string): Promise<GeoResult[]> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY
+  if (!apiKey) return []
+  const res = await fetch(
+    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`,
   )
   if (!res.ok) return []
-  return res.json()
+  const data = await res.json()
+  if (data.status !== 'OK' || !data.results?.length) return []
+  return data.results
 }
 
 export async function POST(req: NextRequest) {
@@ -84,38 +102,32 @@ export async function POST(req: NextRequest) {
 
     // Reverse geocode with coordinates
     if (lat != null && lng != null) {
-      const data = await nominatimReverse(lat, lng)
-      const addr = data?.address
+      const result = await googleReverse(lat, lng)
 
-      if (addr) {
-        const hasHouseNumber = !!addr.house_number
+      if (result) {
+        const { hasStreetNumber } = extractFromComponents(result.address_components)
 
-        // If no house number, try forward geocoding the place name for a better result
-        if (!hasHouseNumber && placeName) {
-          // Try place name + city from reverse result
-          const city = addr.city ?? addr.town ?? addr.village ?? ''
-          const state = addr.state ? (STATE_ABBREV[addr.state] ?? addr.state) : ''
+        // If no street number, try forward geocoding the place name for a better result
+        if (!hasStreetNumber && placeName) {
+          const { city, state } = extractFromComponents(result.address_components)
           const searchQueries = [
-            `${placeName}, ${city}, ${state}`,
+            `${placeName}, ${city ?? ''}, ${state ?? ''}`,
             placeName,
           ]
 
           for (const q of searchQueries) {
-            // Rate limit: 1 req/sec for Nominatim
-            await new Promise(r => setTimeout(r, 1100))
-            const results = await nominatimSearch(q)
-            if (results.length > 0 && results[0].address?.house_number) {
-              return NextResponse.json(formatResult(
-                results[0].address,
-                parseFloat(results[0].lat),
-                parseFloat(results[0].lon),
-              ))
+            const results = await googleSearch(q)
+            if (results.length > 0) {
+              const extracted = extractFromComponents(results[0].address_components)
+              if (extracted.hasStreetNumber) {
+                return NextResponse.json(formatResult(results[0]))
+              }
             }
           }
         }
 
-        // Return reverse geocode result (possibly without house number)
-        return NextResponse.json(formatResult(addr, lat, lng))
+        // Return reverse geocode result (possibly without street number)
+        return NextResponse.json(formatResult(result))
       }
 
       // Even if reverse geocoding failed, return coordinates
@@ -131,13 +143,9 @@ export async function POST(req: NextRequest) {
 
     if (query) {
       const decoded = decodeURIComponent(query.replace(/\+/g, ' '))
-      const results = await nominatimSearch(decoded)
+      const results = await googleSearch(decoded)
       if (results.length > 0) {
-        return NextResponse.json(formatResult(
-          results[0].address,
-          parseFloat(results[0].lat),
-          parseFloat(results[0].lon),
-        ))
+        return NextResponse.json(formatResult(results[0]))
       }
     }
 

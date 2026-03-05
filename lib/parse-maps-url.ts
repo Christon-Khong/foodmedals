@@ -6,22 +6,6 @@ export const ALLOWED_HOSTS = [
   'goo.gl',
 ]
 
-export const STATE_ABBREV: Record<string, string> = {
-  'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR',
-  'California': 'CA', 'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE',
-  'Florida': 'FL', 'Georgia': 'GA', 'Hawaii': 'HI', 'Idaho': 'ID',
-  'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA', 'Kansas': 'KS',
-  'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
-  'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS',
-  'Missouri': 'MO', 'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV',
-  'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY',
-  'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH', 'Oklahoma': 'OK',
-  'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
-  'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT',
-  'Vermont': 'VT', 'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV',
-  'Wisconsin': 'WI', 'Wyoming': 'WY', 'District of Columbia': 'DC',
-}
-
 export type ParsedMapsResult = {
   name: string
   address: string
@@ -101,7 +85,7 @@ export async function parseGoogleMapsUrl(url: string): Promise<ParsedMapsResult>
     }
   }
 
-  // Reverse geocode with Nominatim
+  // Reverse geocode with Google Maps
   let address = ''
   let city = ''
   let state = ''
@@ -109,26 +93,28 @@ export async function parseGoogleMapsUrl(url: string): Promise<ParsedMapsResult>
 
   if (lat != null && lng != null) {
     try {
-      const params = new URLSearchParams({
-        lat: lat.toString(),
-        lon: lng.toString(),
-        format: 'json',
-        addressdetails: '1',
-      })
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?${params}`,
-        { headers: { 'User-Agent': 'FoodMedals/1.0 (foodmedals.com)' } },
-      )
-      if (res.ok) {
-        const data = await res.json()
-        const addr = data.address ?? {}
-        const houseNumber = addr.house_number ?? ''
-        const road = addr.road ?? ''
-        address = `${houseNumber} ${road}`.trim()
-        city = addr.city ?? addr.town ?? addr.village ?? ''
-        const fullState = addr.state ?? ''
-        state = STATE_ABBREV[fullState] ?? fullState
-        zip = addr.postcode ?? ''
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY
+      if (apiKey) {
+        const params = new URLSearchParams({
+          latlng: `${lat},${lng}`,
+          key: apiKey,
+        })
+        const res = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?${params}`,
+        )
+        if (res.ok) {
+          const data = await res.json()
+          if (data.status === 'OK' && data.results?.length) {
+            const components = data.results[0].address_components as { types: string[]; long_name: string; short_name: string }[]
+            const get = (type: string) => components.find(c => c.types.includes(type))
+            const streetNumber = get('street_number')?.long_name ?? ''
+            const route = get('route')?.long_name ?? ''
+            address = `${streetNumber} ${route}`.trim()
+            city = get('locality')?.long_name ?? get('sublocality')?.long_name ?? ''
+            state = get('administrative_area_level_1')?.short_name ?? ''
+            zip = get('postal_code')?.long_name ?? ''
+          }
+        }
       }
     } catch {
       // Best effort — fields will be empty

@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.restaurant.findUnique({ where: { slug } })
   if (existing) slug = `${slug}-${Date.now()}`
 
-  // Geocode the address via OpenStreetMap Nominatim (best-effort — won't block creation if it fails)
+  // Geocode the address via Google Maps (best-effort — won't block creation if it fails)
   const coords = await geocode(address.trim(), city.trim(), state.trim(), zip.trim())
 
   const restaurant = await prisma.restaurant.create({

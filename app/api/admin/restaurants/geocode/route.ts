@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No restaurant IDs provided' }, { status: 400 })
   }
 
-  // Cap at 50 per request to respect Nominatim rate limits (~1 req/s)
+  // Cap at 50 per request
   const batch = ids.slice(0, 50)
 
   const restaurants = await prisma.restaurant.findMany({
@@ -59,9 +59,6 @@ export async function POST(req: NextRequest) {
     } else {
       results.push({ id: r.id, name: r.name, status: 'failed' })
     }
-
-    // Nominatim rate limit: max 1 request/second
-    await new Promise(resolve => setTimeout(resolve, 1100))
   }
 
   const fixed = results.filter(r => r.status === 'fixed').length

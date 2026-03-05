@@ -20,29 +20,23 @@ export async function geocode(
   zip: string,
 ): Promise<{ lat: number; lng: number } | null> {
   try {
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY
+    if (!apiKey) return null
+
     const street = stripUnit(address)
+    const fullAddress = `${street}, ${city}, ${state} ${zip}`
     const params = new URLSearchParams({
-      street,
-      city,
-      state,
-      postalcode:   zip,
-      countrycodes: 'us',
-      format:       'json',
-      limit:        '1',
+      address: fullAddress,
+      key: apiKey,
     })
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?${params}`,
-      {
-        headers: {
-          'User-Agent':      'FoodMedals/1.0 (foodmedals.com)',
-          'Accept-Language': 'en',
-        },
-      },
+      `https://maps.googleapis.com/maps/api/geocode/json?${params}`,
     )
     if (!res.ok) return null
     const data = await res.json()
-    if (!Array.isArray(data) || data.length === 0) return null
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+    if (data.status !== 'OK' || !data.results?.length) return null
+    const { lat, lng } = data.results[0].geometry.location
+    return { lat, lng }
   } catch {
     return null
   }
