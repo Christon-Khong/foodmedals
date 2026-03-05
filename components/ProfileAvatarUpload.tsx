@@ -67,6 +67,9 @@ export function ProfileAvatarUpload({ currentAvatarUrl, displayName }: Props) {
       setScale(1)
       setShowCropModal(true)
     }
+    reader.onerror = () => {
+      setError('Failed to read the image file. Please try again.')
+    }
     reader.readAsDataURL(file)
 
     // Reset input so re-selecting same file triggers change
@@ -186,28 +189,34 @@ export function ProfileAvatarUpload({ currentAvatarUrl, displayName }: Props) {
   return (
     <>
       {/* Avatar with edit overlay */}
-      <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-        {avatarUrl ? (
-          <Image
-            src={avatarUrl}
-            alt={displayName}
-            width={80}
-            height={80}
-            className="rounded-full shadow-lg"
+      <div className="flex flex-col items-center gap-2">
+        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          {avatarUrl ? (
+            <Image
+              src={avatarUrl}
+              alt={displayName}
+              width={80}
+              height={80}
+              className="rounded-full shadow-lg"
+            />
+          ) : (
+            <Initials name={displayName} />
+          )}
+          <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <Camera className="w-5 h-5 text-white" />
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={handleFileSelect}
           />
-        ) : (
-          <Initials name={displayName} />
-        )}
-        <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <Camera className="w-5 h-5 text-white" />
         </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
+        {/* Error shown outside modal so it's always visible */}
+        {error && !showCropModal && (
+          <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-1.5 max-w-[200px] text-center">{error}</p>
+        )}
       </div>
 
       {/* Crop Modal */}
