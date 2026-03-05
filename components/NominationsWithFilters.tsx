@@ -61,6 +61,7 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [selectedCity, setSelectedCity] = useState<string | null>(null)
   const [selectedCityState, setSelectedCityState] = useState<string | null>(null)
+  const [voteStates, setVoteStates] = useState<Record<string, { count: number; activated: boolean }>>({})
 
   // Auto-trigger Near Me on mount
   useEffect(() => {
@@ -235,6 +236,9 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
                     restaurantId={s.id}
                     initialVoted={s.voted}
                     initialCount={s.voteCount}
+                    onCountChange={(count, _voted, activated) => {
+                      setVoteStates(prev => ({ ...prev, [s.id]: { count, activated } }))
+                    }}
                   />
                 ) : (
                   <Link
@@ -271,18 +275,33 @@ export function NominationsWithFilters({ suggestions, isLoggedIn }: Props) {
                   </div>
                 )}
 
-                {/* Progress toward auto-approval */}
-                <div className="mt-3 flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(100, Math.round((s.voteCount / 10) * 100))}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
-                    {s.voteCount}/10 to activate
-                  </span>
-                </div>
+                {/* Progress toward activation */}
+                {(() => {
+                  const currentCount = voteStates[s.id]?.count ?? s.voteCount
+                  const isActivated = voteStates[s.id]?.activated ?? false
+                  return isActivated ? (
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-green-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 rounded-full w-full" />
+                      </div>
+                      <span className="text-[10px] text-green-600 font-bold whitespace-nowrap">
+                        ✓ Activated!
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, Math.round((currentCount / 10) * 100))}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+                        {currentCount}/10 to activate
+                      </span>
+                    </div>
+                  )
+                })()}
 
                 <p className="text-xs text-gray-400 mt-1.5">
                   Suggested by {s.submitter} · {new Date(s.createdAt).toLocaleDateString()}

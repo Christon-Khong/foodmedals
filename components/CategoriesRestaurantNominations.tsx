@@ -2,31 +2,41 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CategoryVoteButton } from '@/app/suggest/vote/CategoryVoteButton'
+import { VoteButton } from '@/app/suggest/vote/VoteButton'
+import { CategoryIcon } from '@/components/CategoryIcon'
 
-type CategorySuggestion = {
+type Category = {
+  name: string
+  emoji: string
+  iconUrl: string | null
+  slug: string
+}
+
+type Suggestion = {
   id: string
   name: string
-  iconEmoji: string
+  city: string
+  state: string
   description: string | null
   submitter: string
   createdAt: string
+  categories: Category[]
   voteCount: number
   voted: boolean
 }
 
 type Props = {
-  suggestions: CategorySuggestion[]
+  suggestions: Suggestion[]
   isLoggedIn: boolean
 }
 
-export function CategoryNominations({ suggestions, isLoggedIn }: Props) {
+export function CategoriesRestaurantNominations({ suggestions, isLoggedIn }: Props) {
   const [voteStates, setVoteStates] = useState<Record<string, { count: number; activated: boolean }>>({})
 
   return (
     <div className="mb-10">
       <h2 className="text-lg font-bold text-gray-900 mb-4">
-        Category Nominations
+        Restaurant Nominations
       </h2>
 
       <div className="space-y-3">
@@ -42,8 +52,8 @@ export function CategoryNominations({ suggestions, isLoggedIn }: Props) {
               {/* Vote button */}
               <div className="shrink-0 pt-1">
                 {isLoggedIn ? (
-                  <CategoryVoteButton
-                    suggestionId={s.id}
+                  <VoteButton
+                    restaurantId={s.id}
                     initialVoted={s.voted}
                     initialCount={s.voteCount}
                     onCountChange={(count, _voted, activated) => {
@@ -52,7 +62,7 @@ export function CategoryNominations({ suggestions, isLoggedIn }: Props) {
                   />
                 ) : (
                   <Link
-                    href="/auth/signin?callbackUrl=/suggest/vote"
+                    href="/auth/signin?callbackUrl=/categories"
                     className="flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl text-sm font-semibold bg-gray-100 text-gray-400 hover:bg-gray-200 transition-colors"
                   >
                     <span className="text-lg">△</span>
@@ -63,13 +73,26 @@ export function CategoryNominations({ suggestions, isLoggedIn }: Props) {
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{s.iconEmoji}</span>
-                  <h3 className="font-bold text-gray-900">{s.name}</h3>
-                </div>
+                <h3 className="font-bold text-gray-900">{s.name}</h3>
+                <p className="text-sm text-gray-500">
+                  {s.city}, {s.state}
+                </p>
 
                 {s.description && (
                   <p className="text-sm text-gray-600 mt-1.5 line-clamp-2">{s.description}</p>
+                )}
+
+                {s.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {s.categories.map(c => (
+                      <span
+                        key={c.name}
+                        className="text-xs bg-amber-50 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full"
+                      >
+                        <CategoryIcon slug={c.slug} iconEmoji={c.emoji} iconUrl={c.iconUrl} /> {c.name}
+                      </span>
+                    ))}
+                  </div>
                 )}
 
                 {/* Progress toward activation */}
@@ -79,7 +102,7 @@ export function CategoryNominations({ suggestions, isLoggedIn }: Props) {
                       <div className="h-full bg-green-500 rounded-full w-full" />
                     </div>
                     <span className="text-[10px] text-green-600 font-bold whitespace-nowrap">
-                      ✓ Added!
+                      ✓ Activated!
                     </span>
                   </div>
                 ) : (
@@ -87,11 +110,11 @@ export function CategoryNominations({ suggestions, isLoggedIn }: Props) {
                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, Math.round((currentCount / 50) * 100))}%` }}
+                        style={{ width: `${Math.min(100, Math.round((currentCount / 10) * 100))}%` }}
                       />
                     </div>
                     <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
-                      {currentCount}/50 to activate
+                      {currentCount}/10 to activate
                     </span>
                   </div>
                 )}
