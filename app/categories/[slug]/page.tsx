@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { isAdminEmail } from '@/lib/adminAuth'
 import { getCategoryBySlug, getLeaderboard, getCitiesForCategory, getStatesForCategory } from '@/lib/queries'
+import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { LeaderboardWithLocation } from '@/components/LeaderboardWithLocation'
 import { CategoryIcon } from '@/components/CategoryIcon'
@@ -136,24 +137,8 @@ export default async function CategoryLeaderboardPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
 
-      {/* ── Top bar ─────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-amber-100 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <nav className="flex items-center gap-1.5 text-sm text-gray-500">
-            <Link href="/" className="hover:text-yellow-700 transition-colors">FoodMedals</Link>
-            <span>/</span>
-            <Link href="/categories" className="hover:text-yellow-700 transition-colors">Categories</Link>
-            <span>/</span>
-            <span className="text-gray-800 font-medium truncate max-w-[120px]">{category.name}</span>
-          </nav>
-          <Link
-            href={awardHref}
-            className="text-xs sm:text-sm font-semibold bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap"
-          >
-            Award medals
-          </Link>
-        </div>
-      </div>
+      {/* ── Navbar ──────────────────────────────────────────────────────── */}
+      <Navbar />
 
       <HeroImage />
 
