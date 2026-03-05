@@ -6,7 +6,7 @@ import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { GoldCommentModal } from '@/components/GoldCommentModal'
-import { LayoutGrid, Map, Lock, Search, X, Plus, Lightbulb, TrendingUp, Quote, ThumbsUp, MessageSquare, Pencil } from 'lucide-react'
+import { LayoutGrid, Map, Lock, Search, X, Plus, TrendingUp, Quote, ThumbsUp, MessageSquare, Pencil } from 'lucide-react'
 
 const ProfileMapInner = dynamic(() => import('./ProfileMapInner'), {
   ssr: false,
@@ -350,18 +350,13 @@ function TrendingUnrankedSection({ categories, userCity }: { categories: Unranke
 
 function SuggestCategoryCard() {
   return (
-    <div className="mt-6">
+    <div className="mt-6 flex justify-center">
       <Link
         href="/suggest/category"
-        className="flex items-center gap-3 p-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-yellow-300 bg-gray-50/50 hover:bg-yellow-50/50 transition-colors group"
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-300 bg-white hover:border-yellow-400 hover:bg-yellow-50 text-sm font-semibold text-gray-600 hover:text-gray-900 shadow-sm hover:shadow transition-all"
       >
-        <div className="w-10 h-10 rounded-full bg-gray-100 group-hover:bg-yellow-100 flex items-center justify-center flex-shrink-0 transition-colors">
-          <Lightbulb className="w-5 h-5 text-gray-400 group-hover:text-yellow-600 transition-colors" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">Missing a category?</p>
-          <p className="text-xs text-gray-400">Suggest a new food category for the community to vote on</p>
-        </div>
+        <Plus className="w-4 h-4" />
+        Suggest a Category
       </Link>
     </div>
   )
