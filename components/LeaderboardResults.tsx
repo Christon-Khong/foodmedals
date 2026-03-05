@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { MessageSquare, Pencil } from 'lucide-react'
 import { Podium } from '@/components/Podium'
 import { LeaderboardMap } from '@/components/LeaderboardMap'
 import type { LeaderboardRow } from '@/lib/queries'
@@ -18,6 +19,9 @@ type Props = {
   isLoggedIn?: boolean
   onMedalChange?: (restaurantId: string, medalType: MedalType) => void
   categorySlug?: string
+  goldMedalId?: string | null
+  goldHasComment?: boolean
+  onOpenComment?: (restaurantName: string) => void
 }
 
 const MEDAL_TYPES: MedalType[] = ['gold', 'silver', 'bronze']
@@ -147,6 +151,9 @@ export function LeaderboardResults({
   isLoggedIn = false,
   onMedalChange,
   categorySlug,
+  goldMedalId,
+  goldHasComment,
+  onOpenComment,
 }: Props) {
   if (loading) return <Skeleton />
 
@@ -237,6 +244,25 @@ export function LeaderboardResults({
                             }`}>
                               Your {userMedal}
                             </span>
+                          )}
+                          {userMedal === 'gold' && goldMedalId && onOpenComment && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onOpenComment(row.restaurantName) }}
+                              className="ml-1 inline-flex items-center gap-0.5 text-[10px] font-semibold text-yellow-700 hover:text-yellow-900 transition-colors"
+                              title={goldHasComment ? 'Edit comment' : 'Share your pick'}
+                            >
+                              {goldHasComment ? (
+                                <>
+                                  <Pencil className="w-2.5 h-2.5" />
+                                  <span className="hidden sm:inline">Edit</span>
+                                </>
+                              ) : (
+                                <>
+                                  <MessageSquare className="w-2.5 h-2.5" />
+                                  <span className="hidden sm:inline">Comment</span>
+                                </>
+                              )}
+                            </button>
                           )}
                         </span>
                       </td>

@@ -178,6 +178,7 @@ export default async function CategoryLeaderboardPage({
       <LeaderboardWithLocation
         categorySlug={slug}
         categoryId={category.id}
+        categoryName={category.name}
         year={year}
         initialRows={initialRows}
         cities={cities}

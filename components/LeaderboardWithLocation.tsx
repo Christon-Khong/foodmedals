@@ -6,6 +6,7 @@ import { StateFilter } from '@/components/StateFilter'
 import { CityFilter } from '@/components/CityFilter'
 import { LeaderboardResults } from '@/components/LeaderboardResults'
 import { Confetti } from '@/components/Confetti'
+import { GoldCommentModal } from '@/components/GoldCommentModal'
 import { NominationsSection } from '@/app/categories/[slug]/NominationsSection'
 import type { LeaderboardRow, CityOption, StateOption } from '@/lib/queries'
 
@@ -28,6 +29,7 @@ type Nomination = {
 type Props = {
   categorySlug: string
   categoryId: string
+  categoryName: string
   year: number
   initialRows: LeaderboardRow[]
   cities: CityOption[]
@@ -43,6 +45,7 @@ type Props = {
 export function LeaderboardWithLocation({
   categorySlug,
   categoryId,
+  categoryName,
   year,
   initialRows,
   cities,
@@ -80,6 +83,16 @@ export function LeaderboardWithLocation({
   const [isLoggedIn, setIsLoggedIn] = useState(isLoggedInProp)
   const [goldConfetti, setGoldConfetti] = useState(false)
 
+  // Gold medal comment tracking
+  const [goldMedalId, setGoldMedalId] = useState<string | null>(null)
+  const [goldHasComment, setGoldHasComment] = useState(false)
+  const [goldCommentText, setGoldCommentText] = useState<string | null>(null)
+  const [commentPrompt, setCommentPrompt] = useState<{
+    medalId: string
+    restaurantName: string
+    initialComment?: string
+  } | null>(null)
+
   // Fetch user's medals on mount
   useEffect(() => {
     fetch(`/api/categories/${categorySlug}/my-medals?year=${year}`)
@@ -94,6 +107,15 @@ export function LeaderboardWithLocation({
         const m: UserMedals = { gold: null, silver: null, bronze: null }
         for (const medal of data.medals) {
           m[medal.medalType as MedalType] = medal.restaurantId
+          // Track gold medal ID and comment
+          if (medal.medalType === 'gold') {
+            setGoldMedalId(medal.id)
+            const comment = medal.goldMedalComment
+            if (comment) {
+              setGoldHasComment(true)
+              setGoldCommentText(comment.comment)
+            }
+          }
         }
         setUserMedals(m)
       })
@@ -233,13 +255,36 @@ export function LeaderboardWithLocation({
           body: JSON.stringify({ foodCategoryId: categoryId, medalType, year }),
         })
         if (!res.ok) { setUserMedals(prevMedals); setRows(prevRows) }
+        else if (medalType === 'gold') {
+          setGoldMedalId(null)
+          setGoldHasComment(false)
+          setGoldCommentText(null)
+        }
       } else {
         const res = await fetch('/api/medals', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ foodCategoryId: categoryId, restaurantId, medalType, year }),
         })
-        if (!res.ok) { setUserMedals(prevMedals); setRows(prevRows) }
+        if (!res.ok) {
+          setUserMedals(prevMedals)
+          setRows(prevRows)
+        } else if (medalType === 'gold') {
+          const data = await res.json()
+          if (data.id) {
+            setGoldMedalId(data.id)
+            setGoldHasComment(false)
+            setGoldCommentText(null)
+            // Prompt user to add a comment
+            const row = rows.find(r => r.restaurantId === restaurantId)
+            if (row) {
+              setCommentPrompt({
+                medalId: data.id,
+                restaurantName: row.restaurantName,
+              })
+            }
+          }
+        }
       }
     } catch {
       setUserMedals(prevMedals)
@@ -350,6 +395,17 @@ export function LeaderboardWithLocation({
         isLoggedIn={isLoggedIn}
         onMedalChange={handleMedalChange}
         categorySlug={categorySlug}
+        goldMedalId={goldMedalId}
+        goldHasComment={goldHasComment}
+        onOpenComment={(restaurantName) => {
+          if (goldMedalId) {
+            setCommentPrompt({
+              medalId: goldMedalId,
+              restaurantName,
+              initialComment: goldCommentText ?? undefined,
+            })
+          }
+        }}
       />
 
       {/* Nominations — filtered by state */}
@@ -359,6 +415,21 @@ export function LeaderboardWithLocation({
         isLoggedIn={isLoggedIn}
         categorySlug={categorySlug}
       />
+
+      {/* Gold medal comment modal */}
+      {commentPrompt && (
+        <GoldCommentModal
+          medalId={commentPrompt.medalId}
+          restaurantName={commentPrompt.restaurantName}
+          categoryName={categoryName}
+          initialComment={commentPrompt.initialComment}
+          onClose={() => setCommentPrompt(null)}
+          onSaved={() => {
+            setCommentPrompt(null)
+            setGoldHasComment(true)
+          }}
+        />
+      )}
     </div>
   )
 }

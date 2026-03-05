@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { CategoryIcon } from '@/components/CategoryIcon'
-import { LayoutGrid, Map, Lock, Search, X, Plus, Lightbulb, TrendingUp, Quote, ThumbsUp } from 'lucide-react'
+import { GoldCommentModal } from '@/components/GoldCommentModal'
+import { LayoutGrid, Map, Lock, Search, X, Plus, Lightbulb, TrendingUp, Quote, ThumbsUp, MessageSquare, Pencil } from 'lucide-react'
 
 const ProfileMapInner = dynamic(() => import('./ProfileMapInner'), {
   ssr: false,
@@ -106,7 +107,7 @@ function EmptyMedalSlot({ type, awardHref }: { type: string; awardHref?: string 
   )
 }
 
-function CategoryCard({ catMedals, isOwner }: { catMedals: Medal[]; isOwner: boolean }) {
+function CategoryCard({ catMedals, isOwner, onOpenComment }: { catMedals: Medal[]; isOwner: boolean; onOpenComment?: (medalId: string, restaurantName: string, categoryName: string, existingComment?: string) => void }) {
   const cat = catMedals[0].foodCategory
   const sorted = [...catMedals].sort(
     (a, b) => (MEDAL_ORDER[a.medalType] ?? 9) - (MEDAL_ORDER[b.medalType] ?? 9),
@@ -181,7 +182,27 @@ function CategoryCard({ catMedals, isOwner }: { catMedals: Medal[]; isOwner: boo
                 {gold.goldMedalComment._count.upvotes}
               </span>
             )}
+            {isOwner && onOpenComment && (
+              <button
+                onClick={() => onOpenComment(gold.id, gold.restaurant.name, cat.name, gold.goldMedalComment?.comment)}
+                className="flex items-center gap-0.5 text-[10px] font-semibold text-yellow-700 hover:text-yellow-900 transition-colors flex-shrink-0"
+                title="Edit comment"
+              >
+                <Pencil className="w-2.5 h-2.5" />
+              </button>
+            )}
           </div>
+        )}
+
+        {/* Owner: add comment prompt when gold has no comment */}
+        {gold && !gold.goldMedalComment && isOwner && onOpenComment && (
+          <button
+            onClick={() => onOpenComment(gold.id, gold.restaurant.name, cat.name)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-yellow-50/50 border border-dashed border-yellow-200 hover:border-yellow-300 hover:bg-yellow-50 transition-colors w-full text-left"
+          >
+            <MessageSquare className="w-3 h-3 text-yellow-600 flex-shrink-0" />
+            <span className="text-[11px] font-semibold text-yellow-700">Share why this is your #1 pick</span>
+          </button>
         )}
 
         {/* Silver & Bronze — compact rows */}
@@ -349,6 +370,19 @@ function SuggestCategoryCard() {
 export function TrophyCaseGrid({ byCategory, year, isOwner, totalCategories, rankedCount, unrankedCategories, userCity }: Props) {
   const [view, setView] = useState<'grid' | 'map'>('grid')
   const [search, setSearch] = useState('')
+  const [commentPrompt, setCommentPrompt] = useState<{
+    medalId: string
+    restaurantName: string
+    categoryName: string
+    initialComment?: string
+  } | null>(null)
+
+  // Track which medal IDs have had comments saved (for optimistic UI)
+  const [savedCommentIds, setSavedCommentIds] = useState<Set<string>>(new Set())
+
+  const handleOpenComment = useCallback((medalId: string, restaurantName: string, categoryName: string, existingComment?: string) => {
+    setCommentPrompt({ medalId, restaurantName, categoryName, initialComment: existingComment })
+  }, [])
 
   // Filter categories by search query (category name, restaurant name, city, state)
   const filteredCategories = useMemo(() => {
@@ -470,7 +504,12 @@ export function TrophyCaseGrid({ byCategory, year, isOwner, totalCategories, ran
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredCategories.map(([, catMedals]) => (
-              <CategoryCard key={catMedals[0].foodCategory.id} catMedals={catMedals} isOwner={isOwner} />
+              <CategoryCard
+                key={catMedals[0].foodCategory.id}
+                catMedals={catMedals}
+                isOwner={isOwner}
+                onOpenComment={isOwner ? handleOpenComment : undefined}
+              />
             ))}
           </div>
         )
@@ -492,6 +531,21 @@ export function TrophyCaseGrid({ byCategory, year, isOwner, totalCategories, ran
 
       {isOwner && (
         <SuggestCategoryCard />
+      )}
+
+      {/* Gold medal comment modal */}
+      {commentPrompt && (
+        <GoldCommentModal
+          medalId={commentPrompt.medalId}
+          restaurantName={commentPrompt.restaurantName}
+          categoryName={commentPrompt.categoryName}
+          initialComment={commentPrompt.initialComment}
+          onClose={() => setCommentPrompt(null)}
+          onSaved={() => {
+            setSavedCommentIds(prev => new Set(prev).add(commentPrompt.medalId))
+            setCommentPrompt(null)
+          }}
+        />
       )}
     </div>
   )

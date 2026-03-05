@@ -8,12 +8,13 @@ type Props = {
   medalId: string
   restaurantName: string
   categoryName: string
+  initialComment?: string
   onClose: () => void
   onSaved: () => void
 }
 
-export function GoldCommentModal({ medalId, restaurantName, categoryName, onClose, onSaved }: Props) {
-  const [comment, setComment] = useState('')
+export function GoldCommentModal({ medalId, restaurantName, categoryName, initialComment, onClose, onSaved }: Props) {
+  const [comment, setComment] = useState(initialComment ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
