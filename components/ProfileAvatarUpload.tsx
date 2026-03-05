@@ -43,37 +43,79 @@ export function ProfileAvatarUpload({ currentAvatarUrl, displayName }: Props) {
   const cropAreaRef = useRef<HTMLDivElement>(null)
 
   const CROP_SIZE = 256 // display size of the crop circle
+  const PRE_COMPRESS_MAX = 1200 // pre-compress to this max dimension before upload
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Pre-compress large images in the browser so we never upload huge files
+  const preCompressImage = useCallback((file: File): Promise<{ file: File; dataUrl: string }> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const { naturalWidth: w, naturalHeight: h } = img
+
+        // If small enough, just read as data URL without re-encoding
+        if (w <= PRE_COMPRESS_MAX && h <= PRE_COMPRESS_MAX && file.size <= 4 * 1024 * 1024) {
+          const reader = new FileReader()
+          reader.onload = () => resolve({ file, dataUrl: reader.result as string })
+          reader.onerror = () => reject(new Error('Failed to read file'))
+          reader.readAsDataURL(file)
+          return
+        }
+
+        // Resize down so the longest side is PRE_COMPRESS_MAX
+        const scale = Math.min(PRE_COMPRESS_MAX / w, PRE_COMPRESS_MAX / h, 1)
+        const cw = Math.round(w * scale)
+        const ch = Math.round(h * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = cw
+        canvas.height = ch
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, cw, ch)
+
+        canvas.toBlob(
+          blob => {
+            if (!blob) { reject(new Error('Compression failed')); return }
+            const compressed = new File([blob], file.name, { type: 'image/jpeg' })
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
+            resolve({ file: compressed, dataUrl })
+          },
+          'image/jpeg',
+          0.92,
+        )
+      }
+      img.onerror = () => {
+        URL.revokeObjectURL(url)
+        reject(new Error('Failed to load image'))
+      }
+      img.src = url
+    })
+  }, [])
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      setError('Please select a PNG, JPEG, or WebP image.')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be under 5 MB.')
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file.')
       return
     }
 
     setError(null)
-    setSelectedFile(file)
-
-    const reader = new FileReader()
-    reader.onload = () => {
-      setImageDataUrl(reader.result as string)
-      setOffset({ x: 0, y: 0 })
-      setScale(1)
-      setShowCropModal(true)
-    }
-    reader.onerror = () => {
-      setError('Failed to read the image file. Please try again.')
-    }
-    reader.readAsDataURL(file)
 
     // Reset input so re-selecting same file triggers change
     e.target.value = ''
+
+    try {
+      const { file: compressed, dataUrl } = await preCompressImage(file)
+      setSelectedFile(compressed)
+      setImageDataUrl(dataUrl)
+      setOffset({ x: 0, y: 0 })
+      setScale(1)
+      setShowCropModal(true)
+    } catch {
+      setError('Failed to read the image file. Please try again.')
+    }
   }
 
   // When image loads in crop modal, compute initial scale so the image fills the crop circle
@@ -188,34 +230,32 @@ export function ProfileAvatarUpload({ currentAvatarUrl, displayName }: Props) {
 
   return (
     <>
-      {/* Avatar with edit overlay */}
-      <div className="flex flex-col items-center gap-2">
-        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={displayName}
-              width={80}
-              height={80}
-              className="rounded-full shadow-lg"
-            />
-          ) : (
-            <Initials name={displayName} />
-          )}
-          <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Camera className="w-5 h-5 text-white" />
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-            className="hidden"
-            onChange={handleFileSelect}
+      {/* Avatar with edit overlay — positioned relatively so error floats below without affecting parent size (preserves aura circle) */}
+      <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+        {avatarUrl ? (
+          <Image
+            src={avatarUrl}
+            alt={displayName}
+            width={80}
+            height={80}
+            className="rounded-full shadow-lg"
           />
+        ) : (
+          <Initials name={displayName} />
+        )}
+        <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <Camera className="w-5 h-5 text-white" />
         </div>
-        {/* Error shown outside modal so it's always visible */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+        {/* Error positioned absolutely so it doesn't expand the parent (which has the aura rounded-full) */}
         {error && !showCropModal && (
-          <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-1.5 max-w-[200px] text-center">{error}</p>
+          <p className="absolute left-1/2 -translate-x-1/2 top-full mt-2 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-1.5 max-w-[200px] text-center whitespace-nowrap z-10">{error}</p>
         )}
       </div>
 
