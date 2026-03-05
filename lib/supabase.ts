@@ -14,3 +14,4 @@ export function getSupabaseAdmin(): SupabaseClient {
 
 export const ICON_BUCKET = 'category-icons'
 export const AVATAR_BUCKET = 'profile-avatars'
+export const REVIEW_PHOTO_BUCKET = 'review-photos'

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getSupabaseAdmin, REVIEW_PHOTO_BUCKET } from '@/lib/supabase'
+import sharp from 'sharp'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -9,7 +11,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { medalId, comment } = await req.json()
+  const formData = await req.formData()
+  const medalId = formData.get('medalId') as string | null
+  const comment = formData.get('comment') as string | null
+  const photo = formData.get('photo') as File | null
+  const removePhoto = formData.get('removePhoto') === 'true'
 
   if (!medalId || !comment) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -38,8 +44,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Comments are only for gold medals' }, { status: 400 })
   }
 
+  // Process photo if provided
+  let photoUrl: string | null | undefined = undefined // undefined = don't change
+  if (photo && photo.size > 0) {
+    if (!photo.type.startsWith('image/')) {
+      return NextResponse.json({ error: 'Please select an image file.' }, { status: 400 })
+    }
+    if (photo.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Image must be under 10MB.' }, { status: 400 })
+    }
+
+    const buffer = Buffer.from(await photo.arrayBuffer())
+    const optimized = await sharp(buffer)
+      .resize(1200, undefined, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer()
+
+    const filePath = `${session.user.id}-${medal.foodCategoryId}-${medal.restaurantId}-${medal.year}.webp`
+
+    const { error: uploadError } = await getSupabaseAdmin().storage
+      .from(REVIEW_PHOTO_BUCKET)
+      .upload(filePath, optimized, {
+        contentType: 'image/webp',
+        upsert: true,
+      })
+
+    if (uploadError) {
+      console.error('Supabase review photo upload error:', uploadError)
+      return NextResponse.json({ error: 'Photo upload failed' }, { status: 500 })
+    }
+
+    const { data: urlData } = getSupabaseAdmin().storage
+      .from(REVIEW_PHOTO_BUCKET)
+      .getPublicUrl(filePath)
+
+    photoUrl = `${urlData.publicUrl}?v=${Date.now()}`
+  } else if (removePhoto) {
+    photoUrl = null
+  }
+
   // Upsert by composite key (userId + categoryId + restaurantId + year)
-  // This preserves the comment identity across medal deletions and re-awards
   const goldComment = await prisma.goldMedalComment.upsert({
     where: {
       userId_foodCategoryId_restaurantId_year: {
@@ -49,7 +93,12 @@ export async function POST(req: NextRequest) {
         year: medal.year,
       },
     },
-    update: { comment: trimmed, active: true, medalId },
+    update: {
+      comment: trimmed,
+      active: true,
+      medalId,
+      ...(photoUrl !== undefined ? { photoUrl } : {}),
+    },
     create: {
       medalId,
       userId: session.user.id,
@@ -57,6 +106,7 @@ export async function POST(req: NextRequest) {
       foodCategoryId: medal.foodCategoryId,
       year: medal.year,
       comment: trimmed,
+      photoUrl: photoUrl ?? null,
     },
   })
 

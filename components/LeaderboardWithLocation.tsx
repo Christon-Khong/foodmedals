@@ -87,10 +87,12 @@ export function LeaderboardWithLocation({
   const [goldMedalId, setGoldMedalId] = useState<string | null>(null)
   const [goldHasComment, setGoldHasComment] = useState(false)
   const [goldCommentText, setGoldCommentText] = useState<string | null>(null)
+  const [goldPhotoUrl, setGoldPhotoUrl] = useState<string | null>(null)
   const [commentPrompt, setCommentPrompt] = useState<{
     medalId: string
     restaurantName: string
     initialComment?: string
+    initialPhotoUrl?: string | null
   } | null>(null)
 
   // Fetch user's medals on mount
@@ -114,6 +116,7 @@ export function LeaderboardWithLocation({
             if (comment) {
               setGoldHasComment(true)
               setGoldCommentText(comment.comment)
+              setGoldPhotoUrl(comment.photoUrl ?? null)
             }
           }
         }
@@ -277,14 +280,25 @@ export function LeaderboardWithLocation({
           const data = await res.json()
           if (data.id) {
             setGoldMedalId(data.id)
-            setGoldHasComment(false)
-            setGoldCommentText(null)
+            const restored = data.existingComment ?? null
+            const restoredPhoto = data.existingPhotoUrl ?? null
+            if (restored) {
+              setGoldHasComment(true)
+              setGoldCommentText(restored)
+              setGoldPhotoUrl(restoredPhoto)
+            } else {
+              setGoldHasComment(false)
+              setGoldCommentText(null)
+              setGoldPhotoUrl(null)
+            }
             // Prompt user to add a comment
             const row = rows.find(r => r.restaurantId === restaurantId)
             if (row) {
               setCommentPrompt({
                 medalId: data.id,
                 restaurantName: row.restaurantName,
+                initialComment: restored ?? undefined,
+                initialPhotoUrl: restoredPhoto,
               })
             }
           }
@@ -408,6 +422,7 @@ export function LeaderboardWithLocation({
               medalId: goldMedalId,
               restaurantName,
               initialComment: goldCommentText ?? undefined,
+              initialPhotoUrl: goldPhotoUrl,
             })
           }
         }}
@@ -440,12 +455,14 @@ export function LeaderboardWithLocation({
           restaurantName={commentPrompt.restaurantName}
           categoryName={categoryName}
           initialComment={commentPrompt.initialComment}
+          initialPhotoUrl={commentPrompt.initialPhotoUrl}
           onClose={() => setCommentPrompt(null)}
-          onSaved={(commentText) => {
+          onSaved={(commentText, photoUrl) => {
             const isNewComment = !commentPrompt.initialComment
             setCommentPrompt(null)
             setGoldHasComment(true)
             setGoldCommentText(commentText)
+            setGoldPhotoUrl(photoUrl ?? null)
 
             // Optimistic +1 bonus point for new comments
             if (isNewComment && userMedals.gold) {

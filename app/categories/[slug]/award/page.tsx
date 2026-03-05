@@ -58,6 +58,7 @@ export default async function AwardPage({
     restaurantId: m.restaurantId,
     hasComment:   !!(m.goldMedalComment),
     commentText:  m.goldMedalComment?.comment ?? undefined,
+    photoUrl:     m.goldMedalComment?.photoUrl ?? null,
   }))
 
   const backHref = `/categories/${slug}?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`

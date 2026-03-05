@@ -4,11 +4,12 @@ import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CategoryIcon } from '@/components/CategoryIcon'
-import { Sparkles, Loader2, Quote, Award } from 'lucide-react'
+import { Sparkles, Loader2, Quote, Award, X } from 'lucide-react'
 
 type Highlight = {
   id:           string
   comment:      string
+  photoUrl:     string | null
   createdAt:    string
   year:         number
   categoryName: string
@@ -26,6 +27,7 @@ type Props = {
   highlights: Highlight[]
   totalCount: number
   restaurantId: string
+  restaurantName: string
   isLoggedIn: boolean
   userUpvotedIds: string[]
 }
@@ -199,10 +201,14 @@ function HighlightCard({
   highlight,
   isLoggedIn,
   upvoted,
+  restaurantName,
+  onPhotoClick,
 }: {
   highlight: Highlight
   isLoggedIn: boolean
   upvoted: boolean
+  restaurantName: string
+  onPhotoClick: (url: string) => void
 }) {
   const tier = getAchievementTier(highlight.userCategoryCount)
 
@@ -220,6 +226,26 @@ function HighlightCard({
           <Quote className="w-5 h-5 text-yellow-400 flex-shrink-0" />
         </div>
       </div>
+
+      {/* Review photo */}
+      {highlight.photoUrl && (
+        <div className="mx-6 mb-4">
+          <button
+            type="button"
+            onClick={() => onPhotoClick(highlight.photoUrl!)}
+            className="block w-full max-h-[300px] overflow-hidden rounded-xl ring-1 ring-black/5 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+          >
+            <Image
+              src={highlight.photoUrl}
+              alt={`${highlight.userName}'s Gold review of ${restaurantName}`}
+              width={600}
+              height={300}
+              className="w-full object-cover"
+              style={{ maxHeight: 300 }}
+            />
+          </button>
+        </div>
+      )}
 
       {/* Attribution bar */}
       <div className="flex items-center justify-between gap-3 px-6 py-3.5 bg-gradient-to-r from-amber-50/80 to-yellow-50/60 border-t border-amber-100">
@@ -288,13 +314,14 @@ function HighlightCard({
 
 // ─── Main component ────────────────────────────────────────────────────────
 
-export function RestaurantHighlights({ highlights: initialHighlights, totalCount, restaurantId, isLoggedIn, userUpvotedIds }: Props) {
+export function RestaurantHighlights({ highlights: initialHighlights, totalCount, restaurantId, restaurantName, isLoggedIn, userUpvotedIds }: Props) {
   const [sort, setSort] = useState<SortMode>('popular')
   const [allHighlights, setAllHighlights] = useState<Highlight[]>(initialHighlights)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialHighlights.length < totalCount)
 
   const [currentSort, setCurrentSort] = useState<SortMode>('popular')
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   const handleSortChange = useCallback(async (newSort: SortMode) => {
     if (newSort === currentSort) return
@@ -391,6 +418,8 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
             highlight={h}
             isLoggedIn={isLoggedIn}
             upvoted={userUpvotedIds.includes(h.id)}
+            restaurantName={restaurantName}
+            onPhotoClick={setLightboxUrl}
           />
         ))}
       </div>
@@ -412,6 +441,28 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
               `Show more (${remaining} remaining)`
             )}
           </button>
+        </div>
+      )}
+
+      {/* Lightbox overlay */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white z-10 transition-colors"
+          >
+            <X className="w-8 h-8" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxUrl}
+            alt="Full size review photo"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </section>

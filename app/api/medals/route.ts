@@ -28,6 +28,7 @@ export async function PUT(req: NextRequest) {
 
   // If reassigning a gold medal, deactivate old comment & check for existing comment on new restaurant
   let existingComment: string | null = null
+  let existingPhotoUrl: string | null = null
   if (medalType === 'gold') {
     const existingGold = await prisma.medal.findUnique({
       where: {
@@ -64,11 +65,12 @@ export async function PUT(req: NextRequest) {
           year,
         },
       },
-      select: { id: true, comment: true },
+      select: { id: true, comment: true, photoUrl: true },
     })
 
     if (preserved) {
       existingComment = preserved.comment
+      existingPhotoUrl = preserved.photoUrl
     }
   }
 
@@ -118,6 +120,7 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({
     ...medal,
     existingComment,
+    existingPhotoUrl,
   })
 }
 

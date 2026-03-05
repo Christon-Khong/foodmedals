@@ -227,6 +227,7 @@ export default async function RestaurantPage({
             }))}
             totalCount={highlights.total}
             restaurantId={restaurant.id}
+            restaurantName={restaurant.name}
             isLoggedIn={isLoggedIn}
             userUpvotedIds={userUpvotedCommentIds}
           />

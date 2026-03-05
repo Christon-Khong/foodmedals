@@ -43,6 +43,7 @@ type Medal = {
   goldMedalComment?: {
     id: string
     comment: string
+    photoUrl?: string | null
     _count: { upvotes: number }
   } | null
 }
@@ -107,7 +108,7 @@ function EmptyMedalSlot({ type, awardHref }: { type: string; awardHref?: string 
   )
 }
 
-function CategoryCard({ catMedals, isOwner, onOpenComment }: { catMedals: Medal[]; isOwner: boolean; onOpenComment?: (medalId: string, restaurantName: string, categoryName: string, existingComment?: string) => void }) {
+function CategoryCard({ catMedals, isOwner, onOpenComment }: { catMedals: Medal[]; isOwner: boolean; onOpenComment?: (medalId: string, restaurantName: string, categoryName: string, existingComment?: string, existingPhotoUrl?: string | null) => void }) {
   const cat = catMedals[0].foodCategory
   const sorted = [...catMedals].sort(
     (a, b) => (MEDAL_ORDER[a.medalType] ?? 9) - (MEDAL_ORDER[b.medalType] ?? 9),
@@ -184,7 +185,7 @@ function CategoryCard({ catMedals, isOwner, onOpenComment }: { catMedals: Medal[
             )}
             {isOwner && onOpenComment && (
               <button
-                onClick={() => onOpenComment(gold.id, gold.restaurant.name, cat.name, gold.goldMedalComment?.comment)}
+                onClick={() => onOpenComment(gold.id, gold.restaurant.name, cat.name, gold.goldMedalComment?.comment, gold.goldMedalComment?.photoUrl)}
                 className="flex items-center gap-0.5 text-[10px] font-semibold text-yellow-700 hover:text-yellow-900 transition-colors flex-shrink-0"
                 title="Edit comment"
               >
@@ -370,13 +371,14 @@ export function TrophyCaseGrid({ byCategory, year, isOwner, totalCategories, ran
     restaurantName: string
     categoryName: string
     initialComment?: string
+    initialPhotoUrl?: string | null
   } | null>(null)
 
   // Track which medal IDs have had comments saved (for optimistic UI)
   const [savedCommentIds, setSavedCommentIds] = useState<Set<string>>(new Set())
 
-  const handleOpenComment = useCallback((medalId: string, restaurantName: string, categoryName: string, existingComment?: string) => {
-    setCommentPrompt({ medalId, restaurantName, categoryName, initialComment: existingComment })
+  const handleOpenComment = useCallback((medalId: string, restaurantName: string, categoryName: string, existingComment?: string, existingPhotoUrl?: string | null) => {
+    setCommentPrompt({ medalId, restaurantName, categoryName, initialComment: existingComment, initialPhotoUrl: existingPhotoUrl })
   }, [])
 
   // Filter categories by search query (category name, restaurant name, city, state)
@@ -535,6 +537,7 @@ export function TrophyCaseGrid({ byCategory, year, isOwner, totalCategories, ran
           restaurantName={commentPrompt.restaurantName}
           categoryName={commentPrompt.categoryName}
           initialComment={commentPrompt.initialComment}
+          initialPhotoUrl={commentPrompt.initialPhotoUrl}
           onClose={() => setCommentPrompt(null)}
           onSaved={() => {
             setSavedCommentIds(prev => new Set(prev).add(commentPrompt.medalId))

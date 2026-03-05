@@ -1,22 +1,70 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { X, Loader2, MessageSquare } from 'lucide-react'
+import { X, Loader2, MessageSquare, Camera } from 'lucide-react'
+import imageCompression from 'browser-image-compression'
 
 type Props = {
   medalId: string
   restaurantName: string
   categoryName: string
   initialComment?: string
+  initialPhotoUrl?: string | null
   onClose: () => void
-  onSaved: (commentText: string) => void
+  onSaved: (commentText: string, photoUrl?: string | null) => void
 }
 
-export function GoldCommentModal({ medalId, restaurantName, categoryName, initialComment, onClose, onSaved }: Props) {
+export function GoldCommentModal({ medalId, restaurantName, categoryName, initialComment, initialPhotoUrl, onClose, onSaved }: Props) {
   const [comment, setComment] = useState(initialComment ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(initialPhotoUrl ?? null)
+  const [removePhoto, setRemovePhoto] = useState(false)
+  const [compressing, setCompressing] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setCompressing(true)
+    setError(null)
+    try {
+      const compressed = await imageCompression(file, {
+        maxWidthOrHeight: 1200,
+        maxSizeMB: 2,
+        useWebWorker: true,
+      })
+      // Revoke old blob URL if there was one
+      if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview)
+      setPhotoFile(compressed)
+      setPhotoPreview(URL.createObjectURL(compressed))
+      setRemovePhoto(false)
+    } catch {
+      setError('Failed to process image. Try a different photo.')
+    } finally {
+      setCompressing(false)
+    }
+  }
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null)
+    if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview)
+    setPhotoPreview(null)
+    setRemovePhoto(true)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const handleSubmit = async () => {
     const trimmed = comment.trim()
@@ -26,10 +74,15 @@ export function GoldCommentModal({ medalId, restaurantName, categoryName, initia
     setError(null)
 
     try {
+      const formData = new FormData()
+      formData.append('medalId', medalId)
+      formData.append('comment', trimmed)
+      if (photoFile) formData.append('photo', photoFile)
+      if (removePhoto) formData.append('removePhoto', 'true')
+
       const res = await fetch('/api/medals/comment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ medalId, comment: trimmed }),
+        body: formData,
       })
 
       if (!res.ok) {
@@ -38,7 +91,8 @@ export function GoldCommentModal({ medalId, restaurantName, categoryName, initia
         return
       }
 
-      onSaved(trimmed)
+      const data = await res.json()
+      onSaved(trimmed, data.photoUrl ?? null)
     } catch {
       setError('Network error. Please try again.')
     } finally {
@@ -92,6 +146,57 @@ export function GoldCommentModal({ medalId, restaurantName, categoryName, initia
           <span className="absolute bottom-2 right-3 text-[10px] text-gray-400">
             {comment.length}/500
           </span>
+        </div>
+
+        {/* Photo section */}
+        <div className="mb-3">
+          {photoPreview ? (
+            <div className="relative inline-block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoPreview}
+                alt="Preview"
+                className="rounded-lg object-cover border border-gray-200"
+                style={{ maxHeight: 80, maxWidth: 120 }}
+              />
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                className="absolute -top-2 -right-2 bg-white border border-gray-200 rounded-full p-0.5 shadow-sm hover:bg-red-50 transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-gray-500" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={compressing}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-yellow-700 transition-colors disabled:opacity-50"
+              >
+                {compressing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4" />
+                    Add photo
+                  </>
+                )}
+              </button>
+            </>
+          )}
         </div>
 
         {error && (

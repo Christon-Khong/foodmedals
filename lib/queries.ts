@@ -374,7 +374,7 @@ export async function getUserMedalsForCategory(
       restaurant: true,
       goldMedalComment: {
         where: { active: true },
-        select: { id: true, comment: true },
+        select: { id: true, comment: true, photoUrl: true },
       },
     },
   })
@@ -396,7 +396,7 @@ export async function getPreservedGoldComment(
         year,
       },
     },
-    select: { comment: true, active: true },
+    select: { comment: true, active: true, photoUrl: true },
   })
 }
 
@@ -904,6 +904,7 @@ export const getUserProfile = cache(async (slug: string) => {
         select: {
           id: true,
           comment: true,
+          photoUrl: true,
           _count: { select: { upvotes: true } },
         },
       },
@@ -919,6 +920,7 @@ export const getUserProfile = cache(async (slug: string) => {
 export type HighlightRow = {
   id:           string
   comment:      string
+  photoUrl:     string | null
   createdAt:    Date
   year:         number
   categoryName: string
@@ -949,6 +951,7 @@ export async function getRestaurantHighlights(
       Array<{
         id:            string
         comment:       string
+        photo_url:     string | null
         created_at:    Date
         year:          number
         category_name: string
@@ -965,6 +968,7 @@ export async function getRestaurantHighlights(
       SELECT
         gmc.id,
         gmc.comment,
+        gmc.photo_url,
         gmc.created_at,
         gmc.year,
         fc.name  AS category_name,
@@ -985,7 +989,7 @@ export async function getRestaurantHighlights(
       LEFT JOIN comment_upvotes cu ON cu.comment_id = gmc.id
       WHERE gmc.restaurant_id = ${restaurantId}
         AND gmc.active = true
-      GROUP BY gmc.id, gmc.comment, gmc.created_at, gmc.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url, gmc.user_id
+      GROUP BY gmc.id, gmc.comment, gmc.photo_url, gmc.created_at, gmc.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url, gmc.user_id
       ORDER BY ${orderClause}
       LIMIT ${limit}
       OFFSET ${offset}
@@ -1005,6 +1009,7 @@ export async function getRestaurantHighlights(
     highlights: rows.map(r => ({
       id:           r.id,
       comment:      r.comment,
+      photoUrl:     r.photo_url,
       createdAt:    r.created_at,
       year:         r.year,
       categoryName: r.category_name,

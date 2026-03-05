@@ -22,6 +22,7 @@ type InitialMedal = {
   restaurantId: string
   hasComment:   boolean
   commentText?: string
+  photoUrl?:    string | null
 }
 
 type AwardFormProps = {
@@ -60,6 +61,9 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
   const [goldCommentText, setGoldCommentText] = useState<string>(
     () => initialMedals.find(m => m.medalType === 'gold')?.commentText ?? ''
   )
+  const [goldPhotoUrl, setGoldPhotoUrl] = useState<string | null>(
+    () => initialMedals.find(m => m.medalType === 'gold')?.photoUrl ?? null
+  )
 
   const [saving, setSaving]         = useState<string | null>(null) // `${restaurantId}-${medalType}`
   const [goldConfetti, setConfetti] = useState(false)
@@ -68,6 +72,7 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
     medalId: string
     restaurantName: string
     initialComment?: string
+    initialPhotoUrl?: string | null
   } | null>(null)
 
   // Use a ref to always have the latest medals for revert, avoiding stale closure
@@ -124,13 +129,16 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
       // For gold medals, prompt user to add/edit a comment
       if (medalType === 'gold' && data.id) {
         const restored = data.existingComment ?? null
+        const restoredPhoto = data.existingPhotoUrl ?? null
         if (restored) {
           // Comment was preserved from a previous award — mark as having comment
           setGoldHasComment(true)
           setGoldCommentText(restored)
+          setGoldPhotoUrl(restoredPhoto)
         } else {
           setGoldHasComment(false)
           setGoldCommentText('')
+          setGoldPhotoUrl(null)
         }
         const restaurant = restaurants.find(r => r.id === restaurantId)
         if (restaurant) {
@@ -138,6 +146,7 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
             medalId: data.id,
             restaurantName: restaurant.name,
             initialComment: restored ?? undefined,
+            initialPhotoUrl: restoredPhoto,
           })
         }
       }
@@ -161,9 +170,10 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
         medalId: goldMedalId,
         restaurantName: restaurant.name,
         initialComment: goldCommentText || undefined,
+        initialPhotoUrl: goldPhotoUrl,
       })
     }
-  }, [medalIds.gold, medals.gold, restaurants, goldCommentText])
+  }, [medalIds.gold, medals.gold, restaurants, goldCommentText, goldPhotoUrl])
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -303,11 +313,13 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
           restaurantName={commentPrompt.restaurantName}
           categoryName={category.name}
           initialComment={commentPrompt.initialComment}
+          initialPhotoUrl={commentPrompt.initialPhotoUrl}
           onClose={() => setCommentPrompt(null)}
-          onSaved={(text) => {
+          onSaved={(text, photoUrl) => {
             setCommentPrompt(null)
             setGoldHasComment(true)
             setGoldCommentText(text)
+            setGoldPhotoUrl(photoUrl ?? null)
           }}
         />
       )}
