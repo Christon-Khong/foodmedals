@@ -86,7 +86,15 @@ export default async function AddressReportsPage() {
 
                 {/* Actions */}
                 <div className="flex flex-col gap-2 shrink-0">
-                  <ReportActions reportId={r.id} />
+                  <ReportActions
+                    reportId={r.id}
+                    restaurantId={r.restaurant.id}
+                    currentAddress={r.restaurant.address}
+                    currentCity={r.restaurant.city}
+                    currentState={r.restaurant.state}
+                    currentZip={r.restaurant.zip}
+                    googleMapsUrl={r.googleMapsUrl}
+                  />
                   <Link
                     href={`/admin/restaurants/${r.restaurant.id}/edit`}
                     className="text-xs text-center text-gray-500 hover:text-yellow-400 transition-colors"

@@ -262,13 +262,31 @@ export default async function CriticProfilePage({ params }: Props) {
           <>
             {/* Crown Jewel */}
             <div className="max-w-2xl">
-              {medals.some(m => m.medalType === 'gold') && (
+              {medals.some(m => m.medalType === 'gold') ? (
                 <CrownJewelCard
                   medals={medals}
                   crownJewelMedalId={user.crownJewelMedalId}
                   isOwner={isOwner}
                 />
-              )}
+              ) : isOwner ? (
+                <div className="mb-8 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl border border-yellow-200/60 p-5">
+                  <div className="flex items-start gap-3">
+                    <Image src="/medals/gold.png" alt="Gold Medal" width={36} height={36} className="flex-shrink-0 mt-0.5 opacity-40" />
+                    <div>
+                      <h3 className="text-sm font-bold text-yellow-800">Crown Jewel</h3>
+                      <p className="text-xs text-yellow-700/70 mt-1 leading-relaxed">
+                        Your Crown Jewel is your absolute #1 restaurant pick. It earns that restaurant a bonus point on the leaderboard. Award a Gold medal in any category to unlock it!
+                      </p>
+                      <Link
+                        href="/categories"
+                        className="inline-block mt-3 text-xs font-bold text-yellow-700 hover:text-yellow-900 bg-yellow-200/60 hover:bg-yellow-200 px-3 py-1.5 rounded-full transition-colors"
+                      >
+                        Browse categories
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             {/* Trophy Case Grid */}
