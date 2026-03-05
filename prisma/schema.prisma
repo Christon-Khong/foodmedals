@@ -32,6 +32,7 @@ model User {
   categorySuggVotes    CategorySuggestionVote[]
   newCategorySuggestions     NewCategorySuggestion[]      @relation("NewCategorySuggestions")
   newCategorySuggestionVotes NewCategorySuggestionVote[]
+  addressReports             AddressReport[]
 
   @@map("users")
 }
@@ -79,6 +80,7 @@ model Restaurant {
   medals          Medal[]
   suggestionVotes    SuggestionVote[]
   categorySuggVotes  CategorySuggestionVote[]
+  addressReports     AddressReport[]
 
   @@map("restaurants")
 }
@@ -194,4 +196,20 @@ model NewCategorySuggestionVote {
 
   @@unique([suggestionId, userId])
   @@map("new_category_suggestion_votes")
+}
+
+model AddressReport {
+  id            String   @id @default(cuid())
+  restaurantId  String   @map("restaurant_id")
+  userId        String   @map("user_id")
+  googleMapsUrl String?  @map("google_maps_url")
+  note          String?
+  status        String   @default("pending") // pending | resolved | dismissed
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, userId])
+  @@map("address_reports")
 }

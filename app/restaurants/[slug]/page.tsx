@@ -10,6 +10,7 @@ import { HeroImage } from '@/components/HeroImage'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { CategorySuggest } from '@/components/CategorySuggest'
 import { CategoryRankingBadges } from '@/components/CategoryRankingBadges'
+import { ReportAddressButton } from '@/components/ReportAddressButton'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -65,12 +66,20 @@ export default async function RestaurantPage({
   // Which categories has the current user voted for?
   const verifiedCategoryIds = restaurant.categories.map(rc => rc.foodCategory.id)
   let userVotedCategoryIds: string[] = []
+  let hasReportedAddress = false
   if (session?.user?.id) {
-    const votes = await prisma.categorySuggestionVote.findMany({
-      where: { restaurantId: restaurant.id, userId: session.user.id },
-      select: { foodCategoryId: true },
-    })
+    const [votes, existingReport] = await Promise.all([
+      prisma.categorySuggestionVote.findMany({
+        where: { restaurantId: restaurant.id, userId: session.user.id },
+        select: { foodCategoryId: true },
+      }),
+      prisma.addressReport.findUnique({
+        where: { restaurantId_userId: { restaurantId: restaurant.id, userId: session.user.id } },
+        select: { id: true },
+      }),
+    ])
     userVotedCategoryIds = votes.map(v => v.foodCategoryId)
+    hasReportedAddress = !!existingReport
   }
 
   const suggestionsWithVoted = categorySuggestions.map(s => ({
@@ -150,6 +159,13 @@ export default async function RestaurantPage({
               </>
             )}
           </div>
+
+          <ReportAddressButton
+            restaurantId={restaurant.id}
+            isLoggedIn={isLoggedIn}
+            hasReported={hasReportedAddress}
+          />
+
           {restaurant.description && (
             <p className="text-sm text-gray-600 mt-3 max-w-xl">{restaurant.description}</p>
           )}
