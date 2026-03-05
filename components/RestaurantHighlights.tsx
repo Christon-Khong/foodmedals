@@ -32,50 +32,108 @@ type Props = {
 
 type SortMode = 'popular' | 'newest'
 
-// ─── Tier logic (shared with profile page) ─────────────────────────────────
+// ─── Achievement tier definitions (matching critic profile page) ──────────
 
-const TIERS = [
-  { min: 80, label: 'Oracle' },
-  { min: 60, label: 'Vanguard' },
-  { min: 45, label: 'The Palate' },
-  { min: 30, label: 'Grand Curator' },
-  { min: 20, label: 'Master Critic' },
-  { min: 12, label: 'Local Legend' },
-  { min:  7, label: 'Silver Spoon' },
-  { min:  4, label: 'Flavor Chaser' },
-  { min:  2, label: 'Food Scout' },
-  { min:  1, label: 'Taste Tester' },
+const TIERS: Array<{
+  min: number; label: string; color: string;
+  glow: string | null; glowDim: string | null; animated: boolean;
+}> = [
+  { min: 80, label: 'Oracle',        color: 'from-amber-200 to-yellow-100 text-amber-900 border-amber-300',
+    glow:    '0 0 12px 3px rgba(251,191,36,0.4), 0 0 24px 6px rgba(245,158,11,0.2)',
+    glowDim: '0 0 8px 2px rgba(251,191,36,0.18), 0 0 16px 4px rgba(245,158,11,0.08)',
+    animated: true },
+  { min: 60, label: 'Vanguard',      color: 'from-cyan-100 to-sky-100 text-cyan-800 border-cyan-200',
+    glow:    '0 0 10px 3px rgba(6,182,212,0.35), 0 0 20px 5px rgba(14,165,233,0.18)',
+    glowDim: '0 0 6px 2px rgba(6,182,212,0.15), 0 0 14px 3px rgba(14,165,233,0.07)',
+    animated: true },
+  { min: 45, label: 'The Palate',    color: 'from-rose-100 to-pink-100 text-rose-800 border-rose-200',
+    glow:    '0 0 10px 3px rgba(244,63,94,0.3), 0 0 18px 5px rgba(236,72,153,0.15)',
+    glowDim: '0 0 6px 2px rgba(244,63,94,0.13), 0 0 12px 3px rgba(236,72,153,0.06)',
+    animated: true },
+  { min: 30, label: 'Grand Curator', color: 'from-indigo-100 to-blue-100 text-indigo-800 border-indigo-200',
+    glow:    '0 0 8px 2px rgba(99,102,241,0.28), 0 0 16px 4px rgba(79,70,229,0.12)',
+    glowDim: '0 0 5px 1px rgba(99,102,241,0.12), 0 0 10px 2px rgba(79,70,229,0.05)',
+    animated: true },
+  { min: 20, label: 'Master Critic', color: 'from-purple-100 to-violet-100 text-purple-800 border-purple-200',
+    glow:    '0 0 8px 2px rgba(168,85,247,0.25), 0 0 14px 3px rgba(139,92,246,0.1)',
+    glowDim: '0 0 4px 1px rgba(168,85,247,0.1), 0 0 8px 2px rgba(139,92,246,0.04)',
+    animated: true },
+  { min: 12, label: 'Local Legend',  color: 'from-emerald-100 to-teal-100 text-emerald-800 border-emerald-200',
+    glow:    '0 0 6px 2px rgba(16,185,129,0.22), 0 0 12px 3px rgba(20,184,166,0.08)',
+    glowDim: '0 0 4px 1px rgba(16,185,129,0.09), 0 0 8px 2px rgba(20,184,166,0.03)',
+    animated: true },
+  { min:  7, label: 'Silver Spoon',  color: 'from-slate-100 to-gray-100 text-slate-700 border-slate-200',
+    glow:    '0 0 5px 1px rgba(148,163,184,0.2), 0 0 10px 2px rgba(100,116,139,0.07)',
+    glowDim: '0 0 3px 1px rgba(148,163,184,0.08), 0 0 6px 1px rgba(100,116,139,0.03)',
+    animated: true },
+  { min:  4, label: 'Flavor Chaser', color: 'from-orange-100 to-amber-100 text-orange-800 border-orange-200',
+    glow:    '0 0 5px 1px rgba(251,146,60,0.15)',
+    glowDim: '0 0 3px 1px rgba(251,146,60,0.06)',
+    animated: true },
+  { min:  2, label: 'Food Scout',    color: 'from-lime-100 to-green-100 text-lime-800 border-lime-200',
+    glow: null, glowDim: null, animated: false },
+  { min:  1, label: 'Taste Tester',  color: 'from-yellow-100 to-amber-100 text-yellow-800 border-yellow-200',
+    glow: null, glowDim: null, animated: false },
 ]
 
-function getTierLabel(categoryCount: number): string | null {
+function getAchievementTier(categoryCount: number) {
   for (const tier of TIERS) {
-    if (categoryCount >= tier.min) return tier.label
+    if (categoryCount >= tier.min) return tier
   }
   return null
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────
 
-function UserAvatar({ name, avatarUrl, size }: { name: string; avatarUrl: string | null; size: number }) {
-  if (avatarUrl) {
-    return (
-      <Image
-        src={avatarUrl}
-        alt={name}
-        width={size}
-        height={size}
-        className="rounded-full"
-      />
-    )
-  }
-  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-  return (
+function UserAvatar({ name, avatarUrl, size, tier }: {
+  name: string
+  avatarUrl: string | null
+  size: number
+  tier: ReturnType<typeof getAchievementTier>
+}) {
+  const animId = tier?.animated && tier.glow && tier.glowDim
+    ? `highlight-aura-${tier.label.toLowerCase().replace(/\s+/g, '-')}`
+    : null
+
+  const avatar = avatarUrl ? (
+    <Image
+      src={avatarUrl}
+      alt={name}
+      width={size}
+      height={size}
+      className="rounded-full"
+    />
+  ) : (
     <div
       className="rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-white font-bold"
       style={{ width: size, height: size, fontSize: size * 0.35 }}
     >
-      {initials}
+      {name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
     </div>
+  )
+
+  if (!tier?.glow) return avatar
+
+  return (
+    <>
+      {animId && (
+        <style>{`
+          @keyframes ${animId} {
+            0%, 100% { box-shadow: ${tier.glow}; }
+            50% { box-shadow: ${tier.glowDim}; }
+          }
+        `}</style>
+      )}
+      <div
+        className="rounded-full"
+        style={{
+          animation: animId ? `${animId} 3s ease-in-out infinite` : undefined,
+          boxShadow: !animId && tier.glow ? tier.glow : undefined,
+        }}
+      >
+        {avatar}
+      </div>
+    </>
   )
 }
 
@@ -146,7 +204,7 @@ function HighlightCard({
   isLoggedIn: boolean
   upvoted: boolean
 }) {
-  const tierLabel = getTierLabel(highlight.userCategoryCount)
+  const tier = getAchievementTier(highlight.userCategoryCount)
 
   return (
     <div className="bg-white rounded-2xl border border-amber-100 overflow-hidden hover:shadow-md transition-shadow">
@@ -166,14 +224,14 @@ function HighlightCard({
       {/* Attribution bar */}
       <div className="flex items-center justify-between gap-3 px-6 py-3.5 bg-gradient-to-r from-amber-50/80 to-yellow-50/60 border-t border-amber-100">
         <div className="flex items-center gap-3 min-w-0">
-          {/* Avatar */}
+          {/* Avatar with tier aura */}
           <div className="flex-shrink-0">
             {highlight.userSlug ? (
               <Link href={`/critics/${highlight.userSlug}`}>
-                <UserAvatar name={highlight.userName} avatarUrl={highlight.userAvatar} size={40} />
+                <UserAvatar name={highlight.userName} avatarUrl={highlight.userAvatar} size={40} tier={tier} />
               </Link>
             ) : (
-              <UserAvatar name={highlight.userName} avatarUrl={highlight.userAvatar} size={40} />
+              <UserAvatar name={highlight.userName} avatarUrl={highlight.userAvatar} size={40} tier={tier} />
             )}
           </div>
 
@@ -190,10 +248,10 @@ function HighlightCard({
               ) : (
                 <span className="text-sm font-bold text-gray-900 truncate">{highlight.userName}</span>
               )}
-              {tierLabel && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-yellow-200">
+              {tier && (
+                <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold bg-gradient-to-r ${tier.color} px-2 py-0.5 rounded-full border`}>
                   <Award className="w-2.5 h-2.5" />
-                  {tierLabel}
+                  {tier.label}
                 </span>
               )}
             </div>
