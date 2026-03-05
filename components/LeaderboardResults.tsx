@@ -273,6 +273,7 @@ export function LeaderboardResults({
                             <p className="text-xs text-gray-500 italic leading-relaxed line-clamp-2">
                               {goldCommentText}
                             </p>
+                            <Quote className="w-3 h-3 text-yellow-500 flex-shrink-0 mt-0.5" />
                           </div>
                         )}
                       </td>
