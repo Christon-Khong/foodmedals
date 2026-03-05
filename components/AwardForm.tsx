@@ -188,24 +188,31 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
               ) : (
                 <p className="text-xs text-gray-400 italic">Not yet picked</p>
               )}
-              {/* Add/edit comment button for gold */}
+              {/* Gold comment preview + edit button */}
               {mt === 'gold' && restaurant && medalIds.gold && (
-                <button
-                  onClick={handleOpenCommentForGold}
-                  className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-yellow-700 hover:text-yellow-900 transition-colors"
-                >
-                  {goldHasComment ? (
-                    <>
-                      <Pencil className="w-2.5 h-2.5" />
-                      Edit comment
-                    </>
-                  ) : (
-                    <>
-                      <MessageSquare className="w-2.5 h-2.5" />
-                      Share your pick
-                    </>
+                <div className="mt-1.5">
+                  {goldHasComment && goldCommentText && (
+                    <p className="text-[10px] text-gray-500 leading-snug line-clamp-2 italic mb-0.5">
+                      &ldquo;{goldCommentText}&rdquo;
+                    </p>
                   )}
-                </button>
+                  <button
+                    onClick={handleOpenCommentForGold}
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-yellow-700 hover:text-yellow-900 transition-colors"
+                  >
+                    {goldHasComment ? (
+                      <>
+                        <Pencil className="w-2.5 h-2.5" />
+                        Edit comment
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquare className="w-2.5 h-2.5" />
+                        Share your pick
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
             </div>
           )
@@ -291,6 +298,7 @@ export function AwardForm({ category, restaurants, initialMedals, year }: AwardF
       {/* ── Gold medal comment prompt ── */}
       {commentPrompt && (
         <GoldCommentModal
+          key={commentPrompt.medalId}
           medalId={commentPrompt.medalId}
           restaurantName={commentPrompt.restaurantName}
           categoryName={category.name}
