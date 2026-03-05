@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { NominationsWithFilters } from '@/components/NominationsWithFilters'
@@ -115,6 +116,16 @@ export default async function CommunityNominationsPage() {
           />
         )}
 
+        <div className="mt-4 mb-10 flex justify-center">
+          <Link
+            href="/suggest/category"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-300 bg-white hover:border-yellow-400 hover:bg-yellow-50 text-sm font-semibold text-gray-600 hover:text-gray-900 shadow-sm hover:shadow transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Suggest a Category
+          </Link>
+        </div>
+
         {/* Restaurant Suggestions */}
         <h2 className="text-lg font-bold text-gray-900 mb-4">
           Restaurant Nominations
@@ -124,18 +135,12 @@ export default async function CommunityNominationsPage() {
           isLoggedIn={!!session}
         />
 
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="mt-8 flex justify-center">
           <Link
             href="/suggest/restaurant"
             className="inline-block px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-full text-sm transition-colors"
           >
             Suggest a restaurant
-          </Link>
-          <Link
-            href="/suggest/category"
-            className="inline-block px-5 py-2.5 border border-yellow-400 hover:bg-yellow-50 text-gray-900 font-semibold rounded-full text-sm transition-colors"
-          >
-            Suggest a category
           </Link>
         </div>
       </div>
