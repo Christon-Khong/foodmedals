@@ -31,10 +31,10 @@ const MEDAL_IMG: Record<MedalType, string> = {
   silver: '/medals/silver.png',
   bronze: '/medals/bronze.png',
 }
-const MEDAL_ACTIVE_STYLES: Record<MedalType, string> = {
-  gold:   'ring-2 ring-yellow-400 bg-yellow-50 shadow-[0_0_8px_rgba(250,204,21,0.5)]',
-  silver: 'ring-2 ring-gray-400 bg-gray-50 shadow-[0_0_8px_rgba(156,163,175,0.5)]',
-  bronze: 'ring-2 ring-amber-500 bg-amber-50 shadow-[0_0_8px_rgba(245,158,11,0.5)]',
+const MEDAL_ACTIVE_BG: Record<MedalType, string> = {
+  gold:   'bg-yellow-50 ring-2 ring-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.4)]',
+  silver: 'bg-gray-50 ring-2 ring-gray-400 shadow-[0_0_8px_rgba(156,163,175,0.4)]',
+  bronze: 'bg-amber-50 ring-2 ring-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]',
 }
 const ROW_HIGHLIGHT: Record<MedalType, string> = {
   gold:   'border-l-4 border-l-yellow-400 bg-yellow-50/40',
@@ -67,55 +67,63 @@ function Skeleton() {
   )
 }
 
-function MedalButtons({
-  restaurantId,
-  userMedals,
+/** Interactive medal cell — shows count + clickable to award */
+function MedalCell({
+  medalType,
+  count,
+  isActive,
   isLoggedIn,
-  onMedalChange,
   categorySlug,
+  onClick,
 }: {
-  restaurantId: string
-  userMedals: UserMedals
+  medalType: MedalType
+  count: number
+  isActive: boolean
   isLoggedIn: boolean
-  onMedalChange?: (restaurantId: string, medalType: MedalType) => void
   categorySlug?: string
+  onClick?: () => void
 }) {
-  if (!isLoggedIn) {
+  const content = (
+    <div className={`flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 ${
+      isActive
+        ? `${MEDAL_ACTIVE_BG[medalType]} scale-105`
+        : isLoggedIn
+          ? 'hover:bg-amber-50 hover:scale-105 cursor-pointer'
+          : ''
+    }`}>
+      <Image src={MEDAL_IMG[medalType]} alt={medalType} width={22} height={22} />
+      <span className={`text-xs tabular-nums leading-none ${
+        isActive ? 'font-bold text-gray-900' : count ? 'font-semibold text-gray-600' : 'text-gray-300'
+      }`}>
+        {count || '—'}
+      </span>
+    </div>
+  )
+
+  if (isLoggedIn) {
     return (
-      <Link
-        href={`/auth/signin?callbackUrl=/categories/${categorySlug ?? ''}`}
-        className="flex gap-0.5 opacity-40 hover:opacity-70 transition-opacity"
-        title="Sign in to award medals"
-      >
-        {MEDAL_TYPES.map(mt => (
-          <div key={mt} className="w-7 h-7 rounded-lg flex items-center justify-center">
-            <Image src={MEDAL_IMG[mt]} alt={mt} width={18} height={18} />
-          </div>
-        ))}
-      </Link>
+      <td className="px-1 py-2 text-center">
+        <button
+          onClick={onClick}
+          title={isActive ? `Remove ${medalType} medal` : `Award ${medalType}`}
+          className="inline-flex"
+        >
+          {content}
+        </button>
+      </td>
     )
   }
 
   return (
-    <div className="flex gap-0.5">
-      {MEDAL_TYPES.map(mt => {
-        const isActive = userMedals[mt] === restaurantId
-        return (
-          <button
-            key={mt}
-            onClick={() => onMedalChange?.(restaurantId, mt)}
-            title={isActive ? `Remove ${mt} medal` : `Award ${mt}`}
-            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 ${
-              isActive
-                ? `scale-110 ${MEDAL_ACTIVE_STYLES[mt]}`
-                : 'opacity-30 hover:opacity-80 hover:bg-amber-50 hover:scale-105'
-            }`}
-          >
-            <Image src={MEDAL_IMG[mt]} alt={mt} width={18} height={18} />
-          </button>
-        )
-      })}
-    </div>
+    <td className="px-1 py-2 text-center">
+      <Link
+        href={`/auth/signin?callbackUrl=/categories/${categorySlug ?? ''}`}
+        title="Sign in to award medals"
+        className="inline-flex opacity-70 hover:opacity-100 transition-opacity"
+      >
+        {content}
+      </Link>
+    </td>
   )
 }
 
@@ -189,22 +197,17 @@ export function LeaderboardResults({
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-amber-50 border-b border-amber-100">
-                  <th className="text-left px-4 py-3 text-gray-500 font-semibold w-10">#</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-semibold">Restaurant</th>
-                  <th className="text-center px-2 py-3 text-gray-500 font-semibold">
-                    <Image src="/medals/gold.png" alt="Gold" width={16} height={16} className="mx-auto" />
-                  </th>
-                  <th className="text-center px-2 py-3 text-gray-500 font-semibold">
-                    <Image src="/medals/silver.png" alt="Silver" width={16} height={16} className="mx-auto" />
-                  </th>
-                  <th className="text-center px-2 py-3 text-gray-500 font-semibold">
-                    <Image src="/medals/bronze.png" alt="Bronze" width={16} height={16} className="mx-auto" />
-                  </th>
-                  <th className="text-center px-2 py-3 text-gray-500 font-semibold" title="Gold medal comments">
+                  <th className="text-left px-3 sm:px-4 py-3 text-gray-500 font-semibold w-10">#</th>
+                  <th className="text-left px-2 sm:px-4 py-3 text-gray-500 font-semibold">Restaurant</th>
+                  {MEDAL_TYPES.map(mt => (
+                    <th key={mt} className="text-center px-1 py-3 text-gray-500 font-semibold">
+                      <Image src={MEDAL_IMG[mt]} alt={mt} width={20} height={20} className="mx-auto" />
+                    </th>
+                  ))}
+                  <th className="text-center px-1 py-3 text-gray-500 font-semibold" title="Gold medal comments">
                     <MessageSquare className="w-4 h-4 mx-auto text-gray-400" />
                   </th>
-                  <th className="text-right px-4 py-3 text-gray-500 font-semibold whitespace-nowrap">Community Score</th>
-                  <th className="px-2 py-3 text-gray-500 font-semibold text-center whitespace-nowrap text-xs">Your Picks</th>
+                  <th className="text-right px-3 sm:px-4 py-3 text-gray-500 font-semibold whitespace-nowrap">Score</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-amber-50">
@@ -218,14 +221,14 @@ export function LeaderboardResults({
                       key={row.restaurantId}
                       className={`hover:bg-amber-50 transition-colors ${rank <= 3 ? 'font-medium' : ''} ${rowHighlight}`}
                     >
-                      <td className="px-4 py-3 text-gray-400">
+                      <td className="px-3 sm:px-4 py-3 text-gray-400">
                         {medalInfo ? (
                           <Image src={medalInfo.src} alt={medalInfo.alt} width={16} height={16} />
                         ) : (
                           rank
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 sm:px-4 py-3">
                         <span className="flex items-center flex-wrap gap-x-1">
                           <Link
                             href={`/restaurants/${row.restaurantSlug}`}
@@ -280,10 +283,21 @@ export function LeaderboardResults({
                           </div>
                         )}
                       </td>
-                      <td className="px-2 py-3 text-center text-gray-600">{row.goldCount   || '—'}</td>
-                      <td className="px-2 py-3 text-center text-gray-600">{row.silverCount || '—'}</td>
-                      <td className="px-2 py-3 text-center text-gray-600">{row.bronzeCount || '—'}</td>
-                      <td className="px-2 py-3 text-center text-gray-600">
+
+                      {/* Medal cells — combined count + award */}
+                      {MEDAL_TYPES.map(mt => (
+                        <MedalCell
+                          key={mt}
+                          medalType={mt}
+                          count={mt === 'gold' ? row.goldCount : mt === 'silver' ? row.silverCount : row.bronzeCount}
+                          isActive={userMedals[mt] === row.restaurantId}
+                          isLoggedIn={isLoggedIn}
+                          categorySlug={categorySlug}
+                          onClick={() => onMedalChange?.(row.restaurantId, mt)}
+                        />
+                      ))}
+
+                      <td className="px-1 py-2 text-center text-gray-600">
                         {row.commentCount ? (
                           <Link
                             href={`/restaurants/${row.restaurantSlug}#highlights`}
@@ -295,16 +309,7 @@ export function LeaderboardResults({
                           </Link>
                         ) : '—'}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-gray-800">{row.totalScore}</td>
-                      <td className="px-2 py-3 text-center">
-                        <MedalButtons
-                          restaurantId={row.restaurantId}
-                          userMedals={userMedals}
-                          isLoggedIn={isLoggedIn}
-                          onMedalChange={onMedalChange}
-                          categorySlug={categorySlug}
-                        />
-                      </td>
+                      <td className="px-3 sm:px-4 py-3 text-right font-bold text-gray-800">{row.totalScore}</td>
                     </tr>
                   )
                 })}
