@@ -6,7 +6,7 @@ import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { GoldCommentModal } from '@/components/GoldCommentModal'
-import { LayoutGrid, Map, Lock, Search, X, Plus, TrendingUp, Quote, ThumbsUp, MessageSquare, Pencil } from 'lucide-react'
+import { LayoutGrid, Map, Lock, Search, X, Plus, TrendingUp, Quote, ThumbsUp, MessageSquare, Pencil, EyeOff } from 'lucide-react'
 
 const ProfileMapInner = dynamic(() => import('./ProfileMapInner'), {
   ssr: false,
@@ -61,6 +61,7 @@ type Props = {
   byCategory: Record<string, Medal[]>
   year: number
   isOwner: boolean
+  isAdmin?: boolean
   totalCategories?: number
   rankedCount?: number
   unrankedCategories?: UnrankedCategory[]
@@ -108,7 +109,7 @@ function EmptyMedalSlot({ type, awardHref }: { type: string; awardHref?: string 
   )
 }
 
-function CategoryCard({ catMedals, isOwner, onOpenComment }: { catMedals: Medal[]; isOwner: boolean; onOpenComment?: (medalId: string, restaurantName: string, categoryName: string, existingComment?: string, existingPhotoUrl?: string | null) => void }) {
+function CategoryCard({ catMedals, isOwner, isAdmin, onOpenComment, onHideComment, hiddenCommentIds }: { catMedals: Medal[]; isOwner: boolean; isAdmin?: boolean; onOpenComment?: (medalId: string, restaurantName: string, categoryName: string, existingComment?: string, existingPhotoUrl?: string | null) => void; onHideComment?: (commentId: string) => void; hiddenCommentIds?: Set<string> }) {
   const cat = catMedals[0].foodCategory
   const sorted = [...catMedals].sort(
     (a, b) => (MEDAL_ORDER[a.medalType] ?? 9) - (MEDAL_ORDER[b.medalType] ?? 9),
@@ -171,7 +172,7 @@ function CategoryCard({ catMedals, isOwner, onOpenComment }: { catMedals: Medal[
         )}
 
         {/* Gold medal comment — subtle quote */}
-        {gold?.goldMedalComment && (
+        {gold?.goldMedalComment && !hiddenCommentIds?.has(gold.goldMedalComment.id) && (
           <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50/50">
             <Quote className="w-3 h-3 text-yellow-500 flex-shrink-0 mt-0.5 rotate-180" />
             <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 flex-1 italic">
@@ -190,6 +191,15 @@ function CategoryCard({ catMedals, isOwner, onOpenComment }: { catMedals: Medal[
                 title="Edit comment"
               >
                 <Pencil className="w-2.5 h-2.5" />
+              </button>
+            )}
+            {isAdmin && onHideComment && gold.goldMedalComment && (
+              <button
+                onClick={() => onHideComment(gold.goldMedalComment!.id)}
+                className="flex items-center gap-0.5 text-[10px] font-semibold text-gray-400 hover:text-red-600 transition-colors flex-shrink-0"
+                title="Hide comment (admin)"
+              >
+                <EyeOff className="w-2.5 h-2.5" />
               </button>
             )}
           </div>
@@ -363,7 +373,7 @@ function SuggestCategoryCard() {
   )
 }
 
-export function TrophyCaseGrid({ byCategory, year, isOwner, totalCategories, rankedCount, unrankedCategories, userCity }: Props) {
+export function TrophyCaseGrid({ byCategory, year, isOwner, isAdmin, totalCategories, rankedCount, unrankedCategories, userCity }: Props) {
   const [view, setView] = useState<'grid' | 'map'>('grid')
   const [search, setSearch] = useState('')
   const [commentPrompt, setCommentPrompt] = useState<{
@@ -379,6 +389,18 @@ export function TrophyCaseGrid({ byCategory, year, isOwner, totalCategories, ran
 
   const handleOpenComment = useCallback((medalId: string, restaurantName: string, categoryName: string, existingComment?: string, existingPhotoUrl?: string | null) => {
     setCommentPrompt({ medalId, restaurantName, categoryName, initialComment: existingComment, initialPhotoUrl: existingPhotoUrl })
+  }, [])
+
+  const [hiddenCommentIds, setHiddenCommentIds] = useState<Set<string>>(new Set())
+  const handleHideComment = useCallback(async (commentId: string) => {
+    try {
+      const res = await fetch(`/api/comments/${commentId}/hide`, { method: 'POST' })
+      if (res.ok) {
+        setHiddenCommentIds(prev => new Set(prev).add(commentId))
+      }
+    } catch {
+      // Silently fail
+    }
   }, [])
 
   // Filter categories by search query (category name, restaurant name, city, state)
@@ -505,7 +527,10 @@ export function TrophyCaseGrid({ byCategory, year, isOwner, totalCategories, ran
                 key={catMedals[0].foodCategory.id}
                 catMedals={catMedals}
                 isOwner={isOwner}
+                isAdmin={isAdmin}
                 onOpenComment={isOwner ? handleOpenComment : undefined}
+                onHideComment={isAdmin ? handleHideComment : undefined}
+                hiddenCommentIds={hiddenCommentIds}
               />
             ))}
           </div>

@@ -4,10 +4,13 @@ import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CategoryIcon } from '@/components/CategoryIcon'
-import { Sparkles, Loader2, Quote, Award, X } from 'lucide-react'
+import { Sparkles, Loader2, Quote, Award, X, Pencil, EyeOff } from 'lucide-react'
+import { GoldCommentModal } from '@/components/GoldCommentModal'
 
 type Highlight = {
   id:           string
+  userId:       string
+  medalId:      string | null
   comment:      string
   photoUrl:     string | null
   createdAt:    string
@@ -30,6 +33,8 @@ type Props = {
   restaurantName: string
   isLoggedIn: boolean
   userUpvotedIds: string[]
+  currentUserId?: string
+  isAdmin?: boolean
 }
 
 type SortMode = 'popular' | 'newest'
@@ -203,21 +208,62 @@ function HighlightCard({
   upvoted,
   restaurantName,
   onPhotoClick,
+  canEdit,
+  canHide,
+  onEdit,
+  onHide,
 }: {
   highlight: Highlight
   isLoggedIn: boolean
   upvoted: boolean
   restaurantName: string
   onPhotoClick: (url: string) => void
+  canEdit: boolean
+  canHide: boolean
+  onEdit: () => void
+  onHide: () => void
 }) {
   const tier = getAchievementTier(highlight.userCategoryCount)
+  const [hiding, setHiding] = useState(false)
 
   return (
     <div className="bg-white rounded-2xl border border-amber-100 overflow-hidden hover:shadow-md transition-shadow">
       {/* Quote body — the hero */}
       <div className="px-6 pt-6 pb-4">
-        <div className="flex items-start gap-1 mb-1">
+        <div className="flex items-start justify-between gap-2 mb-1">
           <Quote className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5 rotate-180" />
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {canEdit && (
+              <button
+                onClick={onEdit}
+                title="Edit comment"
+                className="flex items-center gap-1 text-[11px] font-semibold text-gray-400 hover:text-yellow-700 transition-colors px-2 py-1 rounded-lg hover:bg-yellow-50"
+              >
+                <Pencil className="w-3 h-3" />
+                Edit
+              </button>
+            )}
+            {canHide && (
+              <button
+                onClick={async () => {
+                  if (hiding) return
+                  setHiding(true)
+                  try {
+                    const res = await fetch(`/api/comments/${highlight.id}/hide`, { method: 'POST' })
+                    if (res.ok) onHide()
+                  } finally {
+                    setHiding(false)
+                  }
+                }}
+                disabled={hiding}
+                title="Hide comment (admin)"
+                className="flex items-center gap-1 text-[11px] font-semibold text-gray-400 hover:text-red-600 transition-colors px-2 py-1 rounded-lg hover:bg-red-50 disabled:opacity-50"
+              >
+                <EyeOff className="w-3 h-3" />
+                Hide
+              </button>
+            )}
+          </div>
         </div>
         <p className="font-[family-name:var(--font-lora)] italic text-gray-800 text-lg sm:text-xl leading-relaxed">
           {highlight.comment}
@@ -314,7 +360,7 @@ function HighlightCard({
 
 // ─── Main component ────────────────────────────────────────────────────────
 
-export function RestaurantHighlights({ highlights: initialHighlights, totalCount, restaurantId, restaurantName, isLoggedIn, userUpvotedIds }: Props) {
+export function RestaurantHighlights({ highlights: initialHighlights, totalCount, restaurantId, restaurantName, isLoggedIn, userUpvotedIds, currentUserId, isAdmin }: Props) {
   const [sort, setSort] = useState<SortMode>('popular')
   const [allHighlights, setAllHighlights] = useState<Highlight[]>(initialHighlights)
   const [loading, setLoading] = useState(false)
@@ -322,6 +368,14 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
 
   const [currentSort, setCurrentSort] = useState<SortMode>('popular')
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [commentPrompt, setCommentPrompt] = useState<{
+    medalId: string
+    restaurantName: string
+    categoryName: string
+    initialComment: string
+    initialPhotoUrl: string | null
+    highlightId: string
+  } | null>(null)
 
   const handleSortChange = useCallback(async (newSort: SortMode) => {
     if (newSort === currentSort) return
@@ -420,6 +474,23 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
             upvoted={userUpvotedIds.includes(h.id)}
             restaurantName={restaurantName}
             onPhotoClick={setLightboxUrl}
+            canEdit={!!currentUserId && h.userId === currentUserId && !!h.medalId}
+            canHide={!!isAdmin}
+            onEdit={() => {
+              if (h.medalId) {
+                setCommentPrompt({
+                  medalId: h.medalId,
+                  restaurantName,
+                  categoryName: h.categoryName,
+                  initialComment: h.comment,
+                  initialPhotoUrl: h.photoUrl,
+                  highlightId: h.id,
+                })
+              }
+            }}
+            onHide={() => {
+              setAllHighlights(prev => prev.filter(x => x.id !== h.id))
+            }}
           />
         ))}
       </div>
@@ -442,6 +513,28 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
             )}
           </button>
         </div>
+      )}
+
+      {/* Edit comment modal */}
+      {commentPrompt && (
+        <GoldCommentModal
+          medalId={commentPrompt.medalId}
+          restaurantName={commentPrompt.restaurantName}
+          categoryName={commentPrompt.categoryName}
+          initialComment={commentPrompt.initialComment}
+          initialPhotoUrl={commentPrompt.initialPhotoUrl}
+          onClose={() => setCommentPrompt(null)}
+          onSaved={(newComment, newPhotoUrl) => {
+            setAllHighlights(prev =>
+              prev.map(h =>
+                h.id === commentPrompt.highlightId
+                  ? { ...h, comment: newComment, photoUrl: newPhotoUrl ?? h.photoUrl }
+                  : h
+              )
+            )
+            setCommentPrompt(null)
+          }}
+        />
       )}
 
       {/* Lightbox overlay */}

@@ -230,6 +230,8 @@ export default async function RestaurantPage({
             restaurantName={restaurant.name}
             isLoggedIn={isLoggedIn}
             userUpvotedIds={userUpvotedCommentIds}
+            currentUserId={session?.user?.id}
+            isAdmin={session?.user?.isAdmin ?? false}
           />
         )}
 

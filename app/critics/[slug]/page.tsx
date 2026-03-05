@@ -276,6 +276,7 @@ export default async function CriticProfilePage({ params }: Props) {
               byCategory={byCategory}
               year={year}
               isOwner={isOwner}
+              isAdmin={session?.user?.isAdmin ?? false}
               totalCategories={totalCategories}
               rankedCount={categoriesVoted}
               unrankedCategories={unrankedCategories}

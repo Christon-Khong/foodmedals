@@ -919,6 +919,8 @@ export const getUserProfile = cache(async (slug: string) => {
 
 export type HighlightRow = {
   id:           string
+  userId:       string
+  medalId:      string | null
   comment:      string
   photoUrl:     string | null
   createdAt:    Date
@@ -950,6 +952,8 @@ export async function getRestaurantHighlights(
     prisma.$queryRaw<
       Array<{
         id:            string
+        user_id:       string
+        medal_id:      string | null
         comment:       string
         photo_url:     string | null
         created_at:    Date
@@ -967,6 +971,8 @@ export async function getRestaurantHighlights(
     >`
       SELECT
         gmc.id,
+        gmc.user_id,
+        gmc.medal_id,
         gmc.comment,
         gmc.photo_url,
         gmc.created_at,
@@ -989,7 +995,7 @@ export async function getRestaurantHighlights(
       LEFT JOIN comment_upvotes cu ON cu.comment_id = gmc.id
       WHERE gmc.restaurant_id = ${restaurantId}
         AND gmc.active = true
-      GROUP BY gmc.id, gmc.comment, gmc.photo_url, gmc.created_at, gmc.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url, gmc.user_id
+      GROUP BY gmc.id, gmc.user_id, gmc.medal_id, gmc.comment, gmc.photo_url, gmc.created_at, gmc.year, fc.name, fc.slug, fc.icon_emoji, fc.icon_url, u.display_name, u.slug, u.avatar_url
       ORDER BY ${orderClause}
       LIMIT ${limit}
       OFFSET ${offset}
@@ -1008,6 +1014,8 @@ export async function getRestaurantHighlights(
     total,
     highlights: rows.map(r => ({
       id:           r.id,
+      userId:       r.user_id,
+      medalId:      r.medal_id,
       comment:      r.comment,
       photoUrl:     r.photo_url,
       createdAt:    r.created_at,
