@@ -90,6 +90,7 @@ export async function getLeaderboard(
       AND r.status    = 'active'
       ${locationClause}
     GROUP BY r.id, r.name, r.slug, r.lat, r.lng, r.address, r.city, r.state
+    HAVING (COUNT(*) FILTER (WHERE m.medal_type IS NOT NULL)) > 0
     ORDER BY total_score DESC, gold_count DESC, r.name ASC
   `
 
@@ -169,6 +170,7 @@ export async function getLeaderboardNearMe(
     LEFT JOIN users  u ON u.id = m.user_id
     WHERE n.distance_miles <= ${radius}
     GROUP BY n.id, n.name, n.slug, n.distance_miles, n.address, n.city, n.state
+    HAVING (COUNT(*) FILTER (WHERE m.medal_type IS NOT NULL)) > 0
     ORDER BY total_score DESC, gold_count DESC, n.distance_miles ASC
   `
 
