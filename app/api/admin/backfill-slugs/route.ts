@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAdminSession } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
 import { generateUserSlug } from '@/lib/queries'
 
 export async function POST() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.isAdmin) {
+  const session = await getAdminSession()
+  if (!session) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

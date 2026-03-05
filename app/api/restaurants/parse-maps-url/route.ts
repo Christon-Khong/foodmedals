@@ -1,4 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+const ALLOWED_HOSTS = [
+  'google.com',
+  'www.google.com',
+  'maps.google.com',
+  'maps.app.goo.gl',
+  'goo.gl',
+]
 
 const STATE_ABBREV: Record<string, string> = {
   'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR',
@@ -17,28 +27,44 @@ const STATE_ABBREV: Record<string, string> = {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { url } = await req.json()
 
   if (!url || typeof url !== 'string') {
     return NextResponse.json({ error: 'URL is required' }, { status: 400 })
   }
 
-  // Validate it looks like a Google Maps URL
-  if (
-    !url.includes('google.com/maps') &&
-    !url.includes('maps.google.com') &&
-    !url.includes('goo.gl/maps') &&
-    !url.includes('maps.app.goo.gl')
-  ) {
+  // Strict host validation — parse as URL and check hostname
+  let parsedHost: string
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return NextResponse.json({ error: 'Not a valid Google Maps URL' }, { status: 400 })
+    }
+    parsedHost = parsed.hostname
+  } catch {
+    return NextResponse.json({ error: 'Not a valid URL' }, { status: 400 })
+  }
+
+  if (!ALLOWED_HOSTS.some(h => parsedHost === h || parsedHost.endsWith('.' + h))) {
     return NextResponse.json({ error: 'Not a valid Google Maps URL' }, { status: 400 })
   }
 
   // Follow redirects for shortened URLs
   let resolvedUrl = url
-  if (url.includes('goo.gl')) {
+  if (parsedHost === 'goo.gl' || parsedHost === 'maps.app.goo.gl') {
     try {
       const res = await fetch(url, { redirect: 'follow' })
       resolvedUrl = res.url
+      // Verify the resolved URL also points to Google
+      const resolvedParsed = new URL(resolvedUrl)
+      if (!ALLOWED_HOSTS.some(h => resolvedParsed.hostname === h || resolvedParsed.hostname.endsWith('.' + h))) {
+        return NextResponse.json({ error: 'Redirect did not resolve to Google Maps' }, { status: 400 })
+      }
     } catch {
       return NextResponse.json({ error: 'Could not resolve shortened URL' }, { status: 400 })
     }

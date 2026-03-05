@@ -3,7 +3,7 @@ import { authOptions } from '@/lib/auth'
 
 const handler = NextAuth({
   ...authOptions,
-  debug: true,
+  debug: process.env.NODE_ENV === 'development',
   logger: {
     error(code, ...message) {
       console.error('[NextAuth][error]', code, ...message)
@@ -12,7 +12,9 @@ const handler = NextAuth({
       console.warn('[NextAuth][warn]', code)
     },
     debug(code, ...message) {
-      console.log('[NextAuth][debug]', code, ...message)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[NextAuth][debug]', code, ...message)
+      }
     },
   },
 })

@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
 
       <main className="flex-1 max-w-3xl mx-auto px-4 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-        <p className="text-sm text-gray-400 mb-10">Last updated: March 4, 2026</p>
+        <p className="text-sm text-gray-400 mb-10">Last updated: March 5, 2026</p>
 
         <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed">
 
@@ -41,18 +41,23 @@ export default function PrivacyPolicyPage() {
               <li><strong>Account Information:</strong> When you create an account, we collect your display name, email address, and password (which is stored in hashed form and never in plain text). You may optionally provide your city and state.</li>
               <li><strong>Medal Picks & Rankings:</strong> When you award Gold, Silver, or Bronze medals to restaurants, we store those selections along with your Crown Jewel designation.</li>
               <li><strong>Restaurant Suggestions:</strong> When you suggest a restaurant, we collect the restaurant name, address, city, state, ZIP code, and any optional description you provide.</li>
-              <li><strong>Votes:</strong> When you vote on community nominations or category suggestions, we record your vote.</li>
+              <li><strong>Category Suggestions:</strong> When you suggest a new food category, we collect the category name, emoji, and any optional description you provide.</li>
+              <li><strong>Votes:</strong> When you vote on community nominations (restaurants or categories), we record your vote.</li>
+              <li><strong>Achievement Data:</strong> We track how many categories you have ranked to determine your achievement tier (e.g., Taste Tester, Local Legend, Oracle). Your tier is displayed on your public profile.</li>
             </ul>
 
             <h3 className="font-semibold text-gray-800 mt-4 mb-2">2.2 Information from Third-Party Sign-In</h3>
             <p>
-              If you sign in using Google, we receive your name, email address, and profile picture from Google.
-              We do not receive or store your Google password. Google&rsquo;s use of your information is governed
-              by{' '}
-              <Link href="https://policies.google.com/privacy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">
-                Google&rsquo;s Privacy Policy
-              </Link>.
+              We offer sign-in through Google, Facebook, and X (Twitter). When you use one of these providers,
+              we receive your name, email address, and profile picture from that provider. We do not receive or
+              store your password for any third-party service. Each provider&rsquo;s use of your information is
+              governed by their own privacy policies:
             </p>
+            <ul className="list-disc pl-5 space-y-1.5 mt-2">
+              <li><Link href="https://policies.google.com/privacy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Google Privacy Policy</Link></li>
+              <li><Link href="https://www.facebook.com/privacy/policy/" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Facebook Privacy Policy</Link></li>
+              <li><Link href="https://twitter.com/en/privacy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">X (Twitter) Privacy Policy</Link></li>
+            </ul>
 
             <h3 className="font-semibold text-gray-800 mt-4 mb-2">2.3 Information Collected Automatically</h3>
             <ul className="list-disc pl-5 space-y-1.5">
@@ -67,9 +72,9 @@ export default function PrivacyPolicyPage() {
             <p>We use the information we collect to:</p>
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
               <li>Create and manage your account</li>
-              <li>Display your public profile, medal picks, and rankings</li>
+              <li>Display your public profile, medal picks, rankings, and achievement tier</li>
               <li>Generate community leaderboards and restaurant scores</li>
-              <li>Process restaurant suggestions and community votes</li>
+              <li>Process restaurant and category suggestions and community votes</li>
               <li>Geocode restaurant addresses to enable map and &ldquo;Near Me&rdquo; features</li>
               <li>Maintain the security and integrity of the Service</li>
               <li>Respond to your requests or inquiries</li>
@@ -80,8 +85,8 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-3">4. Public Information</h2>
             <p>
               Certain information you provide is publicly visible on the Service, including your display name,
-              city, state, profile picture, medal picks, and Crown Jewel selections. Your email address is
-              <strong> never</strong> displayed publicly.
+              city, state, profile picture, medal picks, Crown Jewel selections, and achievement tier. Your
+              email address is <strong> never</strong> displayed publicly.
             </p>
           </section>
 
@@ -92,6 +97,8 @@ export default function PrivacyPolicyPage() {
               <li><strong>Vercel:</strong> Hosts our website and may process server logs. <Link href="https://vercel.com/legal/privacy-policy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Vercel Privacy Policy</Link></li>
               <li><strong>Supabase:</strong> Hosts our database where account and application data is stored. <Link href="https://supabase.com/privacy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Supabase Privacy Policy</Link></li>
               <li><strong>Google OAuth:</strong> Provides sign-in functionality. <Link href="https://policies.google.com/privacy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Google Privacy Policy</Link></li>
+              <li><strong>Facebook Login:</strong> Provides sign-in functionality. <Link href="https://www.facebook.com/privacy/policy/" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Facebook Privacy Policy</Link></li>
+              <li><strong>X (Twitter) OAuth:</strong> Provides sign-in functionality. <Link href="https://twitter.com/en/privacy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">X Privacy Policy</Link></li>
               <li><strong>OpenStreetMap / Nominatim:</strong> Used to geocode restaurant addresses (convert addresses to map coordinates). When a restaurant is suggested, its address is sent to the Nominatim geocoding service. <Link href="https://osmfoundation.org/wiki/Privacy_Policy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">OpenStreetMap Privacy Policy</Link></li>
             </ul>
             <p className="mt-2">
