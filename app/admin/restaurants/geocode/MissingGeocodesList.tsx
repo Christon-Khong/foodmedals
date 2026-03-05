@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { MapPin, RotateCcw, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import { MapPin, RotateCcw, CheckCircle2, XCircle, Loader2, Trash2 } from 'lucide-react'
 
 type Restaurant = {
   id: string
@@ -23,6 +23,7 @@ export function MissingGeocodesList() {
   const [batchFixing, setBatchFixing] = useState(false)
   const [results, setResults] = useState<Record<string, 'fixed' | 'failed'>>({})
   const [batchSummary, setBatchSummary] = useState<{ fixed: number; failed: number } | null>(null)
+  const [removing, setRemoving] = useState<string | null>(null)
 
   const fetchMissing = useCallback(async () => {
     setLoading(true)
@@ -103,6 +104,18 @@ export function MissingGeocodesList() {
       }
     } catch { /* ignore */ }
     setBatchFixing(false)
+  }
+
+  async function handleRemove(id: string, name: string) {
+    if (!confirm(`Delete "${name}"? This removes the restaurant and all its medals permanently.`)) return
+    setRemoving(id)
+    try {
+      const res = await fetch(`/api/admin/restaurants/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setRestaurants(prev => prev.filter(r => r.id !== id))
+      }
+    } catch { /* ignore */ }
+    setRemoving(null)
   }
 
   if (loading) {
@@ -252,6 +265,18 @@ export function MissingGeocodesList() {
                       >
                         Edit
                       </Link>
+                      <button
+                        onClick={() => handleRemove(r.id, r.name)}
+                        disabled={removing === r.id || batchFixing}
+                        className="px-2 py-1.5 text-gray-500 hover:text-red-400 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                        title="Delete restaurant"
+                      >
+                        {removing === r.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3 h-3" />
+                        )}
+                      </button>
                     </div>
                   </td>
                 </tr>
