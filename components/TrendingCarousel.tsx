@@ -20,7 +20,7 @@ function CategoryCard({ cat, nearMe }: { cat: TrendingCategory; nearMe: boolean 
     <Link
       href={href}
       data-card
-      className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 hover:shadow-2xl transition-all duration-300 p-5 flex flex-col group will-change-transform"
+      className="flex-shrink-0 w-[260px] sm:w-[280px] bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 p-5 flex flex-col group"
     >
       {/* Category header */}
       <div className="flex items-center gap-3 mb-4">
@@ -113,29 +113,6 @@ export function TrendingCarousel({ categories, year }: Props) {
   const items = [...displayCategories, ...displayCategories, ...displayCategories]
   const count = displayCategories.length
 
-  // ── Proximity-based scaling: cards grow as they approach the center ──
-  const updateScales = useCallback(() => {
-    if (isResetting.current) return
-    const container = scrollRef.current
-    if (!container) return
-    const rect = container.getBoundingClientRect()
-    const centerX = rect.left + rect.width / 2
-    const cards = container.querySelectorAll<HTMLElement>('[data-card]')
-
-    cards.forEach(card => {
-      const cardRect = card.getBoundingClientRect()
-      const cardCenter = cardRect.left + cardRect.width / 2
-      const dist = Math.abs(centerX - cardCenter)
-      const maxDist = rect.width * 0.55
-      const t = Math.max(0, 1 - dist / maxDist)
-      // smoothstep for natural ease-in / ease-out falloff
-      const eased = t * t * (3 - 2 * t)
-      const scale = 1 + eased * 0.12 // 1.0 → 1.12 at center
-      card.style.transform = `scale(${scale})`
-      card.style.zIndex = scale > 1.04 ? '10' : '1'
-    })
-  }, [])
-
   // On mount (or when displayCategories change), scroll to the middle set
   useEffect(() => {
     const el = scrollRef.current
@@ -145,8 +122,7 @@ export function TrendingCarousel({ categories, year }: Props) {
     const cardWidth = card.offsetWidth + 16 // card + gap
     el.scrollLeft = cardWidth * count
     setMounted(true)
-    updateScales()
-  }, [count, updateScales])
+  }, [count])
 
   // When user scrolls near either boundary, silently jump to the equivalent position in the middle set
   const handleScroll = useCallback(() => {
@@ -175,20 +151,14 @@ export function TrendingCarousel({ categories, year }: Props) {
       el.style.scrollBehavior = ''
       requestAnimationFrame(() => { isResetting.current = false })
     }
-
-    updateScales()
-  }, [count, updateScales])
+  }, [count])
 
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
     el.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('resize', updateScales)
-    return () => {
-      el.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('resize', updateScales)
-    }
-  }, [handleScroll, updateScales])
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [handleScroll])
 
   // ── Auto-scroll: slow creep when user isn't interacting ──────────
   const pauseAutoScroll = useCallback(() => {
@@ -298,7 +268,7 @@ export function TrendingCarousel({ categories, year }: Props) {
       {/* Scrollable track — tripled for infinite loop */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto px-4 sm:px-[max(1rem,calc((100%-56rem)/2+1rem))] py-10 -mt-2"
+        className="flex gap-4 overflow-x-auto px-4 sm:px-[max(1rem,calc((100%-56rem)/2+1rem))] py-6"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
       >
         {items.map((cat, i) => (
