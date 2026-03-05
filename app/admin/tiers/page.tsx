@@ -1,7 +1,9 @@
 import { Award, Star } from 'lucide-react'
 import { CommunityTierPreview } from './CommunityTierPreview'
+import { getMaxCommunityScore } from '@/lib/settings'
 
 export const metadata = { title: 'Tier Preview — Admin' }
+export const dynamic = 'force-dynamic'
 
 /* ── Achievement tiers (critic profile badges) ───────────────────────────── */
 const TIERS = [
@@ -58,7 +60,9 @@ function AnimatedStyles() {
   return <style>{css}</style>
 }
 
-export default function TierPreviewPage() {
+export default async function TierPreviewPage() {
+  const savedMaxScore = await getMaxCommunityScore()
+
   return (
     <div>
       <AnimatedStyles />
@@ -73,7 +77,7 @@ export default function TierPreviewPage() {
         Gold = 3 pts, Silver = 2 pts, Bronze = 1 pt. Gold comment bonus = +1 pt. Crown Jewel = +1 pt.
       </p>
 
-      <CommunityTierPreview />
+      <CommunityTierPreview savedMaxScore={savedMaxScore} />
 
       {/* ── Achievement Tiers ───────────────────────────────────────────────── */}
       <h1 className="text-xl font-bold text-white mb-2 flex items-center gap-2">

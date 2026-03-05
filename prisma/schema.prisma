@@ -258,3 +258,11 @@ model CommentUpvote {
   @@unique([commentId, userId])
   @@map("comment_upvotes")
 }
+
+model AdminSettings {
+  id                String   @id @default("singleton")
+  maxCommunityScore Int      @default(150) @map("max_community_score")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_settings")
+}

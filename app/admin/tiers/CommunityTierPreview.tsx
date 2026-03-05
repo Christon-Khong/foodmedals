@@ -1,16 +1,43 @@
 'use client'
 
 import { useState } from 'react'
+import { Save, Check, RotateCcw } from 'lucide-react'
 import {
   DEFAULT_MAX_COMMUNITY_SCORE,
   getTierThresholds,
 } from '@/lib/tiers'
 
-export function CommunityTierPreview() {
-  const [maxScore, setMaxScore] = useState(DEFAULT_MAX_COMMUNITY_SCORE)
+type Props = {
+  savedMaxScore: number
+}
+
+export function CommunityTierPreview({ savedMaxScore }: Props) {
+  const [maxScore, setMaxScore] = useState(savedMaxScore)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const tiers = getTierThresholds(maxScore)
 
+  const hasChanges = maxScore !== savedMaxScore
   const goldMedalsToTop = Math.ceil(maxScore / 5)
+
+  async function handleSave() {
+    setSaving(true)
+    setSaved(false)
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maxCommunityScore: maxScore }),
+      })
+      if (res.ok) {
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
+    } catch {
+      // Error handling — stays unsaved
+    }
+    setSaving(false)
+  }
 
   return (
     <div>
@@ -32,9 +59,10 @@ export function CommunityTierPreview() {
             {maxScore !== DEFAULT_MAX_COMMUNITY_SCORE && (
               <button
                 onClick={() => setMaxScore(DEFAULT_MAX_COMMUNITY_SCORE)}
-                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                title="Reset to default"
+                className="p-1.5 text-gray-500 hover:text-gray-300 transition-colors"
               >
-                Reset
+                <RotateCcw className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -52,6 +80,29 @@ export function CommunityTierPreview() {
           <span>~{goldMedalsToTop} gold medals to reach top tier</span>
           <span>500</span>
         </div>
+
+        {/* Save button — appears when value changes */}
+        {hasChanges && (
+          <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between">
+            <p className="text-xs text-yellow-500">
+              Unsaved changes — current saved value is <span className="font-bold">{savedMaxScore}</span>
+            </p>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-1.5 px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-gray-900 text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        )}
+        {saved && !hasChanges && (
+          <div className="mt-4 pt-3 border-t border-gray-800 flex items-center gap-1.5 text-green-400 text-xs font-semibold">
+            <Check className="w-3.5 h-3.5" />
+            Saved successfully
+          </div>
+        )}
       </div>
 
       {/* Tier Preview Cards */}

@@ -14,6 +14,7 @@ import { ReportAddressButton } from '@/components/ReportAddressButton'
 import { RestaurantHighlights } from '@/components/RestaurantHighlights'
 import { CommunityScore } from '@/components/CommunityScore'
 import { getTierCardAura } from '@/lib/tiers'
+import { getMaxCommunityScore } from '@/lib/settings'
 import { prisma } from '@/lib/prisma'
 
 export const revalidate = 3600
@@ -52,7 +53,7 @@ export default async function RestaurantPage({
 
   const year = new Date().getFullYear()
 
-  const [trophies, categorySuggestions, allCategories, rankings, highlights] = await Promise.all([
+  const [trophies, categorySuggestions, allCategories, rankings, highlights, maxCommunityScore] = await Promise.all([
     getRestaurantTrophies(restaurant.id),
     getCategorySuggestions(restaurant.id),
     prisma.foodCategory.findMany({
@@ -62,6 +63,7 @@ export default async function RestaurantPage({
     }),
     getRestaurantCategoryRankings(restaurant.id, year),
     getRestaurantHighlights(restaurant.id),
+    getMaxCommunityScore(),
   ])
 
   const thisYearTrophies = trophies.filter(t => t.year === year)
@@ -213,7 +215,7 @@ export default async function RestaurantPage({
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
         {/* ── Top Rankings ──────────────────────────────────────────── */}
         {rankings.length > 0 && (
-          <CategoryRankingBadges rankings={rankings} year={year} />
+          <CategoryRankingBadges rankings={rankings} year={year} maxCommunityScore={maxCommunityScore} />
         )}
 
         {/* ── Highlights ────────────────────────────────────────────── */}
@@ -247,7 +249,7 @@ export default async function RestaurantPage({
                 // Determine the "hero" medal — the highest one earned
                 const heroMedal = t.goldCount > 0 ? 'gold' : t.silverCount > 0 ? 'silver' : 'bronze'
                 const heroSize = heroMedal === 'gold' ? 48 : 36
-                const cardAura = getTierCardAura(t.totalScore)
+                const cardAura = getTierCardAura(t.totalScore, maxCommunityScore)
 
                 return (
                   <Link
@@ -316,7 +318,7 @@ export default async function RestaurantPage({
                     {/* Bottom: Community Score bar */}
                     <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-50/50 to-yellow-50/30 border-t border-amber-100/60">
                       <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Community Score</span>
-                      <CommunityScore score={t.totalScore} size="sm" />
+                      <CommunityScore score={t.totalScore} maxScore={maxCommunityScore} size="sm" />
                     </div>
                   </Link>
                 )

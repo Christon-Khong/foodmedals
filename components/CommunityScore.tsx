@@ -23,10 +23,10 @@ const SIZES = {
 export function CommunityScore({ score, maxScore, size = 'md' }: Props) {
   const [showTooltip, setShowTooltip] = useState(false)
   const s = SIZES[size]
-  const tier = getScoreTier(score)
 
   // Fill percentage — bar fills to 100% at the top tier threshold, capped at 100%
   const max = maxScore ?? DEFAULT_MAX_COMMUNITY_SCORE
+  const tier = getScoreTier(score, max)
   const pct = Math.min((score / max) * 100, 100)
 
   return (

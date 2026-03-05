@@ -24,9 +24,10 @@ const CARD_ACCENT: Record<number, string> = {
 type Props = {
   rankings: CategoryRankingRow[]
   year: number
+  maxCommunityScore?: number
 }
 
-export function CategoryRankingBadges({ rankings, year }: Props) {
+export function CategoryRankingBadges({ rankings, year, maxCommunityScore }: Props) {
   if (rankings.length === 0) return null
 
   return (
@@ -43,7 +44,7 @@ export function CategoryRankingBadges({ rankings, year }: Props) {
           )
           const accent = CARD_ACCENT[bestRank] ?? ''
           const medalSrc = RANK_MEDAL[bestRank]
-          const cardAura = getTierCardAura(r.totalScore)
+          const cardAura = getTierCardAura(r.totalScore, maxCommunityScore)
 
           return (
             <Link
@@ -89,7 +90,7 @@ export function CategoryRankingBadges({ rankings, year }: Props) {
               </div>
 
               {/* Community Score */}
-              <CommunityScore score={r.totalScore} size="sm" />
+              <CommunityScore score={r.totalScore} maxScore={maxCommunityScore} size="sm" />
             </Link>
           )
         })}
