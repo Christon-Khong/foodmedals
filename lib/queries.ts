@@ -127,6 +127,8 @@ export async function getLeaderboardNearMe(
       bronze_count:    bigint
       total_score:     bigint
       distance_miles:  number
+      lat:             number | null
+      lng:             number | null
       address:         string | null
       city:            string | null
       state:           string | null
@@ -152,6 +154,8 @@ export async function getLeaderboardNearMe(
       n.name AS restaurant_name,
       n.slug AS restaurant_slug,
       ROUND(n.distance_miles::numeric, 1)                                AS distance_miles,
+      n.lat,
+      n.lng,
       n.address,
       n.city,
       n.state,
@@ -169,7 +173,7 @@ export async function getLeaderboardNearMe(
                       AND m.year = ${year}
     LEFT JOIN users  u ON u.id = m.user_id
     WHERE n.distance_miles <= ${radius}
-    GROUP BY n.id, n.name, n.slug, n.distance_miles, n.address, n.city, n.state
+    GROUP BY n.id, n.name, n.slug, n.lat, n.lng, n.distance_miles, n.address, n.city, n.state
     HAVING (COUNT(*) FILTER (WHERE m.medal_type IS NOT NULL)) > 0
     ORDER BY total_score DESC, gold_count DESC, n.distance_miles ASC
   `
@@ -183,6 +187,8 @@ export async function getLeaderboardNearMe(
     bronzeCount:    Number(row.bronze_count),
     totalScore:     Number(row.total_score),
     distanceMiles:  Number(row.distance_miles),
+    lat:            row.lat,
+    lng:            row.lng,
     address:        row.address,
     city:           row.city,
     state:          row.state,
