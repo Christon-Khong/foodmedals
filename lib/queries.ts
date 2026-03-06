@@ -900,7 +900,7 @@ export async function searchAll(query: string): Promise<QuickResult> {
     WHERE status = 'active'
       AND (
         name ILIKE ${'%' + q + '%'}
-        OR (similarity(name, ${q}) > 0.15 AND length(name) <= length(${q}) * 1.3)
+        OR (similarity(name, ${q}) > 0.15 AND length(name) BETWEEN length(${q}) * 0.7 AND length(${q}) * 1.3)
         OR word_similarity(${q}, name) > 0.7
         ${consonantMatch}
       )
@@ -977,7 +977,7 @@ export async function searchAll(query: string): Promise<QuickResult> {
               AND (
                 name ILIKE ${'%' + termA + '%'}
                 OR (similarity(name, ${termA}) > 0.15 AND length(name) <= length(${termA}) * 1.3)
-                OR word_similarity(${termA}, name) > 0.5
+                OR word_similarity(${termA}, name) > 0.55
                 ${termConsonantMatch}
               )
             LIMIT 5
@@ -1206,7 +1206,7 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
         AND (
           name ILIKE ${'%' + term + '%'}
           OR (similarity(name, ${term}) > 0.15 AND length(name) <= length(${term}) * 1.3)
-          OR word_similarity(${term}, name) > 0.5
+          OR word_similarity(${term}, name) > 0.55
           ${termConsonantMatch}
         )
       LIMIT 5
@@ -1231,7 +1231,7 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
       WHERE fc.status = 'active'
         AND (
           fc.name ILIKE ${'%' + q + '%'}
-          OR (similarity(fc.name, ${q}) > 0.15 AND length(fc.name) <= length(${q}) * 1.3)
+          OR (similarity(fc.name, ${q}) > 0.15 AND length(fc.name) BETWEEN length(${q}) * 0.7 AND length(${q}) * 1.3)
           OR word_similarity(${q}, fc.name) > 0.7
           ${consonantMatch}
         )
