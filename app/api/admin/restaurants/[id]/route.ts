@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
-import { toSlug, geocode } from '@/lib/restaurant-utils'
+import { toSlug, geocodeWithQuota } from '@/lib/restaurant-utils'
 
 const VALID_STATUSES = ['active', 'pending_review', 'inactive'] as const
 type ValidStatus = (typeof VALID_STATUSES)[number]
@@ -67,7 +67,7 @@ export async function PATCH(
 
   // Re-geocode when address fields change
   if (data.address || data.city || data.state || data.zip) {
-    const coords = await geocode(
+    const coords = await geocodeWithQuota(
       (data.address as string) ?? existing.address,
       (data.city as string) ?? existing.city,
       (data.state as string) ?? existing.state,
@@ -81,7 +81,7 @@ export async function PATCH(
 
   // When approving a restaurant that has no coordinates, geocode it now
   if (data.status === 'active' && existing.lat == null && existing.lng == null && !data.lat && !data.lng) {
-    const coords = await geocode(
+    const coords = await geocodeWithQuota(
       existing.address,
       existing.city,
       existing.state,

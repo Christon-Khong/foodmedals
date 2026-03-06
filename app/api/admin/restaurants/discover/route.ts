@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
             limit: quota.limit,
             remaining: quota.remaining,
             costToday: quota.costToday,
+            geocodeUsed: quota.geocodeUsed,
+            geocodeCostToday: quota.geocodeCostToday,
+            totalCostToday: quota.totalCostToday,
           },
           errors: result.errors.length > 0 ? result.errors : undefined,
         })

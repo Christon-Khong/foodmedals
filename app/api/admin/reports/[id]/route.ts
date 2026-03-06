@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
-import { toSlug, geocode } from '@/lib/restaurant-utils'
+import { toSlug, geocodeWithQuota } from '@/lib/restaurant-utils'
 
 export async function PATCH(
   req: NextRequest,
@@ -46,7 +46,7 @@ export async function PATCH(
         data.lat = lat
         data.lng = lng
       } else {
-        const coords = await geocode(
+        const coords = await geocodeWithQuota(
           data.address as string,
           data.city as string,
           data.state as string,

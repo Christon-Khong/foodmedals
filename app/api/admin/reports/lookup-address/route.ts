@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
+import { incrementGeocodeCounter } from '@/lib/google-places-quota'
 
 type AddressComponent = { types: string[]; long_name: string; short_name: string }
 type GeoResult = {
@@ -36,6 +37,7 @@ function formatResult(result: GeoResult) {
 async function googleReverse(lat: number, lng: number): Promise<GeoResult | null> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY
   if (!apiKey) return null
+  await incrementGeocodeCounter(1)
   const res = await fetch(
     `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`,
   )
@@ -48,6 +50,7 @@ async function googleReverse(lat: number, lng: number): Promise<GeoResult | null
 async function googleSearch(query: string): Promise<GeoResult[]> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY
   if (!apiKey) return []
+  await incrementGeocodeCounter(1)
   const res = await fetch(
     `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`,
   )

@@ -1,6 +1,7 @@
 import { prisma } from './prisma'
 
-const COST_PER_CALL = 0.032
+const COST_PER_PLACES_CALL = 0.032  // Google Places API (Text Search)
+const COST_PER_GEOCODE_CALL = 0.005 // Google Geocoding API
 
 export type QuotaStatus = {
   used: number
@@ -8,6 +9,9 @@ export type QuotaStatus = {
   remaining: number
   costToday: number
   percentUsed: number
+  geocodeUsed: number
+  geocodeCostToday: number
+  totalCostToday: number
 }
 
 /**
@@ -18,7 +22,7 @@ function todayUTC(): string {
 }
 
 /**
- * Ensure the AdminSettings singleton exists and auto-reset the counter
+ * Ensure the AdminSettings singleton exists and auto-reset the counters
  * if the day has changed. Returns the current row.
  */
 async function getOrResetSettings() {
@@ -31,12 +35,13 @@ async function getOrResetSettings() {
     create: { id: 'singleton' },
   })
 
-  // If the stored date doesn't match today, reset the counter
+  // If the stored date doesn't match today, reset both counters
   if (row.placesApiLastResetDate !== today) {
     row = await prisma.adminSettings.update({
       where: { id: 'singleton' },
       data: {
         placesApiCallsToday: 0,
+        geocodeCallsToday: 0,
         placesApiLastResetDate: today,
       },
     })
@@ -54,13 +59,19 @@ export async function getQuotaStatus(): Promise<QuotaStatus> {
   const limit = row.placesApiDailyLimit
   const remaining = Math.max(0, limit - used)
   const percentUsed = limit > 0 ? Math.round((used / limit) * 100) : 0
+  const geocodeUsed = row.geocodeCallsToday
+  const placesCost = Math.round(used * COST_PER_PLACES_CALL * 1000) / 1000
+  const geocodeCost = Math.round(geocodeUsed * COST_PER_GEOCODE_CALL * 1000) / 1000
 
   return {
     used,
     limit,
     remaining,
-    costToday: Math.round(used * COST_PER_CALL * 1000) / 1000,
+    costToday: placesCost,
     percentUsed: Math.min(percentUsed, 100),
+    geocodeUsed,
+    geocodeCostToday: geocodeCost,
+    totalCostToday: Math.round((placesCost + geocodeCost) * 1000) / 1000,
   }
 }
 
@@ -136,4 +147,17 @@ export async function getDiscoverSettings(): Promise<{
     minRating: row.discoverMinRating,
     minReviews: row.discoverMinReviews,
   }
+}
+
+/**
+ * Increment the geocode counter. Unlike Places API, geocoding has no hard
+ * daily limit — it's cheap ($0.005/call) — but we track it for visibility.
+ * Auto-resets on new day.
+ */
+export async function incrementGeocodeCounter(callCount: number = 1): Promise<void> {
+  await getOrResetSettings() // ensures day reset
+  await prisma.adminSettings.update({
+    where: { id: 'singleton' },
+    data: { geocodeCallsToday: { increment: callCount } },
+  })
 }

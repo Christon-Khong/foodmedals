@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
 import { verifyApiKey } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
-import { toSlug, geocode } from '@/lib/restaurant-utils'
+import { toSlug, geocodeWithQuota } from '@/lib/restaurant-utils'
 import { validateGoogleMapsUrl, parseGoogleMapsUrl } from '@/lib/parse-maps-url'
 
 export const maxDuration = 120
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       let { lat, lng } = parsed
       if (lat == null || lng == null) {
         if (parsed.address && parsed.city && parsed.state) {
-          const geo = await geocode(parsed.address, parsed.city, parsed.state, parsed.zip)
+          const geo = await geocodeWithQuota(parsed.address, parsed.city, parsed.state, parsed.zip)
           if (geo) {
             lat = geo.lat
             lng = geo.lng

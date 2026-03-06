@@ -1,4 +1,4 @@
-import { checkAndIncrementQuota } from './google-places-quota'
+import { incrementGeocodeCounter } from './google-places-quota'
 
 export function toSlug(name: string, city: string) {
   return `${name}-${city}`
@@ -45,8 +45,8 @@ export async function geocode(
 }
 
 /**
- * Geocode with quota tracking — increments the unified daily API counter
- * before making the call. Returns null if quota is exhausted.
+ * Geocode with tracking — increments the geocode counter and makes the call.
+ * Geocoding is cheap ($0.005/call) so no hard quota limit, just tracking.
  */
 export async function geocodeWithQuota(
   address: string,
@@ -54,7 +54,6 @@ export async function geocodeWithQuota(
   state: string,
   zip: string,
 ): Promise<{ lat: number; lng: number } | null> {
-  const check = await checkAndIncrementQuota(1)
-  if (!check.allowed) return null
+  await incrementGeocodeCounter(1)
   return geocode(address, city, state, zip)
 }

@@ -47,6 +47,9 @@ type QuotaInfo = {
   remaining: number
   costToday: number
   percentUsed: number
+  geocodeUsed: number
+  geocodeCostToday: number
+  totalCostToday: number
   verificationReserve: number
   minRating: number
   minReviews: number
@@ -82,8 +85,6 @@ const US_STATES = [
   'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
   'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC',
 ]
-
-const COST_PER_CALL = 0.032
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -405,11 +406,14 @@ export function DiscoverForm() {
             // Update quota (preserve settings fields)
             if (event.quota) {
               setQuota(prev => ({
-                ...(prev ?? { verificationReserve: 40, minRating: 4.5, minReviews: 100 }),
+                ...(prev ?? { verificationReserve: 40, minRating: 4.5, minReviews: 100, geocodeUsed: 0, geocodeCostToday: 0, totalCostToday: 0 }),
                 used: event.quota.used,
                 limit: event.quota.limit,
                 remaining: event.quota.remaining,
                 costToday: event.quota.costToday,
+                geocodeUsed: event.quota.geocodeUsed ?? prev?.geocodeUsed ?? 0,
+                geocodeCostToday: event.quota.geocodeCostToday ?? prev?.geocodeCostToday ?? 0,
+                totalCostToday: event.quota.totalCostToday ?? prev?.totalCostToday ?? 0,
                 percentUsed: event.quota.limit > 0
                   ? Math.min(Math.round((event.quota.used / event.quota.limit) * 100), 100)
                   : 0,
@@ -547,12 +551,13 @@ export function DiscoverForm() {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white">API Usage Today</h2>
             <span className="text-xs text-gray-500">
-              ~${(quota.limit * COST_PER_CALL).toFixed(2)}/day budget
+              ${(quota.totalCostToday ?? quota.costToday).toFixed(3)} total spent
             </span>
           </div>
 
-          {/* Progress bar */}
+          {/* Places API */}
           <div className="space-y-2">
+            <div className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Places API · $0.032/call</div>
             <div className={`h-2.5 bg-gray-800 rounded-full overflow-hidden border ${barBorderColor}`}>
               <div
                 className={`h-full ${barColor} rounded-full transition-all duration-500`}
@@ -571,7 +576,7 @@ export function DiscoverForm() {
                 </span>
               </div>
               <span className="text-gray-400">
-                ${quota.costToday.toFixed(2)} spent today
+                ${quota.costToday.toFixed(3)}
               </span>
             </div>
 
@@ -586,8 +591,23 @@ export function DiscoverForm() {
                 </span>
               </div>
             )}
+          </div>
 
-            {/* Quality filter info */}
+          {/* Geocoding API */}
+          <div className="space-y-1">
+            <div className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Geocoding API · $0.005/call</div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-300">
+                <strong className="text-white">{quota.geocodeUsed ?? 0}</strong> calls
+              </span>
+              <span className="text-gray-400">
+                ${(quota.geocodeCostToday ?? 0).toFixed(3)}
+              </span>
+            </div>
+          </div>
+
+          {/* Quality filter info */}
+          <div className="space-y-2">
             <div className="text-[11px] text-gray-500 pt-0.5">
               Quality filter: ≥{quota.minRating}★ and ≥{quota.minReviews} reviews
             </div>

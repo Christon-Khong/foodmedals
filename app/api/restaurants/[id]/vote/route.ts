@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { geocode } from '@/lib/restaurant-utils'
+import { geocodeWithQuota } from '@/lib/restaurant-utils'
 
 const ACTIVATION_THRESHOLD = 10
 
@@ -47,7 +47,7 @@ export async function POST(
     // Geocode if coordinates are missing before activating
     const updateData: Record<string, unknown> = { status: 'active' }
     if (restaurant.lat == null && restaurant.lng == null) {
-      const coords = await geocode(restaurant.address, restaurant.city, restaurant.state, restaurant.zip)
+      const coords = await geocodeWithQuota(restaurant.address, restaurant.city, restaurant.state, restaurant.zip)
       if (coords) {
         updateData.lat = coords.lat
         updateData.lng = coords.lng
