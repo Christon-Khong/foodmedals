@@ -901,7 +901,7 @@ export async function searchAll(query: string): Promise<QuickResult> {
       AND (
         name ILIKE ${'%' + q + '%'}
         OR similarity(name, ${q}) > 0.15
-        OR word_similarity(${q}, name) > 0.55
+        OR word_similarity(${q}, name) > 0.7
         ${consonantMatch}
       )
     ORDER BY
@@ -1232,7 +1232,7 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
         AND (
           fc.name ILIKE ${'%' + q + '%'}
           OR similarity(fc.name, ${q}) > 0.15
-          OR word_similarity(${q}, fc.name) > 0.55
+          OR word_similarity(${q}, fc.name) > 0.7
           ${consonantMatch}
         )
       ORDER BY

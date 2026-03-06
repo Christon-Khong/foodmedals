@@ -188,7 +188,7 @@ export default async function CategoryLeaderboardPage({
         nominations={nominations}
         isAdmin={isAdmin}
         isLoggedIn={isLoggedIn}
-        defaultNearMe
+        defaultNearMe={!state && !city}
       />
 
       {/* ── CTA ─────────────────────────────────────────────────────────── */}
