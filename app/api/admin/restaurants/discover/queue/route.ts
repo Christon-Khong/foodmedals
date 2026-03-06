@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { city, state, resultsPerCategory, categorySlug } = body
+  const { city, state, resultsPerCategory, categorySlug, priority } = body
 
   if (!city?.trim() || !state?.trim()) {
     return NextResponse.json(
@@ -33,12 +33,22 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Append at end: get max sortOrder
-  const last = await prisma.searchQueueItem.findFirst({
-    orderBy: { sortOrder: 'desc' },
-    select: { sortOrder: true },
-  })
-  const nextOrder = (last?.sortOrder ?? -1) + 1
+  let sortOrder: number
+  if (priority) {
+    // Insert at top: get min sortOrder and go one below
+    const first = await prisma.searchQueueItem.findFirst({
+      orderBy: { sortOrder: 'asc' },
+      select: { sortOrder: true },
+    })
+    sortOrder = (first?.sortOrder ?? 0) - 1
+  } else {
+    // Append at end: get max sortOrder
+    const last = await prisma.searchQueueItem.findFirst({
+      orderBy: { sortOrder: 'desc' },
+      select: { sortOrder: true },
+    })
+    sortOrder = (last?.sortOrder ?? -1) + 1
+  }
 
   const item = await prisma.searchQueueItem.create({
     data: {
@@ -46,7 +56,7 @@ export async function POST(req: NextRequest) {
       state: state.trim().toUpperCase(),
       resultsPerCategory: resultsPerCategory ?? 5,
       categorySlug: categorySlug || null,
-      sortOrder: nextOrder,
+      sortOrder,
       status: 'pending',
     },
   })

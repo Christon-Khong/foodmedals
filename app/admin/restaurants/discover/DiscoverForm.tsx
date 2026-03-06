@@ -148,6 +148,9 @@ export function DiscoverForm() {
   const [loadingBatchId, setLoadingBatchId] = useState<string | null>(null)
   const [deletingBatchId, setDeletingBatchId] = useState<string | null>(null)
 
+  // Queue refresh trigger (incremented to signal SearchQueue to refetch)
+  const [queueRefreshKey, setQueueRefreshKey] = useState(0)
+
   // Status
   const [searching, setSearching] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -736,7 +739,7 @@ export function DiscoverForm() {
       )}
 
       {/* ═══════ Search Queue ═══════ */}
-      <SearchQueue onQueueProcessed={() => { fetchQuota(); fetchBatches(); }} />
+      <SearchQueue onQueueProcessed={() => { fetchQuota(); fetchBatches(); }} refreshTrigger={queueRefreshKey} />
 
       {/* ═══════ Pending Batches Queue ═══════ */}
       {pendingBatches.length > 0 && !hasResults && (
@@ -1148,9 +1151,15 @@ export function DiscoverForm() {
       )}
 
       {/* ═══════ City Category Gaps ═══════ */}
-      <CityGaps onRunCity={(c, s, rpc) => {
-        handleDiscover({ city: c, state: s, resultsPerCategory: rpc })
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+      <CityGaps onRunCity={async (c, s, rpc) => {
+        await fetch('/api/admin/restaurants/discover/queue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ city: c, state: s, resultsPerCategory: rpc, priority: true }),
+        })
+        setQueueRefreshKey(k => k + 1)
+        // Scroll to the search queue section
+        document.querySelector('[data-queue]')?.scrollIntoView({ behavior: 'smooth' })
       }} />
     </div>
   )

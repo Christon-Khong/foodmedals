@@ -35,9 +35,10 @@ const US_STATES = [
 
 type Props = {
   onQueueProcessed?: () => void
+  refreshTrigger?: number
 }
 
-export function SearchQueue({ onQueueProcessed }: Props) {
+export function SearchQueue({ onQueueProcessed, refreshTrigger }: Props) {
   const [items, setItems] = useState<QueueItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -83,6 +84,11 @@ export function SearchQueue({ onQueueProcessed }: Props) {
       .then(data => setCategories(data ?? []))
       .catch(() => {})
   }, [fetchQueue])
+
+  // Refetch when parent signals a change (e.g. priority add from CityGaps)
+  useEffect(() => {
+    if (refreshTrigger) fetchQueue()
+  }, [refreshTrigger, fetchQueue])
 
   /* ---- Add to queue ---- */
   const handleAdd = async () => {
@@ -203,7 +209,7 @@ export function SearchQueue({ onQueueProcessed }: Props) {
   if (loading) return null
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+    <div data-queue className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-white flex items-center gap-2">
           <ListOrdered className="w-4 h-4 text-yellow-400" />
