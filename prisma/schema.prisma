@@ -282,9 +282,12 @@ model CommentUpvote {
 }
 
 model AdminSettings {
-  id                String   @id @default("singleton")
-  maxCommunityScore Int      @default(150) @map("max_community_score")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                     String   @id @default("singleton")
+  maxCommunityScore      Int      @default(150) @map("max_community_score")
+  placesApiDailyLimit    Int      @default(200) @map("places_api_daily_limit")
+  placesApiCallsToday    Int      @default(0)   @map("places_api_calls_today")
+  placesApiLastResetDate String   @default("")  @map("places_api_last_reset_date")
+  updatedAt              DateTime @updatedAt    @map("updated_at")
 
   @@map("admin_settings")
 }

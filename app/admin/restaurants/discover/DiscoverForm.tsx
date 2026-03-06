@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Search, Loader2, CheckSquare, Square, AlertTriangle, ExternalLink } from 'lucide-react'
 
 /* ---------- Types ---------- */
@@ -37,6 +37,14 @@ type ImportSummary = {
   errors: number
 }
 
+type QuotaInfo = {
+  used: number
+  limit: number
+  remaining: number
+  costToday: number
+  percentUsed: number
+}
+
 /* ---------- US States ---------- */
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
@@ -45,6 +53,8 @@ const US_STATES = [
   'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
   'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC',
 ]
+
+const COST_PER_CALL = 0.032
 
 /* ---------- Component ---------- */
 export function DiscoverForm() {
@@ -63,10 +73,30 @@ export function DiscoverForm() {
   const [importResults, setImportResults] = useState<ImportResult[] | null>(null)
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
 
+  // Quota
+  const [quota, setQuota] = useState<QuotaInfo | null>(null)
+
   // Status
   const [searching, setSearching] = useState(false)
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  /* ---- Fetch quota on mount ---- */
+  const fetchQuota = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/restaurants/discover/quota')
+      if (res.ok) {
+        const data = await res.json()
+        setQuota(data)
+      }
+    } catch {
+      // silently fail — quota display is informational
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchQuota()
+  }, [fetchQuota])
 
   /* ---- Phase 1: Discover ---- */
   const handleDiscover = useCallback(async () => {
@@ -92,15 +122,32 @@ export function DiscoverForm() {
         }),
       })
 
+      const data = await res.json().catch(() => ({}))
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
+        // Update quota from 429 response
+        if (data.quota) {
+          setQuota(prev => prev ? { ...prev, ...data.quota } : null)
+        }
         throw new Error(data.error || `Server error ${res.status}`)
       }
 
-      const data = await res.json()
       setRestaurants(data.restaurants ?? [])
       setStats(data.stats ?? null)
       setDiscoveryErrors(data.errors ?? [])
+
+      // Update quota from successful response
+      if (data.quota) {
+        setQuota(prev => ({
+          used: data.quota.used,
+          limit: data.quota.limit,
+          remaining: data.quota.remaining,
+          costToday: data.quota.costToday,
+          percentUsed: data.quota.limit > 0
+            ? Math.min(Math.round((data.quota.used / data.quota.limit) * 100), 100)
+            : 0,
+        }))
+      }
 
       // Select all by default
       const allIds = new Set<string>((data.restaurants ?? []).map((r: DiscoveredRestaurant) => r.placeId))
@@ -169,12 +216,65 @@ export function DiscoverForm() {
     }
   }, [restaurants, selected])
 
-  /* ---- Render ---- */
+  /* ---- Render helpers ---- */
   const hasResults = restaurants.length > 0
   const hasImportResults = importResults !== null
+  const quotaExhausted = quota ? quota.remaining <= 0 : false
+
+  // Progress bar color: yellow normally, red when >80%
+  const barColor = quota && quota.percentUsed > 80
+    ? 'bg-red-500'
+    : 'bg-yellow-500'
+
+  const barBorderColor = quota && quota.percentUsed > 80
+    ? 'border-red-500/30'
+    : 'border-yellow-500/30'
 
   return (
     <div className="space-y-6">
+      {/* ═══════ API Usage Card ═══════ */}
+      {quota && (
+        <div className={`bg-gray-900 border ${quotaExhausted ? 'border-red-500/40' : 'border-gray-800'} rounded-2xl p-5 space-y-3`}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white">API Usage Today</h2>
+            <span className="text-xs text-gray-500">
+              ~${(quota.limit * COST_PER_CALL).toFixed(2)}/day budget
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          <div className="space-y-2">
+            <div className={`h-2.5 bg-gray-800 rounded-full overflow-hidden border ${barBorderColor}`}>
+              <div
+                className={`h-full ${barColor} rounded-full transition-all duration-500`}
+                style={{ width: `${Math.min(quota.percentUsed, 100)}%` }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-3">
+                <span className="text-gray-300">
+                  <strong className="text-white">{quota.used}</strong> / {quota.limit} calls
+                </span>
+                <span className="text-gray-600">|</span>
+                <span className={quota.remaining <= 0 ? 'text-red-400 font-medium' : 'text-gray-400'}>
+                  {quota.remaining} remaining
+                </span>
+              </div>
+              <span className="text-gray-400">
+                ${quota.costToday.toFixed(2)} spent today
+              </span>
+            </div>
+          </div>
+
+          {quotaExhausted && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 text-xs text-red-400">
+              Daily limit reached. Quota resets at midnight UTC.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ═══════ Phase 1: Search Form ═══════ */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
         <h2 className="text-sm font-semibold text-white">Search Google Places</h2>
@@ -228,7 +328,7 @@ export function DiscoverForm() {
         <button
           type="button"
           onClick={handleDiscover}
-          disabled={searching || !city.trim() || !state}
+          disabled={searching || !city.trim() || !state || quotaExhausted}
           className="flex items-center justify-center gap-2 w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 font-semibold py-3 rounded-xl transition-colors text-sm"
         >
           {searching ? (
@@ -236,6 +336,8 @@ export function DiscoverForm() {
               <Loader2 className="w-4 h-4 animate-spin" />
               Searching all categories…
             </>
+          ) : quotaExhausted ? (
+            <>Daily quota reached</>
           ) : (
             <>
               <Search className="w-4 h-4" />
@@ -485,6 +587,7 @@ export function DiscoverForm() {
               setImportResults(null)
               setImportSummary(null)
               setError(null)
+              fetchQuota() // refresh quota display
             }}
             className="text-sm text-gray-400 hover:text-yellow-300 transition-colors"
           >

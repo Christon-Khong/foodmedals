@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
 import { searchPlaces, type PlaceResult } from '@/lib/google-places'
+import { checkAndIncrementQuota, getQuotaStatus } from '@/lib/google-places-quota'
 
 export const maxDuration = 300
 
@@ -48,6 +49,22 @@ export async function POST(req: NextRequest) {
 
   if (categories.length === 0) {
     return NextResponse.json({ error: 'No active categories found' }, { status: 400 })
+  }
+
+  // Check quota before starting (reserve calls for all categories)
+  const quotaCheck = await checkAndIncrementQuota(categories.length)
+  if (!quotaCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: `Daily API quota exceeded. ${quotaCheck.used}/${quotaCheck.limit} calls used today. This search needs ${categories.length} calls but only ${quotaCheck.remaining} remain.`,
+        quota: {
+          used: quotaCheck.used,
+          limit: quotaCheck.limit,
+          remaining: quotaCheck.remaining,
+        },
+      },
+      { status: 429 },
+    )
   }
 
   // Deduplicated results keyed by placeId
@@ -100,12 +117,21 @@ export async function POST(req: NextRequest) {
 
   const restaurants = Array.from(byPlaceId.values())
 
+  // Get updated quota status after search
+  const quota = await getQuotaStatus()
+
   return NextResponse.json({
     restaurants,
     stats: {
       categoriesSearched,
       totalPlacesFound,
       uniqueRestaurants: restaurants.length,
+    },
+    quota: {
+      used: quota.used,
+      limit: quota.limit,
+      remaining: quota.remaining,
+      costToday: quota.costToday,
     },
     errors: errors.length > 0 ? errors : undefined,
   })
