@@ -141,18 +141,23 @@ export function DiscoverForm() {
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  /* ---- Fetch quota on mount ---- */
+  /* ---- Fetch quota ---- */
+  const settingsInitialized = useRef(false)
   const fetchQuota = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/restaurants/discover/quota')
       if (res.ok) {
         const data = await res.json()
         setQuota(data)
-        // Sync settings fields
-        setSettingsDailyLimit(data.limit)
-        setSettingsReserve(data.verificationReserve ?? 40)
-        setSettingsMinRating(data.minRating ?? 4.5)
-        setSettingsMinReviews(data.minReviews ?? 100)
+        // Only sync settings fields on first load (not on 30s poll,
+        // which would overwrite the user's in-progress edits)
+        if (!settingsInitialized.current) {
+          settingsInitialized.current = true
+          setSettingsDailyLimit(data.limit)
+          setSettingsReserve(data.verificationReserve ?? 40)
+          setSettingsMinRating(data.minRating ?? 4.5)
+          setSettingsMinReviews(data.minReviews ?? 100)
+        }
       }
     } catch {
       // silently fail — quota display is informational
@@ -227,6 +232,8 @@ export function DiscoverForm() {
         throw new Error(data.error || 'Failed to save settings')
       }
       setSettingsSaved(true)
+      // Allow next fetchQuota to re-sync settings fields from the server
+      settingsInitialized.current = false
       fetchQuota()
       setTimeout(() => setSettingsSaved(false), 2000)
     } catch (err) {
