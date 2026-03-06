@@ -93,8 +93,8 @@ export async function discoverCity(options: {
     throw new Error('No active categories found')
   }
 
-  // Check quota before starting (reserve calls for all categories + verification reserve)
-  const quotaCheck = await checkAndIncrementQuota(categories.length, quotaReserve)
+  // Check Text Search quota before starting (verification uses geocoding — a separate budget)
+  const quotaCheck = await checkAndIncrementQuota(categories.length)
   if (!quotaCheck.allowed) {
     throw new QuotaExhaustedError(
       `Daily API quota exceeded. ${quotaCheck.used}/${quotaCheck.limit} calls used today. ` +

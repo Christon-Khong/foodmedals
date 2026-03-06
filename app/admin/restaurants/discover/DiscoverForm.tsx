@@ -48,6 +48,8 @@ type QuotaInfo = {
   costToday: number
   percentUsed: number
   geocodeUsed: number
+  geocodeLimit: number
+  geocodeRemaining: number
   geocodeCostToday: number
   totalCostToday: number
   verificationReserve: number
@@ -411,12 +413,14 @@ export function DiscoverForm() {
             // Update quota (preserve settings fields)
             if (event.quota) {
               setQuota(prev => ({
-                ...(prev ?? { verificationReserve: 40, verificationIntervalDays: 30, activeRestaurantCount: 0, minRating: 4.5, minReviews: 100, geocodeUsed: 0, geocodeCostToday: 0, totalCostToday: 0 }),
+                ...(prev ?? { verificationReserve: 40, verificationIntervalDays: 30, activeRestaurantCount: 0, minRating: 4.5, minReviews: 100, geocodeUsed: 0, geocodeLimit: 0, geocodeRemaining: 0, geocodeCostToday: 0, totalCostToday: 0 }),
                 used: event.quota.used,
                 limit: event.quota.limit,
                 remaining: event.quota.remaining,
                 costToday: event.quota.costToday,
                 geocodeUsed: event.quota.geocodeUsed ?? prev?.geocodeUsed ?? 0,
+                geocodeLimit: event.quota.geocodeLimit ?? prev?.geocodeLimit ?? 0,
+                geocodeRemaining: event.quota.geocodeRemaining ?? prev?.geocodeRemaining ?? 0,
                 geocodeCostToday: event.quota.geocodeCostToday ?? prev?.geocodeCostToday ?? 0,
                 totalCostToday: event.quota.totalCostToday ?? prev?.totalCostToday ?? 0,
                 percentUsed: event.quota.limit > 0
@@ -560,9 +564,9 @@ export function DiscoverForm() {
             </span>
           </div>
 
-          {/* Places API */}
+          {/* Text Search API */}
           <div className="space-y-2">
-            <div className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Places API · $0.032/call</div>
+            <div className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Text Search · 5k free/mo</div>
             <div className={`h-2.5 bg-gray-800 rounded-full overflow-hidden border ${barBorderColor}`}>
               <div
                 className={`h-full ${barColor} rounded-full transition-all duration-500`}
@@ -584,32 +588,50 @@ export function DiscoverForm() {
                 ${quota.costToday.toFixed(3)}
               </span>
             </div>
-
-            {/* Verification reserve info */}
-            {(quota.verificationReserve ?? 0) > 0 && (
-              <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
-                <span>
-                  {quota.verificationReserve} reserved for address verification
-                </span>
-                <span>
-                  {Math.max(0, quota.limit - quota.used - (quota.verificationReserve ?? 0))} available for discovery
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Geocoding API */}
-          <div className="space-y-1">
-            <div className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Geocoding API · $0.005/call</div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-300">
-                <strong className="text-white">{quota.geocodeUsed ?? 0}</strong> calls
-              </span>
-              <span className="text-gray-400">
-                ${(quota.geocodeCostToday ?? 0).toFixed(3)}
-              </span>
-            </div>
-          </div>
+          {(() => {
+            const geoPercent = quota.geocodeLimit > 0 ? Math.min(Math.round(((quota.geocodeUsed ?? 0) / quota.geocodeLimit) * 100), 100) : 0
+            const geoBarColor = geoPercent > 80 ? 'bg-red-500' : 'bg-blue-500'
+            const geoBarBorder = geoPercent > 80 ? 'border-red-500/30' : 'border-blue-500/30'
+            return (
+              <div className="space-y-2">
+                <div className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Geocoding · 10k free/mo</div>
+                <div className={`h-2.5 bg-gray-800 rounded-full overflow-hidden border ${geoBarBorder}`}>
+                  <div
+                    className={`h-full ${geoBarColor} rounded-full transition-all duration-500`}
+                    style={{ width: `${geoPercent}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-300">
+                      <strong className="text-white">{quota.geocodeUsed ?? 0}</strong> / {quota.geocodeLimit ?? 0} calls
+                    </span>
+                    <span className="text-gray-600">|</span>
+                    <span className={(quota.geocodeRemaining ?? 0) <= 0 ? 'text-red-400 font-medium' : 'text-gray-400'}>
+                      {quota.geocodeRemaining ?? 0} remaining
+                    </span>
+                  </div>
+                  <span className="text-gray-400">
+                    ${(quota.geocodeCostToday ?? 0).toFixed(3)}
+                  </span>
+                </div>
+                {/* Verification reserve info */}
+                {(quota.verificationReserve ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
+                    <span>
+                      {quota.verificationReserve} reserved for address verification
+                    </span>
+                    <span>
+                      {Math.max(0, (quota.geocodeRemaining ?? 0) - (quota.verificationReserve ?? 0))} available for other geocoding
+                    </span>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* Quality filter info */}
           <div className="space-y-2">
@@ -634,7 +656,7 @@ export function DiscoverForm() {
                 <div className="w-full bg-gray-800/50 border border-gray-700/50 text-gray-400 rounded-lg px-2.5 py-1.5 text-sm font-mono">
                   {quota?.limit ?? '—'}
                 </div>
-                <p className="text-[10px] text-gray-600 mt-0.5">$200 ÷ days in month</p>
+                <p className="text-[10px] text-gray-600 mt-0.5">5k free ÷ days in month</p>
               </div>
 
               {/* Verification Reserve */}

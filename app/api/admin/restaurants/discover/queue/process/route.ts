@@ -39,9 +39,10 @@ async function processQueue(): Promise<{
   const reserve = settings.verificationReserve
 
   while (true) {
-    // Check remaining quota — need ~30+ calls for a city search, plus reserve for verification
+    // Check remaining Text Search quota — need ~30+ calls for a city search
+    // (verification uses geocoding, a separate free tier, so no reserve needed here)
     const quota = await getQuotaStatus()
-    if (quota.remaining < 30 + reserve) {
+    if (quota.remaining < 30) {
       break
     }
 
@@ -120,10 +121,10 @@ async function processQueue(): Promise<{
     }
   }
 
-  // After queue processing, use remaining quota for address verification
+  // After queue processing, use remaining geocode budget for address verification
   let verification = null
   const quotaAfterQueue = await getQuotaStatus()
-  const checksAvailable = Math.min(quotaAfterQueue.remaining, reserve)
+  const checksAvailable = Math.min(quotaAfterQueue.geocodeRemaining, reserve)
 
   if (checksAvailable > 0) {
     verification = await verifyAddresses(checksAvailable)

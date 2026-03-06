@@ -45,8 +45,8 @@ export async function geocode(
 }
 
 /**
- * Geocode with tracking — increments the geocode counter and makes the call.
- * Geocoding is cheap ($0.005/call) so no hard quota limit, just tracking.
+ * Geocode with quota enforcement — checks daily geocode limit before making the call.
+ * Returns null if the daily geocode budget (10,000 free/month) is exhausted.
  */
 export async function geocodeWithQuota(
   address: string,
@@ -54,6 +54,7 @@ export async function geocodeWithQuota(
   state: string,
   zip: string,
 ): Promise<{ lat: number; lng: number } | null> {
-  await incrementGeocodeCounter(1)
+  const allowed = await incrementGeocodeCounter(1)
+  if (!allowed) return null
   return geocode(address, city, state, zip)
 }
