@@ -40,6 +40,15 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
+  // Sync internal state when props change (e.g. navbar search navigates to new query)
+  useEffect(() => {
+    setQuery(initialQuery)
+    setResults(initialResults)
+    setStateFilter(null)
+    setCityFilter(null)
+    setCategoryFilter(null)
+  }, [initialQuery, initialResults])
+
   const activeFilterCount = [stateFilter, cityFilter, categoryFilter].filter(Boolean).length
 
   // Derive available filter options from results
@@ -141,7 +150,7 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
     && !results.states.length && !results.critics.length
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
       {/* Search bar */}
       <div className="relative mb-4">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />

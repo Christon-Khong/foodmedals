@@ -884,7 +884,7 @@ export async function searchAll(query: string): Promise<QuickResult> {
   const words = q.split(/\s+/)
   const isMultiWord = words.length > 1
 
-  // 1. Fuzzy category search via trigram
+  // 1. Fuzzy category search via trigram (tighter thresholds to avoid false positives)
   const categories = await prisma.$queryRaw<
     Array<{ slug: string; name: string; icon_emoji: string; icon_url: string | null; sim: number }>
   >`
@@ -894,8 +894,8 @@ export async function searchAll(query: string): Promise<QuickResult> {
     WHERE status = 'active'
       AND (
         name ILIKE ${'%' + q + '%'}
-        OR similarity(name, ${q}) > 0.15
-        OR word_similarity(${q}, name) > 0.3
+        OR similarity(name, ${q}) > 0.25
+        OR word_similarity(${q}, name) > 0.55
       )
     ORDER BY
       CASE WHEN name ILIKE ${'%' + q + '%'} THEN 0 ELSE 1 END,
@@ -936,6 +936,10 @@ export async function searchAll(query: string): Promise<QuickResult> {
     // Cache fuzzy category lookups per term to avoid redundant DB queries
     const fuzzyCatCache = new Map<string, Array<{ slug: string; name: string; iconEmoji: string; iconUrl: string | null }>>()
 
+    // Track detected location for post-filtering
+    let detectedState: string | null = null
+    let detectedCityTerm: string | null = null
+
     for (let i = 1; i < words.length; i++) {
       const partA = words.slice(0, i).join(' ')
       const partB = words.slice(i).join(' ')
@@ -943,6 +947,10 @@ export async function searchAll(query: string): Promise<QuickResult> {
       for (const [termA, termB] of [[partA, partB], [partB, partA]]) {
         const stateCode = resolveStateCode(termB)
         const cityPattern = resolveCityPattern(termB)
+
+        // Track first detected location
+        if (stateCode && !detectedState) detectedState = stateCode
+        if (cityPattern && !stateCode && !detectedCityTerm && termB.length >= 3) detectedCityTerm = termB.toLowerCase()
 
         // a) Category + location: fuzzy-match categories for the individual term
         const cacheKey = termA.toLowerCase()
@@ -1037,6 +1045,21 @@ export async function searchAll(query: string): Promise<QuickResult> {
             }
           }
         }
+      }
+    }
+
+    // Post-filter: when a location was detected, remove out-of-location direct results
+    if (detectedState || detectedCityTerm) {
+      const filtered = allRestaurants.filter(r => {
+        if (detectedState && r.state === detectedState) return true
+        if (detectedCityTerm && r.city.toLowerCase().includes(detectedCityTerm)) return true
+        return false
+      })
+      if (filtered.length > 0) {
+        allRestaurants.length = 0
+        allRestaurants.push(...filtered)
+        seenSlugs.clear()
+        for (const r of allRestaurants) seenSlugs.add(r.slug)
       }
     }
 
@@ -1136,8 +1159,8 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
       WHERE fc.status = 'active'
         AND (
           fc.name ILIKE ${'%' + q + '%'}
-          OR similarity(fc.name, ${q}) > 0.15
-          OR word_similarity(${q}, fc.name) > 0.3
+          OR similarity(fc.name, ${q}) > 0.25
+          OR word_similarity(${q}, fc.name) > 0.55
         )
       ORDER BY
         CASE WHEN fc.name ILIKE ${'%' + q + '%'} THEN 0 ELSE 1 END,
@@ -1246,6 +1269,10 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
   // Cache fuzzy category lookups per term to avoid redundant DB queries (shared with combo building)
   const fuzzyCatCache = new Map<string, Array<{ slug: string; name: string; iconEmoji: string; iconUrl: string | null }>>()
 
+  // Track detected location for post-filtering
+  let detectedStateFull: string | null = null
+  let detectedCityTermFull: string | null = null
+
   if (isMultiWord) {
     for (let i = 1; i < words.length; i++) {
       const partA = words.slice(0, i).join(' ')
@@ -1254,6 +1281,10 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
       for (const [termA, termB] of [[partA, partB], [partB, partA]]) {
         const stateCode = resolveStateCode(termB)
         const cityPattern = resolveCityPattern(termB)
+
+        // Track first detected location
+        if (stateCode && !detectedStateFull) detectedStateFull = stateCode
+        if (cityPattern && !stateCode && !detectedCityTermFull && termB.length >= 3) detectedCityTermFull = termB.toLowerCase()
 
         // a) Category + location: fuzzy-match categories for the individual term
         const cacheKey = termA.toLowerCase()
@@ -1350,6 +1381,21 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
             }
           }
         }
+      }
+    }
+
+    // Post-filter: when a location was detected, remove out-of-location direct results
+    if (detectedStateFull || detectedCityTermFull) {
+      const filtered = allRestaurants.filter(r => {
+        if (detectedStateFull && r.state === detectedStateFull) return true
+        if (detectedCityTermFull && r.city.toLowerCase().includes(detectedCityTermFull)) return true
+        return false
+      })
+      if (filtered.length > 0) {
+        allRestaurants.length = 0
+        allRestaurants.push(...filtered)
+        seenSlugs.clear()
+        for (const r of allRestaurants) seenSlugs.add(r.slug)
       }
     }
 
