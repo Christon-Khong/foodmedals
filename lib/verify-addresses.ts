@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { geocodeWithQuota } from './restaurant-utils'
+import { getVerificationIntervalDays } from './google-places-quota'
 
 export type VerificationResult = {
   checked: number
@@ -20,9 +21,10 @@ export async function verifyAddresses(maxChecks: number): Promise<VerificationRe
     return { checked: 0, updated: 0, failed: 0, skipped: 0 }
   }
 
-  // Only re-check restaurants that haven't been verified in the last 30 days
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  // Only re-check restaurants that haven't been verified within the configured interval
+  const intervalDays = await getVerificationIntervalDays()
+  const cutoffDate = new Date()
+  cutoffDate.setDate(cutoffDate.getDate() - intervalDays)
 
   // Fetch restaurants to verify: never-checked first, then oldest checked
   const restaurants = await prisma.restaurant.findMany({
@@ -33,10 +35,10 @@ export async function verifyAddresses(maxChecks: number): Promise<VerificationRe
       city: { not: '' },
       state: { not: '' },
       zip: { not: '' },
-      // Skip restaurants checked within the last 30 days
+      // Skip restaurants checked within the interval
       OR: [
         { lastGeocodedAt: null },
-        { lastGeocodedAt: { lt: thirtyDaysAgo } },
+        { lastGeocodedAt: { lt: cutoffDate } },
       ],
     },
     orderBy: [

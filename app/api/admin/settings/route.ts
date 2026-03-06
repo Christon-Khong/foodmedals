@@ -15,6 +15,7 @@ export async function GET() {
   return NextResponse.json({
     maxCommunityScore: row?.maxCommunityScore ?? DEFAULT_MAX_COMMUNITY_SCORE,
     apiVerificationReserve: row?.apiVerificationReserve ?? 40,
+    verificationIntervalDays: row?.verificationIntervalDays ?? 30,
     discoverMinRating: row?.discoverMinRating ?? 4.5,
     discoverMinReviews: row?.discoverMinReviews ?? 100,
   })
@@ -50,6 +51,17 @@ export async function PUT(req: NextRequest) {
       )
     }
     updateData.apiVerificationReserve = val
+  }
+
+  if (body.verificationIntervalDays !== undefined) {
+    const val = Number(body.verificationIntervalDays)
+    if (!Number.isInteger(val) || val < 1 || val > 365) {
+      return NextResponse.json(
+        { error: 'verificationIntervalDays must be between 1 and 365' },
+        { status: 400 },
+      )
+    }
+    updateData.verificationIntervalDays = val
   }
 
   if (body.discoverMinRating !== undefined) {
@@ -90,6 +102,7 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({
     maxCommunityScore: row.maxCommunityScore,
     apiVerificationReserve: row.apiVerificationReserve,
+    verificationIntervalDays: row.verificationIntervalDays,
     discoverMinRating: row.discoverMinRating,
     discoverMinReviews: row.discoverMinReviews,
   })

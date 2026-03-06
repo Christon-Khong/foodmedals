@@ -151,16 +151,26 @@ export async function getVerificationReserve(): Promise<number> {
 }
 
 /**
+ * Get the verification interval in days from AdminSettings.
+ */
+export async function getVerificationIntervalDays(): Promise<number> {
+  const row = await getOrResetSettings()
+  return row.verificationIntervalDays
+}
+
+/**
  * Get discover-related settings from AdminSettings.
  */
 export async function getDiscoverSettings(): Promise<{
   verificationReserve: number
+  verificationIntervalDays: number
   minRating: number
   minReviews: number
 }> {
   const row = await getOrResetSettings()
   return {
     verificationReserve: row.apiVerificationReserve,
+    verificationIntervalDays: row.verificationIntervalDays,
     minRating: row.discoverMinRating,
     minReviews: row.discoverMinReviews,
   }

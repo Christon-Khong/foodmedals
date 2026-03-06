@@ -51,6 +51,8 @@ type QuotaInfo = {
   geocodeCostToday: number
   totalCostToday: number
   verificationReserve: number
+  verificationIntervalDays: number
+  activeRestaurantCount: number
   minRating: number
   minReviews: number
 }
@@ -129,6 +131,7 @@ export function DiscoverForm() {
   // Settings panel
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsReserve, setSettingsReserve] = useState<number>(40)
+  const [settingsInterval, setSettingsInterval] = useState<number>(30)
   const [settingsMinRating, setSettingsMinRating] = useState<number>(4.5)
   const [settingsMinReviews, setSettingsMinReviews] = useState<number>(100)
   const [savingSettings, setSavingSettings] = useState(false)
@@ -163,6 +166,7 @@ export function DiscoverForm() {
         if (!settingsInitialized.current) {
           settingsInitialized.current = true
           setSettingsReserve(data.verificationReserve ?? 40)
+          setSettingsInterval(data.verificationIntervalDays ?? 30)
           setSettingsMinRating(data.minRating ?? 4.5)
           setSettingsMinReviews(data.minReviews ?? 100)
         }
@@ -244,6 +248,7 @@ export function DiscoverForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           apiVerificationReserve: settingsReserve,
+          verificationIntervalDays: settingsInterval,
           discoverMinRating: settingsMinRating,
           discoverMinReviews: settingsMinReviews,
         }),
@@ -262,7 +267,7 @@ export function DiscoverForm() {
     } finally {
       setSavingSettings(false)
     }
-  }, [settingsReserve, settingsMinRating, settingsMinReviews, fetchQuota])
+  }, [settingsReserve, settingsInterval, settingsMinRating, settingsMinReviews, fetchQuota])
 
   /* ---- Load a saved batch ---- */
   const loadBatch = useCallback(async (batchId: string) => {
@@ -403,7 +408,7 @@ export function DiscoverForm() {
             // Update quota (preserve settings fields)
             if (event.quota) {
               setQuota(prev => ({
-                ...(prev ?? { verificationReserve: 40, minRating: 4.5, minReviews: 100, geocodeUsed: 0, geocodeCostToday: 0, totalCostToday: 0 }),
+                ...(prev ?? { verificationReserve: 40, verificationIntervalDays: 30, activeRestaurantCount: 0, minRating: 4.5, minReviews: 100, geocodeUsed: 0, geocodeCostToday: 0, totalCostToday: 0 }),
                 used: event.quota.used,
                 limit: event.quota.limit,
                 remaining: event.quota.remaining,
@@ -619,7 +624,7 @@ export function DiscoverForm() {
               <Settings className="w-3.5 h-3.5" />
               Settings
             </summary>
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-3">
               {/* Daily API Limit (computed) */}
               <div>
                 <label className="block text-[11px] text-gray-500 mb-1">Daily limit (auto)</label>
@@ -631,13 +636,26 @@ export function DiscoverForm() {
 
               {/* Verification Reserve */}
               <div>
-                <label className="block text-[11px] text-gray-500 mb-1">Verification reserve</label>
+                <label className="block text-[11px] text-gray-500 mb-1">Verify calls/day</label>
                 <input
                   type="number"
                   min={0}
                   max={1000}
                   value={settingsReserve}
                   onChange={e => setSettingsReserve(Number(e.target.value))}
+                  className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 font-mono"
+                />
+              </div>
+
+              {/* Verification Interval */}
+              <div>
+                <label className="block text-[11px] text-gray-500 mb-1">Verify interval (days)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={settingsInterval}
+                  onChange={e => setSettingsInterval(Number(e.target.value))}
                   className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 font-mono"
                 />
               </div>
@@ -669,6 +687,25 @@ export function DiscoverForm() {
                 />
               </div>
             </div>
+
+            {/* Verification coverage help text */}
+            {(() => {
+              const maxCoverage = settingsReserve * settingsInterval
+              const activeCount = quota?.activeRestaurantCount ?? 0
+              const covered = activeCount > 0 && maxCoverage >= activeCount
+              return (
+                <p className={`mt-2 text-[11px] ${covered ? 'text-gray-500' : 'text-amber-400'}`}>
+                  {settingsReserve}/day × {settingsInterval} days = <span className="font-semibold text-gray-300">{maxCoverage.toLocaleString()}</span> restaurants covered per cycle
+                  {activeCount > 0 && (
+                    <> — {covered ? (
+                      <span className="text-green-400">covers all {activeCount.toLocaleString()} active restaurants</span>
+                    ) : (
+                      <span className="text-amber-400">not enough for {activeCount.toLocaleString()} active restaurants (need {Math.ceil(activeCount / settingsInterval)}/day or {Math.ceil(activeCount / settingsReserve)}-day interval)</span>
+                    )}</>
+                  )}
+                </p>
+              )
+            })()}
 
             {/* Save button */}
             <div className="mt-3 flex items-center gap-2">

@@ -322,8 +322,9 @@ model AdminSettings {
   placesApiCallsToday    Int      @default(0)   @map("places_api_calls_today")
   placesApiLastResetDate String   @default("")  @map("places_api_last_reset_date")
   geocodeCallsToday      Int      @default(0)   @map("geocode_calls_today")
-  apiVerificationReserve Int      @default(40)  @map("api_verification_reserve")
-  discoverMinRating      Float    @default(4.5) @map("discover_min_rating")
+  apiVerificationReserve    Int      @default(40)  @map("api_verification_reserve")
+  verificationIntervalDays  Int      @default(30)  @map("verification_interval_days")
+  discoverMinRating         Float    @default(4.5) @map("discover_min_rating")
   discoverMinReviews     Int      @default(100) @map("discover_min_reviews")
   updatedAt              DateTime @updatedAt    @map("updated_at")
 
