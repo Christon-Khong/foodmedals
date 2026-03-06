@@ -1143,8 +1143,55 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
                  JOIN food_categories ffc ON ffc.id = frc.food_category_id AND ffc.slug = ${filters.categorySlug}`
     : Prisma.empty
 
-  // Run all queries in parallel
-  const [categories, directRestaurants, cityRows, critics] = await Promise.all([
+  // Pre-compute state matches (client-side lookup, no DB needed)
+  const qLower = q.toLowerCase()
+  const matchedStates: string[] = Object.entries(STATE_NAMES)
+    .filter(([code, name]) => code.toLowerCase().includes(qLower) || name.toLowerCase().includes(qLower))
+    .map(([code]) => code)
+
+  // Pre-compute multi-word split work and unique terms for parallel fuzzy cat lookups
+  type SplitWorkItem = { termA: string; termB: string; stateCode: string | null; cityPattern: string | null }
+  const splitWork: SplitWorkItem[] = []
+  const uniqueCatTerms = new Set<string>()
+  let detectedStateFull: string | null = null
+  let detectedCityTermFull: string | null = null
+
+  if (isMultiWord) {
+    for (let i = 1; i < words.length; i++) {
+      const partA = words.slice(0, i).join(' ')
+      const partB = words.slice(i).join(' ')
+      for (const [termA, termB] of [[partA, partB], [partB, partA]]) {
+        const stateCode = resolveStateCode(termB)
+        const cityPattern = resolveCityPattern(termB)
+        if (stateCode && !detectedStateFull) detectedStateFull = stateCode
+        if (cityPattern && !stateCode && !detectedCityTermFull && termB.length >= 3) detectedCityTermFull = termB.toLowerCase()
+        splitWork.push({ termA, termB, stateCode, cityPattern })
+        uniqueCatTerms.add(termA.toLowerCase())
+      }
+    }
+  }
+
+  // Build per-term fuzzy category lookup promises (run in parallel with core queries)
+  const fuzzyCatPromises = Array.from(uniqueCatTerms).map(async (term) => {
+    const rows = await prisma.$queryRaw<
+      Array<{ slug: string; name: string; icon_emoji: string; icon_url: string | null }>
+    >`
+      SELECT slug, name, icon_emoji, icon_url
+      FROM food_categories
+      WHERE status = 'active'
+        AND (
+          name ILIKE ${'%' + term + '%'}
+          OR similarity(name, ${term}) > 0.15
+          OR word_similarity(${term}, name) > 0.3
+        )
+      LIMIT 5
+    `
+    return [term, rows.map(c => ({ slug: c.slug, name: c.name, iconEmoji: c.icon_emoji, iconUrl: c.icon_url }))] as const
+  })
+
+  // ── PHASE 1: Run ALL independent queries in parallel ──
+  const [[categories, directRestaurants, cityRows, critics, stateRows], catLookupEntries] = await Promise.all([
+    Promise.all([
     // Fuzzy category search via trigram
     prisma.$queryRaw<
       Array<{ id: string; slug: string; name: string; icon_emoji: string; icon_url: string | null; restaurant_count: bigint; sim: number }>
@@ -1220,6 +1267,19 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
         similarity(display_name, ${q}) DESC
       LIMIT 20
     `,
+
+      // State restaurant counts (moved from sequential to parallel)
+      matchedStates.length > 0
+        ? prisma.$queryRaw<Array<{ state: string; count: bigint }>>`
+            SELECT state, COUNT(*) as count
+            FROM restaurants
+            WHERE status = 'active' AND state = ANY(${matchedStates})
+            GROUP BY state ORDER BY count DESC
+          `
+        : Promise.resolve([] as Array<{ state: string; count: bigint }>),
+    ]),
+    // Per-term fuzzy category lookups (for multi-word queries)
+    Promise.all(fuzzyCatPromises),
   ])
 
   // Map categories
@@ -1233,26 +1293,12 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
     city: r.city, state: r.state, restaurantCount: Number(r.count),
   }))
 
-  // Match states (by abbreviation, full name, or prefix)
-  const qLower = q.toLowerCase()
-  const matchedStates: string[] = Object.entries(STATE_NAMES)
-    .filter(([code, name]) => code.toLowerCase().includes(qLower) || name.toLowerCase().includes(qLower))
-    .map(([code]) => code)
-
-  let states: SearchState[] = []
-  if (matchedStates.length > 0) {
-    const stateRows = await prisma.$queryRaw<Array<{ state: string; count: bigint }>>`
-      SELECT state, COUNT(*) as count
-      FROM restaurants
-      WHERE status = 'active' AND state = ANY(${matchedStates})
-      GROUP BY state ORDER BY count DESC
-    `
-    states = stateRows.map(r => ({
-      state: STATE_NAMES[r.state] || r.state,
-      stateCode: r.state,
-      restaurantCount: Number(r.count),
-    }))
-  }
+  // Map states (from parallel query)
+  const states: SearchState[] = stateRows.map(r => ({
+    state: STATE_NAMES[r.state] || r.state,
+    stateCode: r.state,
+    restaurantCount: Number(r.count),
+  }))
 
   // Map critics
   const mappedCritics: SearchCritic[] = critics.map(u => ({
@@ -1260,125 +1306,83 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
     city: u.city, state: u.state,
   }))
 
-  // --- Cross-referenced restaurant search for multi-word queries ---
+  // Build fuzzy category cache from parallel lookups (shared with combo building)
+  const fuzzyCatCache = new Map(catLookupEntries)
+
   const allRestaurants: SearchRestaurant[] = directRestaurants.map(r => ({
     slug: r.slug, name: r.name, city: r.city, state: r.state,
   }))
   const seenSlugs = new Set(directRestaurants.map(r => r.slug))
 
-  // Cache fuzzy category lookups per term to avoid redundant DB queries (shared with combo building)
-  const fuzzyCatCache = new Map<string, Array<{ slug: string; name: string; iconEmoji: string; iconUrl: string | null }>>()
+  // ── PHASE 2: Location-dependent queries in parallel ──
+  if (isMultiWord && splitWork.length > 0) {
+    const locationPromises: Array<Promise<Array<{ slug: string; name: string; city: string; state: string }>>> = []
 
-  // Track detected location for post-filtering
-  let detectedStateFull: string | null = null
-  let detectedCityTermFull: string | null = null
+    for (const { termA, stateCode, cityPattern } of splitWork) {
+      const matchedCats = fuzzyCatCache.get(termA.toLowerCase()) || []
+      const catSlugs = matchedCats.map(c => c.slug)
 
-  if (isMultiWord) {
-    for (let i = 1; i < words.length; i++) {
-      const partA = words.slice(0, i).join(' ')
-      const partB = words.slice(i).join(' ')
+      // Category + location restaurants
+      if (catSlugs.length > 0 && stateCode) {
+        locationPromises.push(prisma.$queryRaw`
+          SELECT DISTINCT r.slug, r.name, r.city, r.state
+          FROM restaurants r
+          JOIN restaurant_categories rc ON rc.restaurant_id = r.id AND rc.verified = true
+          JOIN food_categories fc ON fc.id = rc.food_category_id
+          ${catFilterJoin}
+          WHERE r.status = 'active'
+            AND fc.slug = ANY(${catSlugs})
+            AND r.state = ${stateCode}
+            ${stateFilter} ${cityFilter}
+          ORDER BY r.name ASC LIMIT 15
+        `)
+      } else if (catSlugs.length > 0 && cityPattern) {
+        locationPromises.push(prisma.$queryRaw`
+          SELECT DISTINCT r.slug, r.name, r.city, r.state
+          FROM restaurants r
+          JOIN restaurant_categories rc ON rc.restaurant_id = r.id AND rc.verified = true
+          JOIN food_categories fc ON fc.id = rc.food_category_id
+          ${catFilterJoin}
+          WHERE r.status = 'active'
+            AND fc.slug = ANY(${catSlugs})
+            AND r.city ILIKE ${cityPattern}
+            ${stateFilter} ${cityFilter}
+          ORDER BY r.name ASC LIMIT 15
+        `)
+      }
 
-      for (const [termA, termB] of [[partA, partB], [partB, partA]]) {
-        const stateCode = resolveStateCode(termB)
-        const cityPattern = resolveCityPattern(termB)
+      // Name + location restaurants
+      if (stateCode) {
+        locationPromises.push(prisma.$queryRaw<
+          Array<{ slug: string; name: string; city: string; state: string }>
+        >`
+          SELECT slug, name, city, state FROM restaurants
+          WHERE status = 'active' AND state = ${stateCode}
+            AND (name ILIKE ${'%' + termA + '%'} OR similarity(name, ${termA}) > 0.2)
+          ORDER BY similarity(name, ${termA}) DESC
+          LIMIT 10
+        `)
+      } else if (cityPattern) {
+        locationPromises.push(prisma.$queryRaw<
+          Array<{ slug: string; name: string; city: string; state: string }>
+        >`
+          SELECT slug, name, city, state FROM restaurants
+          WHERE status = 'active' AND city ILIKE ${cityPattern}
+            AND (name ILIKE ${'%' + termA + '%'} OR similarity(name, ${termA}) > 0.2)
+          ORDER BY similarity(name, ${termA}) DESC
+          LIMIT 10
+        `)
+      }
+    }
 
-        // Track first detected location
-        if (stateCode && !detectedStateFull) detectedStateFull = stateCode
-        if (cityPattern && !stateCode && !detectedCityTermFull && termB.length >= 3) detectedCityTermFull = termB.toLowerCase()
-
-        // a) Category + location: fuzzy-match categories for the individual term
-        const cacheKey = termA.toLowerCase()
-        let matchedCats = fuzzyCatCache.get(cacheKey)
-        if (matchedCats === undefined) {
-          const fuzzyCats = await prisma.$queryRaw<
-            Array<{ slug: string; name: string; icon_emoji: string; icon_url: string | null }>
-          >`
-            SELECT slug, name, icon_emoji, icon_url
-            FROM food_categories
-            WHERE status = 'active'
-              AND (
-                name ILIKE ${'%' + termA + '%'}
-                OR similarity(name, ${termA}) > 0.15
-                OR word_similarity(${termA}, name) > 0.3
-              )
-            LIMIT 5
-          `
-          matchedCats = fuzzyCats.map(c => ({ slug: c.slug, name: c.name, iconEmoji: c.icon_emoji, iconUrl: c.icon_url }))
-          fuzzyCatCache.set(cacheKey, matchedCats)
-        }
-        if (matchedCats.length > 0) {
-          const catSlugs = matchedCats.map(c => c.slug)
-          let catLocResults: Array<{ slug: string; name: string; city: string; state: string }>
-
-          if (stateCode) {
-            catLocResults = await prisma.$queryRaw`
-              SELECT DISTINCT r.slug, r.name, r.city, r.state
-              FROM restaurants r
-              JOIN restaurant_categories rc ON rc.restaurant_id = r.id AND rc.verified = true
-              JOIN food_categories fc ON fc.id = rc.food_category_id
-              ${catFilterJoin}
-              WHERE r.status = 'active'
-                AND fc.slug = ANY(${catSlugs})
-                AND r.state = ${stateCode}
-                ${stateFilter} ${cityFilter}
-              ORDER BY r.name ASC LIMIT 15
-            `
-          } else if (cityPattern) {
-            catLocResults = await prisma.$queryRaw`
-              SELECT DISTINCT r.slug, r.name, r.city, r.state
-              FROM restaurants r
-              JOIN restaurant_categories rc ON rc.restaurant_id = r.id AND rc.verified = true
-              JOIN food_categories fc ON fc.id = rc.food_category_id
-              ${catFilterJoin}
-              WHERE r.status = 'active'
-                AND fc.slug = ANY(${catSlugs})
-                AND r.city ILIKE ${cityPattern}
-                ${stateFilter} ${cityFilter}
-              ORDER BY r.name ASC LIMIT 15
-            `
-          } else {
-            catLocResults = []
-          }
-          for (const r of catLocResults) {
-            if (!seenSlugs.has(r.slug)) {
-              seenSlugs.add(r.slug)
-              allRestaurants.push(r)
-            }
-          }
-        }
-
-        // b) Name + location: fuzzy restaurant name at location
-        if (stateCode) {
-          const nameLocResults = await prisma.$queryRaw<
-            Array<{ slug: string; name: string; city: string; state: string }>
-          >`
-            SELECT slug, name, city, state FROM restaurants
-            WHERE status = 'active' AND state = ${stateCode}
-              AND (name ILIKE ${'%' + termA + '%'} OR similarity(name, ${termA}) > 0.2)
-            ORDER BY similarity(name, ${termA}) DESC
-            LIMIT 10
-          `
-          for (const r of nameLocResults) {
-            if (!seenSlugs.has(r.slug)) {
-              seenSlugs.add(r.slug)
-              allRestaurants.push(r)
-            }
-          }
-        } else if (cityPattern) {
-          const nameLocResults = await prisma.$queryRaw<
-            Array<{ slug: string; name: string; city: string; state: string }>
-          >`
-            SELECT slug, name, city, state FROM restaurants
-            WHERE status = 'active' AND city ILIKE ${cityPattern}
-              AND (name ILIKE ${'%' + termA + '%'} OR similarity(name, ${termA}) > 0.2)
-            ORDER BY similarity(name, ${termA}) DESC
-            LIMIT 10
-          `
-          for (const r of nameLocResults) {
-            if (!seenSlugs.has(r.slug)) {
-              seenSlugs.add(r.slug)
-              allRestaurants.push(r)
-            }
+    // Execute all location queries in parallel
+    if (locationPromises.length > 0) {
+      const locationResults = await Promise.all(locationPromises)
+      for (const rows of locationResults) {
+        for (const r of rows) {
+          if (!seenSlugs.has(r.slug)) {
+            seenSlugs.add(r.slug)
+            allRestaurants.push(r)
           }
         }
       }
@@ -1442,26 +1446,8 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
       const partB = words.slice(i).join(' ')
 
       for (const [cp, lp] of [[partA, partB], [partB, partA]]) {
-        // Fuzzy-match categories for the individual term (reuses shared cache)
-        const cacheKey = cp.toLowerCase()
-        let matchedCats = fuzzyCatCache.get(cacheKey)
-        if (matchedCats === undefined) {
-          const fuzzyCats = await prisma.$queryRaw<
-            Array<{ slug: string; name: string; icon_emoji: string; icon_url: string | null }>
-          >`
-            SELECT slug, name, icon_emoji, icon_url
-            FROM food_categories
-            WHERE status = 'active'
-              AND (
-                name ILIKE ${'%' + cp + '%'}
-                OR similarity(name, ${cp}) > 0.15
-                OR word_similarity(${cp}, name) > 0.3
-              )
-            LIMIT 5
-          `
-          matchedCats = fuzzyCats.map(c => ({ slug: c.slug, name: c.name, iconEmoji: c.icon_emoji, iconUrl: c.icon_url }))
-          fuzzyCatCache.set(cacheKey, matchedCats)
-        }
+        // Use pre-populated fuzzy category cache (no DB queries needed)
+        const matchedCats = fuzzyCatCache.get(cp.toLowerCase()) || []
 
         // Category × city combos
         const matchedCitiesForLoc = cities.filter(c =>

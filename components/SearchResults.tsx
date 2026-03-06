@@ -116,8 +116,9 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && query.trim().length >= 2) {
       if (timerRef.current) clearTimeout(timerRef.current)
+      // Only router.push — the server component will call searchFull() and
+      // useEffect will sync the results. No need for a redundant client API call.
       router.push(`/search?q=${encodeURIComponent(query.trim())}`)
-      fetchResults(query, stateFilter, cityFilter, categoryFilter)
     }
   }
 
