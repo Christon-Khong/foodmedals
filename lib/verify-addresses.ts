@@ -20,6 +20,10 @@ export async function verifyAddresses(maxChecks: number): Promise<VerificationRe
     return { checked: 0, updated: 0, failed: 0, skipped: 0 }
   }
 
+  // Only re-check restaurants that haven't been verified in the last 30 days
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
   // Fetch restaurants to verify: never-checked first, then oldest checked
   const restaurants = await prisma.restaurant.findMany({
     where: {
@@ -29,6 +33,11 @@ export async function verifyAddresses(maxChecks: number): Promise<VerificationRe
       city: { not: '' },
       state: { not: '' },
       zip: { not: '' },
+      // Skip restaurants checked within the last 30 days
+      OR: [
+        { lastGeocodedAt: null },
+        { lastGeocodedAt: { lt: thirtyDaysAgo } },
+      ],
     },
     orderBy: [
       { lastGeocodedAt: { sort: 'asc', nulls: 'first' } },
