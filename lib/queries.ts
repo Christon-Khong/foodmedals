@@ -977,7 +977,8 @@ export async function searchAll(query: string): Promise<QuickResult> {
             WHERE status = 'active'
               AND (
                 name ILIKE ${'%' + termA + '%'}
-                OR (similarity(name, ${termA}) > 0.15 AND length(name) <= length(${termA}) * 1.3)
+                OR (similarity(name, ${termA}) > CASE WHEN length(${termA}) > 6 THEN 0.25 ELSE 0.15 END
+                    AND length(name) <= length(${termA}) * 1.3)
                 OR word_similarity(${termA}, name) > 0.55
                 ${termConsonantMatch}
               )
@@ -1206,7 +1207,8 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
       WHERE status = 'active'
         AND (
           name ILIKE ${'%' + term + '%'}
-          OR (similarity(name, ${term}) > 0.15 AND length(name) <= length(${term}) * 1.3)
+          OR (similarity(name, ${term}) > CASE WHEN length(${term}) > 6 THEN 0.25 ELSE 0.15 END
+              AND length(name) <= length(${term}) * 1.3)
           OR word_similarity(${term}, name) > 0.55
           ${termConsonantMatch}
         )
