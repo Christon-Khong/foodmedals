@@ -176,6 +176,12 @@ export function DiscoverForm() {
     fetchBatches()
   }, [fetchQuota, fetchBatches])
 
+  // Auto-refresh quota every 30s
+  useEffect(() => {
+    const interval = setInterval(fetchQuota, 30_000)
+    return () => clearInterval(interval)
+  }, [fetchQuota])
+
   // Auto-scroll progress log
   useEffect(() => {
     if (logRef.current) {
