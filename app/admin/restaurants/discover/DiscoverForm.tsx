@@ -56,6 +56,7 @@ type ProgressEntry = {
   index: number
   total: number
   found: number
+  qualityFiltered?: number
   uniqueSoFar: number
   error?: string
 }
@@ -845,6 +846,9 @@ export function DiscoverForm() {
                       <span className="text-gray-300">{p.category}</span>
                       <span className="text-gray-600">—</span>
                       <span className="text-yellow-400/70">{p.found} found</span>
+                      {(p.qualityFiltered ?? 0) > 0 && (
+                        <span className="text-red-400/50">-{p.qualityFiltered} filtered</span>
+                      )}
                       <span className="text-gray-600 ml-auto">{p.uniqueSoFar} unique</span>
                     </>
                   )}

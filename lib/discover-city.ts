@@ -34,6 +34,7 @@ export type ProgressEvent = {
   index: number
   total: number
   found: number
+  qualityFiltered: number
   uniqueSoFar: number
   error?: string
 }
@@ -106,6 +107,7 @@ export async function discoverCity(options: {
   for (const cat of categories) {
     const query = `best ${cat.name} restaurants in ${city}, ${state}`
     let found = 0
+    let qualityFiltered = 0
 
     try {
       const places: PlaceResult[] = await searchPlaces(query, maxResults)
@@ -115,8 +117,14 @@ export async function discoverCity(options: {
       for (const place of places) {
         // Quality filter: skip restaurants that have ratings/reviews below thresholds.
         // If rating or reviewCount is missing, don't reject — only filter when data exists.
-        if (place.rating != null && place.rating < minRating) continue
-        if (place.reviewCount != null && place.reviewCount < minReviews) continue
+        if (place.rating != null && place.rating < minRating) {
+          qualityFiltered++
+          continue
+        }
+        if (place.reviewCount != null && place.reviewCount < minReviews) {
+          qualityFiltered++
+          continue
+        }
 
         const existing = byPlaceId.get(place.placeId)
         if (existing) {
@@ -153,6 +161,7 @@ export async function discoverCity(options: {
       index: categoriesSearched,
       total: categories.length,
       found,
+      qualityFiltered,
       uniqueSoFar: byPlaceId.size,
       error:
         found === 0 && errors.length > 0
