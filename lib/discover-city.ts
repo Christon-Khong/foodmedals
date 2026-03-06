@@ -113,10 +113,10 @@ export async function discoverCity(options: {
       totalPlacesFound += places.length
 
       for (const place of places) {
-        // Quality filter: skip restaurants below rating/review thresholds
-        if ((place.rating ?? 0) < minRating || (place.reviewCount ?? 0) < minReviews) {
-          continue
-        }
+        // Quality filter: skip restaurants that have ratings/reviews below thresholds.
+        // If rating or reviewCount is missing, don't reject — only filter when data exists.
+        if (place.rating != null && place.rating < minRating) continue
+        if (place.reviewCount != null && place.reviewCount < minReviews) continue
 
         const existing = byPlaceId.get(place.placeId)
         if (existing) {
