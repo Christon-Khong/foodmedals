@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
 import { discoverCity, QuotaExhaustedError } from '@/lib/discover-city'
-import { getQuotaStatus, getVerificationReserve } from '@/lib/google-places-quota'
+import { getQuotaStatus, getDiscoverSettings } from '@/lib/google-places-quota'
 import { verifyAddresses } from '@/lib/verify-addresses'
 
 export const maxDuration = 300
@@ -35,7 +35,8 @@ async function processQueue(): Promise<{
   quota: Awaited<ReturnType<typeof getQuotaStatus>>
 }> {
   const results: ProcessResult[] = []
-  const reserve = await getVerificationReserve()
+  const settings = await getDiscoverSettings()
+  const reserve = settings.verificationReserve
 
   while (true) {
     // Check remaining quota — need ~30+ calls for a city search, plus reserve for verification
@@ -64,6 +65,8 @@ async function processQueue(): Promise<{
         state: item.state,
         resultsPerCategory: item.resultsPerCategory,
         quotaReserve: reserve,
+        minRating: settings.minRating,
+        minReviews: settings.minReviews,
       })
 
       await prisma.searchQueueItem.update({

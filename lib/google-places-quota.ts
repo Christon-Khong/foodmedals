@@ -121,3 +121,19 @@ export async function getVerificationReserve(): Promise<number> {
   const row = await getOrResetSettings()
   return row.apiVerificationReserve
 }
+
+/**
+ * Get discover-related settings from AdminSettings.
+ */
+export async function getDiscoverSettings(): Promise<{
+  verificationReserve: number
+  minRating: number
+  minReviews: number
+}> {
+  const row = await getOrResetSettings()
+  return {
+    verificationReserve: row.apiVerificationReserve,
+    minRating: row.discoverMinRating,
+    minReviews: row.discoverMinReviews,
+  }
+}

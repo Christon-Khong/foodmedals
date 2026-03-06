@@ -17,10 +17,6 @@ export type DiscoveredRestaurant = {
   categorySlugs: string[]
 }
 
-/** Minimum quality thresholds for discovered restaurants */
-const MIN_RATING = 4.5
-const MIN_REVIEWS = 100
-
 export type DiscoverCityResult = {
   batchId?: string
   restaurants: DiscoveredRestaurant[]
@@ -71,9 +67,14 @@ export async function discoverCity(options: {
   state: string
   resultsPerCategory?: number
   quotaReserve?: number
+  minRating?: number
+  minReviews?: number
   onProgress?: ProgressCallback
 }): Promise<DiscoverCityResult> {
-  const { city, state, resultsPerCategory = 5, quotaReserve = 0, onProgress } = options
+  const {
+    city, state, resultsPerCategory = 5, quotaReserve = 0,
+    minRating = 4.5, minReviews = 100, onProgress,
+  } = options
   const maxResults = Math.min(Math.max(resultsPerCategory, 1), 10)
 
   // Fetch all active categories
@@ -113,7 +114,7 @@ export async function discoverCity(options: {
 
       for (const place of places) {
         // Quality filter: skip restaurants below rating/review thresholds
-        if ((place.rating ?? 0) < MIN_RATING || (place.reviewCount ?? 0) < MIN_REVIEWS) {
+        if ((place.rating ?? 0) < minRating || (place.reviewCount ?? 0) < minReviews) {
           continue
         }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Search, Loader2, CheckSquare, Square, AlertTriangle, ExternalLink, Trash2, FolderOpen, Clock } from 'lucide-react'
+import { Search, Loader2, CheckSquare, Square, AlertTriangle, ExternalLink, Trash2, FolderOpen, Clock, Settings, Save, Check } from 'lucide-react'
 import { SearchQueue } from './SearchQueue'
 
 /* ---------- Types ---------- */
@@ -46,7 +46,9 @@ type QuotaInfo = {
   remaining: number
   costToday: number
   percentUsed: number
-  verificationReserve?: number
+  verificationReserve: number
+  minRating: number
+  minReviews: number
 }
 
 type ProgressEntry = {
@@ -113,6 +115,15 @@ export function DiscoverForm() {
   // Quota
   const [quota, setQuota] = useState<QuotaInfo | null>(null)
 
+  // Settings panel
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsDailyLimit, setSettingsDailyLimit] = useState<number>(200)
+  const [settingsReserve, setSettingsReserve] = useState<number>(40)
+  const [settingsMinRating, setSettingsMinRating] = useState<number>(4.5)
+  const [settingsMinReviews, setSettingsMinReviews] = useState<number>(100)
+  const [savingSettings, setSavingSettings] = useState(false)
+  const [settingsSaved, setSettingsSaved] = useState(false)
+
   // Search progress (streaming)
   const [progress, setProgress] = useState<ProgressEntry[]>([])
   const [searchProgress, setSearchProgress] = useState<{ index: number; total: number } | null>(null)
@@ -136,6 +147,11 @@ export function DiscoverForm() {
       if (res.ok) {
         const data = await res.json()
         setQuota(data)
+        // Sync settings fields
+        setSettingsDailyLimit(data.limit)
+        setSettingsReserve(data.verificationReserve ?? 40)
+        setSettingsMinRating(data.minRating ?? 4.5)
+        setSettingsMinReviews(data.minReviews ?? 100)
       }
     } catch {
       // silently fail — quota display is informational
@@ -183,6 +199,35 @@ export function DiscoverForm() {
     fetchQuota()
     fetchBatches()
   }, [fetchQuota, fetchBatches])
+
+  /* ---- Save settings ---- */
+  const handleSaveSettings = useCallback(async () => {
+    setSavingSettings(true)
+    setSettingsSaved(false)
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          placesApiDailyLimit: settingsDailyLimit,
+          apiVerificationReserve: settingsReserve,
+          discoverMinRating: settingsMinRating,
+          discoverMinReviews: settingsMinReviews,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to save settings')
+      }
+      setSettingsSaved(true)
+      fetchQuota()
+      setTimeout(() => setSettingsSaved(false), 2000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save settings')
+    } finally {
+      setSavingSettings(false)
+    }
+  }, [settingsDailyLimit, settingsReserve, settingsMinRating, settingsMinReviews, fetchQuota])
 
   /* ---- Load a saved batch ---- */
   const loadBatch = useCallback(async (batchId: string) => {
@@ -306,9 +351,10 @@ export function DiscoverForm() {
               fetchBatches()
             }
 
-            // Update quota
+            // Update quota (preserve settings fields)
             if (event.quota) {
-              setQuota({
+              setQuota(prev => ({
+                ...(prev ?? { verificationReserve: 40, minRating: 4.5, minReviews: 100 }),
                 used: event.quota.used,
                 limit: event.quota.limit,
                 remaining: event.quota.remaining,
@@ -316,7 +362,7 @@ export function DiscoverForm() {
                 percentUsed: event.quota.limit > 0
                   ? Math.min(Math.round((event.quota.used / event.quota.limit) * 100), 100)
                   : 0,
-              })
+              }))
             }
 
             // Select all by default
@@ -489,7 +535,96 @@ export function DiscoverForm() {
                 </span>
               </div>
             )}
+
+            {/* Quality filter info */}
+            <div className="text-[11px] text-gray-500 pt-0.5">
+              Quality filter: ≥{quota.minRating}★ and ≥{quota.minReviews} reviews
+            </div>
           </div>
+
+          {/* Collapsible settings panel */}
+          <details
+            open={settingsOpen}
+            onToggle={e => setSettingsOpen((e.target as HTMLDetailsElement).open)}
+          >
+            <summary className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer hover:text-gray-300 transition-colors select-none">
+              <Settings className="w-3.5 h-3.5" />
+              Settings
+            </summary>
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Daily API Limit */}
+              <div>
+                <label className="block text-[11px] text-gray-500 mb-1">Daily API limit</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={10000}
+                  value={settingsDailyLimit}
+                  onChange={e => setSettingsDailyLimit(Number(e.target.value))}
+                  className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 font-mono"
+                />
+              </div>
+
+              {/* Verification Reserve */}
+              <div>
+                <label className="block text-[11px] text-gray-500 mb-1">Verification reserve</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={1000}
+                  value={settingsReserve}
+                  onChange={e => setSettingsReserve(Number(e.target.value))}
+                  className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 font-mono"
+                />
+              </div>
+
+              {/* Min Rating */}
+              <div>
+                <label className="block text-[11px] text-gray-500 mb-1">Min rating (★)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  value={settingsMinRating}
+                  onChange={e => setSettingsMinRating(Number(e.target.value))}
+                  className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 font-mono"
+                />
+              </div>
+
+              {/* Min Reviews */}
+              <div>
+                <label className="block text-[11px] text-gray-500 mb-1">Min reviews</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={10000}
+                  value={settingsMinReviews}
+                  onChange={e => setSettingsMinReviews(Number(e.target.value))}
+                  className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Save button */}
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSaveSettings}
+                disabled={savingSettings}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border border-gray-700 hover:border-yellow-500/50 text-gray-300 hover:text-white rounded-lg transition-colors text-xs disabled:opacity-50"
+              >
+                {savingSettings ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : settingsSaved ? (
+                  <Check className="w-3 h-3 text-green-400" />
+                ) : (
+                  <Save className="w-3 h-3" />
+                )}
+                {settingsSaved ? 'Saved!' : 'Save Settings'}
+              </button>
+            </div>
+          </details>
 
           {quotaExhausted && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 text-xs text-red-400">

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
-import { getQuotaStatus, getVerificationReserve } from '@/lib/google-places-quota'
+import { getQuotaStatus, getDiscoverSettings } from '@/lib/google-places-quota'
 
 export async function GET() {
   const session = await getAdminSession()
@@ -8,9 +8,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const [quota, verificationReserve] = await Promise.all([
+  const [quota, discoverSettings] = await Promise.all([
     getQuotaStatus(),
-    getVerificationReserve(),
+    getDiscoverSettings(),
   ])
-  return NextResponse.json({ ...quota, verificationReserve })
+  return NextResponse.json({ ...quota, ...discoverSettings })
 }
