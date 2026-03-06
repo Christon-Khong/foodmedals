@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Search, Loader2, CheckSquare, Square, AlertTriangle, ExternalLink, Trash2, FolderOpen, Clock } from 'lucide-react'
+import { SearchQueue } from './SearchQueue'
 
 /* ---------- Types ---------- */
 type DiscoveredRestaurant = {
@@ -482,6 +483,9 @@ export function DiscoverForm() {
           )}
         </div>
       )}
+
+      {/* ═══════ Search Queue ═══════ */}
+      <SearchQueue onQueueProcessed={() => { fetchQuota(); fetchBatches(); }} />
 
       {/* ═══════ Pending Batches Queue ═══════ */}
       {pendingBatches.length > 0 && !hasResults && (

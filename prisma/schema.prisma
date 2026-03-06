@@ -281,6 +281,22 @@ model CommentUpvote {
   @@map("comment_upvotes")
 }
 
+model SearchQueueItem {
+  id                 String    @id @default(cuid())
+  city               String
+  state              String
+  resultsPerCategory Int       @default(5) @map("results_per_category")
+  sortOrder          Int       @map("sort_order")
+  status             String    @default("pending") // pending | processing | completed | failed
+  error              String?
+  discoveryBatchId   String?   @map("discovery_batch_id")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  processedAt        DateTime? @map("processed_at")
+
+  @@index([status, sortOrder])
+  @@map("search_queue_items")
+}
+
 model DiscoveryBatch {
   id                 String   @id @default(cuid())
   city               String
