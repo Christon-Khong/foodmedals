@@ -15,6 +15,8 @@ type DiscoveredRestaurant = {
   lat: number
   lng: number
   websiteUrl?: string
+  rating?: number
+  reviewCount?: number
   categorySlugs: string[]
 }
 
@@ -796,6 +798,7 @@ export function DiscoverForm() {
                   <th className="pb-2 pr-2 w-8"></th>
                   <th className="pb-2 pr-3">Restaurant</th>
                   <th className="pb-2 pr-3">Address</th>
+                  <th className="pb-2 pr-3">Rating</th>
                   <th className="pb-2 pr-3">Categories</th>
                   <th className="pb-2 w-8"></th>
                 </tr>
@@ -825,6 +828,14 @@ export function DiscoverForm() {
                       </td>
                       <td className="py-2.5 pr-3 text-gray-400 text-xs">
                         {r.address}, {r.city}, {r.state} {r.zip}
+                      </td>
+                      <td className="py-2.5 pr-3 text-xs whitespace-nowrap">
+                        {r.rating != null && (
+                          <span className="text-yellow-400 font-medium">{r.rating.toFixed(1)}★</span>
+                        )}
+                        {r.reviewCount != null && (
+                          <span className="text-gray-500 ml-1">({r.reviewCount.toLocaleString()})</span>
+                        )}
                       </td>
                       <td className="py-2.5 pr-3">
                         <div className="flex flex-wrap gap-1">

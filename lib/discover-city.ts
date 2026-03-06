@@ -12,8 +12,14 @@ export type DiscoveredRestaurant = {
   lat: number
   lng: number
   websiteUrl?: string
+  rating?: number
+  reviewCount?: number
   categorySlugs: string[]
 }
+
+/** Minimum quality thresholds for discovered restaurants */
+const MIN_RATING = 4.5
+const MIN_REVIEWS = 100
 
 export type DiscoverCityResult = {
   batchId?: string
@@ -106,6 +112,11 @@ export async function discoverCity(options: {
       totalPlacesFound += places.length
 
       for (const place of places) {
+        // Quality filter: skip restaurants below rating/review thresholds
+        if ((place.rating ?? 0) < MIN_RATING || (place.reviewCount ?? 0) < MIN_REVIEWS) {
+          continue
+        }
+
         const existing = byPlaceId.get(place.placeId)
         if (existing) {
           if (!existing.categorySlugs.includes(cat.slug)) {
@@ -122,6 +133,8 @@ export async function discoverCity(options: {
             lat: place.lat,
             lng: place.lng,
             websiteUrl: place.websiteUrl,
+            rating: place.rating,
+            reviewCount: place.reviewCount,
             categorySlugs: [cat.slug],
           })
         }

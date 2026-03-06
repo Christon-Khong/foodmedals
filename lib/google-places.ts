@@ -8,6 +8,8 @@ export type PlaceResult = {
   lat: number
   lng: number
   websiteUrl?: string
+  rating?: number
+  reviewCount?: number
 }
 
 /**
@@ -27,7 +29,7 @@ export async function searchPlaces(
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': apiKey,
       'X-Goog-FieldMask':
-        'places.id,places.displayName,places.formattedAddress,places.location,places.websiteUri',
+        'places.id,places.displayName,places.formattedAddress,places.location,places.websiteUri,places.rating,places.userRatingCount',
     },
     body: JSON.stringify({
       textQuery: query,
@@ -48,6 +50,8 @@ export async function searchPlaces(
     formattedAddress?: string
     location?: { latitude: number; longitude: number }
     websiteUri?: string
+    rating?: number
+    userRatingCount?: number
   }> = data.places ?? []
 
   return places
@@ -64,6 +68,8 @@ export async function searchPlaces(
         lat: p.location!.latitude,
         lng: p.location!.longitude,
         websiteUrl: p.websiteUri,
+        rating: p.rating,
+        reviewCount: p.userRatingCount,
       }
     })
     .filter(p => p.city && p.state && p.zip) // filter out unparseable addresses
