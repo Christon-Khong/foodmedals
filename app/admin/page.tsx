@@ -12,6 +12,8 @@ async function getStats() {
     totalMedalsThisYear,
     totalCategories,
     pendingAddressReports,
+    pendingClosureReports,
+    missingGeocodesCount,
     recentPending,
   ] = await Promise.all([
     prisma.restaurant.count(),
@@ -21,6 +23,8 @@ async function getStats() {
     prisma.medal.count({ where: { year } }),
     prisma.foodCategory.count({ where: { status: 'active' } }),
     prisma.addressReport.count({ where: { status: 'pending' } }),
+    prisma.closureReport.count({ where: { status: 'pending' } }),
+    prisma.restaurant.count({ where: { status: 'active', lat: null } }),
     prisma.restaurant.findMany({
       where:   { status: 'pending_review' },
       orderBy: { createdAt: 'desc' },
@@ -28,19 +32,21 @@ async function getStats() {
       include: { submitter: { select: { displayName: true, email: true } } },
     }),
   ])
-  return { totalRestaurants, pendingRestaurants, activeRestaurants, totalUsers, totalMedalsThisYear, totalCategories, pendingAddressReports, recentPending, year }
+  return { totalRestaurants, pendingRestaurants, activeRestaurants, totalUsers, totalMedalsThisYear, totalCategories, pendingAddressReports, pendingClosureReports, missingGeocodesCount, recentPending, year }
 }
 
 export default async function AdminDashboard() {
   const stats = await getStats()
 
   const statCards: { label: string; value: number; icon: React.ReactNode; href: string | null; alert?: boolean }[] = [
-    { label: 'Active Restaurants', value: stats.activeRestaurants,    icon: '🍽️', href: '/admin/restaurants/all' },
-    { label: 'Pending Review',     value: stats.pendingRestaurants,    icon: '⏳', href: '/admin/restaurants',    alert: stats.pendingRestaurants > 0 },
-    { label: 'Registered Users',   value: stats.totalUsers,            icon: '👥', href: '/admin/users' },
-    { label: `${stats.year} Medals`, value: stats.totalMedalsThisYear, icon: <Image src="/medals/gold.webp" alt="medals" width={24} height={24} />, href: null },
-    { label: 'Address Reports',    value: stats.pendingAddressReports,  icon: '📍', href: '/admin/reports',        alert: stats.pendingAddressReports > 0 },
-    { label: 'Food Categories',    value: stats.totalCategories,       icon: '📂', href: '/admin/categories' },
+    { label: 'Active Restaurants', value: stats.activeRestaurants,      icon: '🍽️', href: '/admin/restaurants/all' },
+    { label: 'Pending Review',     value: stats.pendingRestaurants,     icon: '⏳', href: '/admin/restaurants',       alert: stats.pendingRestaurants > 0 },
+    { label: 'Registered Users',   value: stats.totalUsers,             icon: '👥', href: '/admin/users' },
+    { label: `${stats.year} Medals`, value: stats.totalMedalsThisYear,  icon: <Image src="/medals/gold.webp" alt="medals" width={24} height={24} />, href: null },
+    { label: 'Address Reports',    value: stats.pendingAddressReports,  icon: '📍', href: '/admin/reports',           alert: stats.pendingAddressReports > 0 },
+    { label: 'Closure Reports',    value: stats.pendingClosureReports,  icon: '🚫', href: '/admin/closure-reports',   alert: stats.pendingClosureReports > 0 },
+    { label: 'Missing Geocodes',   value: stats.missingGeocodesCount,   icon: '🗺️', href: '/admin/restaurants/geocode', alert: stats.missingGeocodesCount > 0 },
+    { label: 'Food Categories',    value: stats.totalCategories,        icon: '📂', href: '/admin/categories' },
   ]
 
   return (
@@ -51,7 +57,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Stat grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {statCards.map(card => (
           <StatCard key={card.label} {...card} />
         ))}
