@@ -91,6 +91,30 @@ Safeguards (already built into the API):
 - Only links active categories (ignores invalid slugs)
 - Max 50 per request, 120s timeout`
 
+  const csvPrompt = `Research restaurants in ${cityDisplay} across ALL food categories for FoodMedals and output a CSV file.
+
+For EACH category below, research and find the top 3-5 restaurants in ${cityDisplay} that are best known for that category. Use web search to find highly-rated, well-known spots.
+
+For each restaurant found, collect: name, full street address, city, state (2-letter abbreviation), and ZIP code.
+
+Output the results as a CSV with this EXACT format:
+
+name,address,city,state,zip,categorySlugs
+Restaurant Name,123 Main St,City,ST,12345,slug1;slug2;slug3
+
+Rules:
+- First line MUST be the header: name,address,city,state,zip,categorySlugs
+- Each restaurant gets one row
+- If a restaurant fits multiple categories, list all slugs separated by semicolons (;) in the categorySlugs column
+- State must be a 2-letter abbreviation (e.g. UT, NV, CA)
+- Do NOT wrap fields in quotes unless the value contains a comma
+- Do NOT include any text before or after the CSV — output ONLY the CSV
+
+Categories to research (use these exact slugs in categorySlugs):
+${slugs.map(s => `- ${s}`).join('\n')}
+
+Output the complete CSV and nothing else.`
+
   return (
     <div className="mt-8">
       <button
@@ -132,6 +156,30 @@ Safeguards (already built into the API):
             )}
             <pre className="bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 text-xs text-gray-300 whitespace-pre-wrap overflow-x-auto max-h-80 overflow-y-auto leading-relaxed">
               {apiKey ? claudePrompt.replace(apiKey, apiKey.slice(0, 8) + '...' + apiKey.slice(-4)) : claudePrompt}
+            </pre>
+          </div>
+
+          {/* Claude CSV Prompt */}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white">Claude Cowork Prompt — CSV Output</h3>
+              <CopyButton text={csvPrompt} label="Copy prompt" />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-500 shrink-0">City, State:</label>
+              <input
+                type="text"
+                value={city}
+                onChange={e => setCity(e.target.value)}
+                placeholder="e.g. Salt Lake City, UT"
+                className="flex-1 bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 placeholder:text-gray-600"
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              Produces a CSV file you can upload via the Bulk Import form above. Same city field as the API prompt.
+            </p>
+            <pre className="bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 text-xs text-gray-300 whitespace-pre-wrap overflow-x-auto max-h-80 overflow-y-auto leading-relaxed">
+              {csvPrompt}
             </pre>
           </div>
 
