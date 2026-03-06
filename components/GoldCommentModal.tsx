@@ -173,7 +173,6 @@ export function GoldCommentModal({ medalId, restaurantName, categoryName, initia
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 className="hidden"
                 onChange={handleFileSelect}
               />
