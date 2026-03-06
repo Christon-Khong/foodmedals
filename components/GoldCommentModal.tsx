@@ -172,7 +172,7 @@ export function GoldCommentModal({ medalId, restaurantName, categoryName, initia
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                 className="hidden"
                 onChange={handleFileSelect}
               />
