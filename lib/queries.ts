@@ -933,6 +933,9 @@ export async function searchAll(query: string): Promise<QuickResult> {
 
   // 3. Multi-word: split and try category+location and name+location combos
   if (isMultiWord) {
+    // Cache fuzzy category lookups per term to avoid redundant DB queries
+    const fuzzyCatCache = new Map<string, Array<{ slug: string; name: string; iconEmoji: string; iconUrl: string | null }>>()
+
     for (let i = 1; i < words.length; i++) {
       const partA = words.slice(0, i).join(' ')
       const partB = words.slice(i).join(' ')
@@ -941,11 +944,26 @@ export async function searchAll(query: string): Promise<QuickResult> {
         const stateCode = resolveStateCode(termB)
         const cityPattern = resolveCityPattern(termB)
 
-        // a) Category + location: find restaurants in matched category at location
-        const matchedCats = mappedCategories.filter(c =>
-          c.name.toLowerCase().includes(termA.toLowerCase()) ||
-          termA.toLowerCase().includes(c.name.toLowerCase())
-        )
+        // a) Category + location: fuzzy-match categories for the individual term
+        const cacheKey = termA.toLowerCase()
+        let matchedCats = fuzzyCatCache.get(cacheKey)
+        if (matchedCats === undefined) {
+          const fuzzyCats = await prisma.$queryRaw<
+            Array<{ slug: string; name: string; icon_emoji: string; icon_url: string | null }>
+          >`
+            SELECT slug, name, icon_emoji, icon_url
+            FROM food_categories
+            WHERE status = 'active'
+              AND (
+                name ILIKE ${'%' + termA + '%'}
+                OR similarity(name, ${termA}) > 0.15
+                OR word_similarity(${termA}, name) > 0.3
+              )
+            LIMIT 5
+          `
+          matchedCats = fuzzyCats.map(c => ({ slug: c.slug, name: c.name, iconEmoji: c.icon_emoji, iconUrl: c.icon_url }))
+          fuzzyCatCache.set(cacheKey, matchedCats)
+        }
         if (matchedCats.length > 0) {
           const catSlugs = matchedCats.map(c => c.slug)
           let catLocResults: Array<{ slug: string; name: string; city: string; state: string }>
@@ -1018,6 +1036,17 @@ export async function searchAll(query: string): Promise<QuickResult> {
               allRestaurants.push(r)
             }
           }
+        }
+      }
+    }
+
+    // Merge newly discovered fuzzy-matched categories into results
+    const catSeen = new Set(mappedCategories.map(c => c.slug))
+    for (const cats of Array.from(fuzzyCatCache.values())) {
+      for (const c of cats) {
+        if (!catSeen.has(c.slug)) {
+          catSeen.add(c.slug)
+          mappedCategories.push(c)
         }
       }
     }
@@ -1214,6 +1243,9 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
   }))
   const seenSlugs = new Set(directRestaurants.map(r => r.slug))
 
+  // Cache fuzzy category lookups per term to avoid redundant DB queries (shared with combo building)
+  const fuzzyCatCache = new Map<string, Array<{ slug: string; name: string; iconEmoji: string; iconUrl: string | null }>>()
+
   if (isMultiWord) {
     for (let i = 1; i < words.length; i++) {
       const partA = words.slice(0, i).join(' ')
@@ -1223,11 +1255,26 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
         const stateCode = resolveStateCode(termB)
         const cityPattern = resolveCityPattern(termB)
 
-        // a) Category + location: find restaurants in matched category at location
-        const matchedCats = mappedCategories.filter(c =>
-          c.name.toLowerCase().includes(termA.toLowerCase()) ||
-          termA.toLowerCase().includes(c.name.toLowerCase())
-        )
+        // a) Category + location: fuzzy-match categories for the individual term
+        const cacheKey = termA.toLowerCase()
+        let matchedCats = fuzzyCatCache.get(cacheKey)
+        if (matchedCats === undefined) {
+          const fuzzyCats = await prisma.$queryRaw<
+            Array<{ slug: string; name: string; icon_emoji: string; icon_url: string | null }>
+          >`
+            SELECT slug, name, icon_emoji, icon_url
+            FROM food_categories
+            WHERE status = 'active'
+              AND (
+                name ILIKE ${'%' + termA + '%'}
+                OR similarity(name, ${termA}) > 0.15
+                OR word_similarity(${termA}, name) > 0.3
+              )
+            LIMIT 5
+          `
+          matchedCats = fuzzyCats.map(c => ({ slug: c.slug, name: c.name, iconEmoji: c.icon_emoji, iconUrl: c.icon_url }))
+          fuzzyCatCache.set(cacheKey, matchedCats)
+        }
         if (matchedCats.length > 0) {
           const catSlugs = matchedCats.map(c => c.slug)
           let catLocResults: Array<{ slug: string; name: string; city: string; state: string }>
@@ -1305,6 +1352,17 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
         }
       }
     }
+
+    // Merge newly discovered fuzzy-matched categories into results
+    const catSeen = new Set(mappedCategories.map(c => c.slug))
+    for (const cats of Array.from(fuzzyCatCache.values())) {
+      for (const c of cats) {
+        if (!catSeen.has(c.slug)) {
+          catSeen.add(c.slug)
+          mappedCategories.push({ ...c, restaurantCount: 0 })
+        }
+      }
+    }
   }
 
   // If category matched but no restaurants yet, pull some from those categories
@@ -1338,10 +1396,26 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
       const partB = words.slice(i).join(' ')
 
       for (const [cp, lp] of [[partA, partB], [partB, partA]]) {
-        const matchedCats = mappedCategories.filter(c =>
-          c.name.toLowerCase().includes(cp.toLowerCase()) ||
-          cp.toLowerCase().includes(c.name.toLowerCase())
-        )
+        // Fuzzy-match categories for the individual term (reuses shared cache)
+        const cacheKey = cp.toLowerCase()
+        let matchedCats = fuzzyCatCache.get(cacheKey)
+        if (matchedCats === undefined) {
+          const fuzzyCats = await prisma.$queryRaw<
+            Array<{ slug: string; name: string; icon_emoji: string; icon_url: string | null }>
+          >`
+            SELECT slug, name, icon_emoji, icon_url
+            FROM food_categories
+            WHERE status = 'active'
+              AND (
+                name ILIKE ${'%' + cp + '%'}
+                OR similarity(name, ${cp}) > 0.15
+                OR word_similarity(${cp}, name) > 0.3
+              )
+            LIMIT 5
+          `
+          matchedCats = fuzzyCats.map(c => ({ slug: c.slug, name: c.name, iconEmoji: c.icon_emoji, iconUrl: c.icon_url }))
+          fuzzyCatCache.set(cacheKey, matchedCats)
+        }
 
         // Category × city combos
         const matchedCitiesForLoc = cities.filter(c =>
