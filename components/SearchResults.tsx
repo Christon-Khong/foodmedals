@@ -264,6 +264,23 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
         <div className="text-center py-16">
           <p className="text-gray-400 text-lg">No results found</p>
           <p className="text-gray-400 text-sm mt-1">Try a different search term or remove filters</p>
+          {results?.suggestion && (
+            <p className="text-sm mt-4">
+              Did you mean{' '}
+              <button
+                onClick={() => {
+                  setQuery(results.suggestion!)
+                  clearFilters()
+                  fetchResults(results.suggestion!, null, null, null)
+                  router.push(`/search?q=${encodeURIComponent(results.suggestion!)}`)
+                }}
+                className="text-amber-600 hover:text-amber-800 font-medium underline underline-offset-2"
+              >
+                {results.suggestion}
+              </button>
+              ?
+            </p>
+          )}
         </div>
       )}
 
