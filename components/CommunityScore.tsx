@@ -67,7 +67,7 @@ export function CommunityScore({ score, maxScore, size = 'md' }: Props) {
           <p className="text-gray-300">
             Earned from community medals.
             Gold = 3 pts, Silver = 2 pts, Bronze = 1 pt.
-            Sharing a gold medal comment adds +1 bonus point.
+            Gold comment = +1. Photo with comment = +1 extra.
             Crown Jewel picks also add +1.
           </p>
           <div className="absolute bottom-0 right-4 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900" />

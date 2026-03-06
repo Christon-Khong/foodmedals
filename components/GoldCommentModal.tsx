@@ -132,7 +132,7 @@ export function GoldCommentModal({ medalId, restaurantName, categoryName, initia
           <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-xl px-3 py-2 mb-4">
             <span className="text-base">+1</span>
             <p className="text-xs text-yellow-800">
-              Sharing a comment adds <span className="font-bold">+1 bonus point</span> to {restaurantName}&apos;s Community Score!
+              Sharing a comment adds <span className="font-bold">+1 bonus point</span> to {restaurantName}&apos;s Community Score! Add a photo for <span className="font-bold">+1 more</span>.
             </p>
           </div>
         )}
