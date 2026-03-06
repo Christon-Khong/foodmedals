@@ -884,7 +884,13 @@ export async function searchAll(query: string): Promise<QuickResult> {
   const words = q.split(/\s+/)
   const isMultiWord = words.length > 1
 
-  // 1. Fuzzy category search via trigram (tighter thresholds to avoid false positives)
+  // Consonant skeleton for vowel-dropped abbreviations (e.g. "brgr" → matches "Burgers")
+  const qConsonants = q.toLowerCase().replace(/[aeiou\s]/g, '')
+  const consonantMatch = qConsonants.length >= 3
+    ? Prisma.sql`OR regexp_replace(lower(name), '[aeiou ]', '', 'g') LIKE ${'%' + qConsonants + '%'}`
+    : Prisma.empty
+
+  // 1. Fuzzy category search via trigram + consonant skeleton
   const categories = await prisma.$queryRaw<
     Array<{ slug: string; name: string; icon_emoji: string; icon_url: string | null; sim: number }>
   >`
@@ -894,8 +900,9 @@ export async function searchAll(query: string): Promise<QuickResult> {
     WHERE status = 'active'
       AND (
         name ILIKE ${'%' + q + '%'}
-        OR similarity(name, ${q}) > 0.25
+        OR similarity(name, ${q}) > 0.15
         OR word_similarity(${q}, name) > 0.55
+        ${consonantMatch}
       )
     ORDER BY
       CASE WHEN name ILIKE ${'%' + q + '%'} THEN 0 ELSE 1 END,
@@ -956,6 +963,11 @@ export async function searchAll(query: string): Promise<QuickResult> {
         const cacheKey = termA.toLowerCase()
         let matchedCats = fuzzyCatCache.get(cacheKey)
         if (matchedCats === undefined) {
+          const termConsonants = termA.toLowerCase().replace(/[aeiou\s]/g, '')
+          const termConsonantMatch = termConsonants.length >= 3
+            ? Prisma.sql`OR regexp_replace(lower(name), '[aeiou ]', '', 'g') LIKE ${'%' + termConsonants + '%'}`
+            : Prisma.empty
+
           const fuzzyCats = await prisma.$queryRaw<
             Array<{ slug: string; name: string; icon_emoji: string; icon_url: string | null }>
           >`
@@ -966,6 +978,7 @@ export async function searchAll(query: string): Promise<QuickResult> {
                 name ILIKE ${'%' + termA + '%'}
                 OR similarity(name, ${termA}) > 0.15
                 OR word_similarity(${termA}, name) > 0.3
+                ${termConsonantMatch}
               )
             LIMIT 5
           `
@@ -1143,6 +1156,12 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
                  JOIN food_categories ffc ON ffc.id = frc.food_category_id AND ffc.slug = ${filters.categorySlug}`
     : Prisma.empty
 
+  // Consonant skeleton for vowel-dropped abbreviations (e.g. "brgr" → matches "Burgers")
+  const qConsonants = q.toLowerCase().replace(/[aeiou\s]/g, '')
+  const consonantMatch = qConsonants.length >= 3
+    ? Prisma.sql`OR regexp_replace(lower(fc.name), '[aeiou ]', '', 'g') LIKE ${'%' + qConsonants + '%'}`
+    : Prisma.empty
+
   // Pre-compute state matches (client-side lookup, no DB needed)
   const qLower = q.toLowerCase()
   const matchedStates: string[] = Object.entries(STATE_NAMES)
@@ -1173,6 +1192,11 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
 
   // Build per-term fuzzy category lookup promises (run in parallel with core queries)
   const fuzzyCatPromises = Array.from(uniqueCatTerms).map(async (term) => {
+    const termConsonants = term.replace(/[aeiou\s]/g, '')
+    const termConsonantMatch = termConsonants.length >= 3
+      ? Prisma.sql`OR regexp_replace(lower(name), '[aeiou ]', '', 'g') LIKE ${'%' + termConsonants + '%'}`
+      : Prisma.empty
+
     const rows = await prisma.$queryRaw<
       Array<{ slug: string; name: string; icon_emoji: string; icon_url: string | null }>
     >`
@@ -1183,6 +1207,7 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
           name ILIKE ${'%' + term + '%'}
           OR similarity(name, ${term}) > 0.15
           OR word_similarity(${term}, name) > 0.3
+          ${termConsonantMatch}
         )
       LIMIT 5
     `
@@ -1206,8 +1231,9 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
       WHERE fc.status = 'active'
         AND (
           fc.name ILIKE ${'%' + q + '%'}
-          OR similarity(fc.name, ${q}) > 0.25
+          OR similarity(fc.name, ${q}) > 0.15
           OR word_similarity(${q}, fc.name) > 0.55
+          ${consonantMatch}
         )
       ORDER BY
         CASE WHEN fc.name ILIKE ${'%' + q + '%'} THEN 0 ELSE 1 END,
