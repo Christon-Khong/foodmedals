@@ -42,6 +42,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
 
 export function ApiReference({ categories, slugs }: Props) {
   const [open, setOpen] = useState(false)
+  const [city, setCity] = useState('')
 
   const slugList = slugs.join(', ')
 
@@ -62,19 +63,26 @@ export function ApiReference({ categories, slugs }: Props) {
     ],
   }, null, 2)
 
-  const claudePrompt = `Research and import restaurants for [CITY, STATE] in the [CATEGORY] category to FoodMedals.
+  const cityDisplay = city.trim() || '[CITY, STATE]'
 
-1. Research the top 20-30 [CATEGORY] restaurants in [CITY, STATE] using web search
-2. For each restaurant, find: name, street address, city, state, zip, and website URL
-3. Format as JSON and POST to the FoodMedals bulk import API:
-   - Endpoint: POST https://foodmedals.com/api/admin/restaurants/import-direct
-   - Auth header: Authorization: Bearer [PASTE_YOUR_ADMIN_API_KEY]
-   - Content-Type: application/json
-   - Body: { "restaurants": [{ "name", "address", "city", "state", "zip", "websiteUrl?", "description?", "categorySlugs?": [...] }] }
-   - Max 50 restaurants per request
-4. Report the results summary (successes, duplicates, errors)
+  const claudePrompt = `Research and import restaurants in ${cityDisplay} across ALL food categories to FoodMedals.
 
-Available category slugs: ${slugList}
+For EACH category below, research and find the top 3-5 restaurants in ${cityDisplay} that are best known for that category. Use web search to find highly-rated, well-known spots.
+
+For each restaurant found, collect: name, street address, city, state, zip, and website URL.
+
+After researching all categories, send the results to the FoodMedals bulk import API:
+- Endpoint: POST https://foodmedals.com/api/admin/restaurants/import-direct
+- Auth header: Authorization: Bearer [PASTE_YOUR_ADMIN_API_KEY]
+- Content-Type: application/json
+- Body: { "restaurants": [{ "name", "address", "city", "state", "zip", "websiteUrl?", "description?", "categorySlugs?": [...] }] }
+- Max 50 restaurants per request (split into multiple requests if needed)
+- A restaurant can appear in multiple categories if applicable
+
+Categories to research (use these exact slugs in categorySlugs):
+${slugs.map(s => `- ${s}`).join('\n')}
+
+Report the results summary after each API call (successes, duplicates, errors).
 
 Safeguards (already built into the API):
 - Deduplicates by name + city (won't create duplicates)
@@ -101,10 +109,27 @@ Safeguards (already built into the API):
               <h3 className="text-sm font-semibold text-white">Claude Cowork Prompt</h3>
               <CopyButton text={claudePrompt} label="Copy prompt" />
             </div>
-            <p className="text-xs text-gray-500">
-              Paste this into Claude Cowork. Replace <code className="bg-gray-700 px-1 rounded text-yellow-300">[CITY, STATE]</code>, <code className="bg-gray-700 px-1 rounded text-yellow-300">[CATEGORY]</code>, and <code className="bg-gray-700 px-1 rounded text-yellow-300">[PASTE_YOUR_ADMIN_API_KEY]</code> with real values.
-            </p>
-            <pre className="bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 text-xs text-gray-300 whitespace-pre-wrap overflow-x-auto max-h-64 overflow-y-auto leading-relaxed">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-500 shrink-0">City, State:</label>
+              <input
+                type="text"
+                value={city}
+                onChange={e => setCity(e.target.value)}
+                placeholder="e.g. Salt Lake City, UT"
+                className="flex-1 bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 placeholder:text-gray-600"
+              />
+            </div>
+            {!city.trim() && (
+              <p className="text-xs text-yellow-500/70">
+                Enter a city above and it will be inserted into the prompt automatically. Also replace <code className="bg-gray-700 px-1 rounded text-yellow-300">[PASTE_YOUR_ADMIN_API_KEY]</code> after copying.
+              </p>
+            )}
+            {city.trim() && (
+              <p className="text-xs text-gray-500">
+                Replace <code className="bg-gray-700 px-1 rounded text-yellow-300">[PASTE_YOUR_ADMIN_API_KEY]</code> after copying.
+              </p>
+            )}
+            <pre className="bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 text-xs text-gray-300 whitespace-pre-wrap overflow-x-auto max-h-80 overflow-y-auto leading-relaxed">
               {claudePrompt}
             </pre>
           </div>
