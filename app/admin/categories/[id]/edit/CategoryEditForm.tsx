@@ -114,6 +114,11 @@ export function CategoryEditForm({ category, restaurantCount, medalCount }: Prop
   async function handleUploadIcon(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Image must be under 20 MB.')
+      e.target.value = ''
+      return
+    }
     setUploading(true)
     setError('')
 
@@ -278,7 +283,7 @@ export function CategoryEditForm({ category, restaurantCount, medalCount }: Prop
                   Remove image (use emoji)
                 </button>
               )}
-              <p className="text-xs text-gray-600">Any image format. Auto-compressed to 256px WebP.</p>
+              <p className="text-xs text-gray-600">Up to 20 MB. Auto-compressed to 256px WebP.</p>
             </div>
           </div>
         </div>

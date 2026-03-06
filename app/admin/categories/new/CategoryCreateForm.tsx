@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -24,6 +24,9 @@ export function CategoryCreateForm() {
   const [autoSlug, setAutoSlug] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [iconFile, setIconFile] = useState<File | null>(null)
+  const [iconPreview, setIconPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function update(field: string) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -36,6 +39,26 @@ export function CategoryCreateForm() {
         return next
       })
     }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Image must be under 20 MB.')
+      e.target.value = ''
+      return
+    }
+    setError('')
+    setIconFile(file)
+    setIconPreview(URL.createObjectURL(file))
+  }
+
+  function removeFile() {
+    setIconFile(null)
+    if (iconPreview) URL.revokeObjectURL(iconPreview)
+    setIconPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -55,14 +78,31 @@ export function CategoryCreateForm() {
       }),
     })
 
-    if (res.ok) {
-      router.push('/admin/categories')
-      router.refresh()
-    } else {
+    if (!res.ok) {
       const data = await res.json()
       setError(data.error ?? 'Failed to create')
       setSaving(false)
+      return
     }
+
+    const created = await res.json()
+
+    // Upload icon if file was selected
+    if (iconFile && created.category?.id) {
+      const fd = new FormData()
+      fd.append('file', iconFile)
+      const uploadRes = await fetch(`/api/admin/categories/${created.category.id}/upload-icon`, {
+        method: 'POST',
+        body: fd,
+      })
+      if (!uploadRes.ok) {
+        // Category was created but icon upload failed — still redirect
+        console.error('Icon upload failed')
+      }
+    }
+
+    router.push('/admin/categories')
+    router.refresh()
   }
 
   const inputClass =
@@ -119,13 +159,53 @@ export function CategoryCreateForm() {
             />
           </div>
 
+          {/* Category Icon Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Category Icon</label>
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 rounded-xl border border-gray-700 bg-gray-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {iconPreview ? (
+                  <img src={iconPreview} alt="Icon preview" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-2xl text-gray-600">📷</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-1.5 text-xs font-medium bg-gray-800 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-750 hover:text-white transition-colors"
+                >
+                  {iconFile ? 'Replace image' : 'Upload image'}
+                </button>
+                {iconFile && (
+                  <button
+                    type="button"
+                    onClick={removeFile}
+                    className="px-3 py-1.5 text-xs font-medium text-red-400 hover:text-red-300 transition-colors text-left"
+                  >
+                    Remove
+                  </button>
+                )}
+                <p className="text-xs text-gray-600">Up to 20 MB. Auto-compressed to 256px WebP.</p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Icon Emoji <span className="text-red-400">*</span>
               </label>
               <input type="text" value={form.iconEmoji} onChange={update('iconEmoji')} required placeholder="🍔" className={inputClass} />
-              <p className="text-xs text-gray-600 mt-1">You can upload a custom icon after creating.</p>
+              <p className="text-xs text-gray-600 mt-1">Fallback when no image is uploaded.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Sort Order</label>

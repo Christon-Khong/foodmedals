@@ -1,0 +1,75 @@
+name,address,city,state,zip,categorySlugs
+Gordon Ramsay Burger,3667 Las Vegas Blvd S,Las Vegas,NV,89109,burgers;onion-rings;french-fries
+Sickies Garage Burgers & Brews,6629 Las Vegas Blvd S Ste 120,Las Vegas,NV,89119,burgers;onion-rings
+Slater's 50/50,467 E Silverado Ranch Blvd,Las Vegas,NV,89183,burgers
+Holsteins Shakes and Buns,3708 Las Vegas Blvd S,Las Vegas,NV,89109,burgers;milkshakes;onion-rings
+Mr. Fries Man,1040 E Flamingo Rd,Las Vegas,NV,89119,french-fries
+The Crack Shack,3770 Las Vegas Blvd S,Las Vegas,NV,89109,french-fries;fried-chicken-sandwich;chicken-tenders
+Bouchon,3355 Las Vegas Blvd S,Las Vegas,NV,89109,french-fries
+Fat Boy Restaurant,4425 Stewart Ave #107,Las Vegas,NV,89110,french-fries
+Tacos El Gordo,3049 Las Vegas Blvd S,Las Vegas,NV,89109,tacos;nachos
+The Taco Stand,3616 Spring Mountain Rd,Las Vegas,NV,89102,tacos
+Hussong's Cantina,3930 Las Vegas Blvd S,Las Vegas,NV,89119,tacos;nachos
+Nacho Daddy,9560 W Sahara Ave,Las Vegas,NV,89117,tacos;nachos
+Pizza Rock,201 N Third St,Las Vegas,NV,89101,pizza
+Double Zero,3853 Spring Mountain Rd,Las Vegas,NV,89102,pizza
+Good Pie,1212 S Main St,Las Vegas,NV,89104,pizza
+Secret Pizza,3708 Las Vegas Blvd S,Las Vegas,NV,89109,pizza
+Sayulitas,616 E Carson Ave #120,Las Vegas,NV,89101,burritos
+El Steak Burrito,4590 Spring Mountain Rd,Las Vegas,NV,89102,burritos
+Roberto's Taco Shop,1414 N Eastern Ave,Las Vegas,NV,89101,burritos;nachos
+Abuela's Tacos,2685 S Eastern Ave Ste 400,Las Vegas,NV,89169,burritos;nachos
+Trap Wingz,3050 E Desert Inn Rd,Las Vegas,NV,89121,wings
+Naked City Pizza,6090 S Rainbow Blvd Ste 2,Las Vegas,NV,89118,wings;french-fries
+Blue Ox Tavern,5825 W Sahara Ave,Las Vegas,NV,89146,wings;fried-chicken-sandwich
+Hattie B's Hot Chicken,3708 Las Vegas Blvd S,Las Vegas,NV,89109,fried-chicken-sandwich;chicken-tenders
+Howlin' Ray's,3355 Las Vegas Blvd S,Las Vegas,NV,89109,fried-chicken-sandwich;chicken-tenders
+Dave's Hot Chicken,3623 Las Vegas Blvd S,Las Vegas,NV,89109,fried-chicken-sandwich;chicken-tenders
+Honey Salt,1031 S Rampart Blvd,Las Vegas,NV,89145,fried-chicken-sandwich
+Kabuto,5040 W Spring Mountain Rd Ste 4,Las Vegas,NV,89146,sushi
+Sakana Sushi,4355 Spring Mountain Rd #101b,Las Vegas,NV,89103,sushi
+SUSHISAMBA,520 Fremont St #150,Las Vegas,NV,89101,sushi
+Mizumi,3131 Las Vegas Blvd S,Las Vegas,NV,89109,sushi
+Black Tap,3355 Las Vegas Blvd S,Las Vegas,NV,89109,milkshakes
+Big Chicken,4480 Paradise Rd Ste 1200,Las Vegas,NV,89169,milkshakes
+Napoli Pizzeria,765 N Nellis Blvd Ste 10,Las Vegas,NV,89110,milkshakes
+Bobby's Burgers by Bobby Flay,3570 Las Vegas Blvd S,Las Vegas,NV,89109,onion-rings
+The Peppermill,2985 Las Vegas Blvd S,Las Vegas,NV,89109,onion-rings
+Sorry Not Sorry Creamery,517 Fremont St Ste 150,Las Vegas,NV,89101,ice-cream
+Salt & Straw,6815 Tom Rodriguez St Ste 120,Las Vegas,NV,89113,ice-cream
+Handel's Homemade Ice Cream,10170 W Tropicana Ave,Las Vegas,NV,89147,ice-cream
+Afters Ice Cream,5175 S Fort Apache Rd #120,Las Vegas,NV,89148,ice-cream
+Original Chicken Tender,3900 Las Vegas Blvd S,Las Vegas,NV,89109,chicken-tenders
+Soulbelly BBQ,1327 S Main St,Las Vegas,NV,89104,pulled-pork;bbq-ribs;mac-and-cheese
+Rollin Smoke Barbeque,3185 S Highland Dr Ste 2,Las Vegas,NV,89109,pulled-pork;bbq-ribs
+Jessie Rae's BBQ,308 N Boulder Hwy,Henderson,NV,89015,pulled-pork;bbq-ribs
+Lloyd B's,4321 W Flamingo Rd,Las Vegas,NV,89103,pulled-pork;bbq-ribs
+Carson Kitchen,124 S 6th St #100,Las Vegas,NV,89101,mac-and-cheese
+Freedom Beat,206 N 3rd St,Las Vegas,NV,89101,mac-and-cheese
+M&M Soul Food Cafe,3923 W Charleston Blvd,Las Vegas,NV,89102,mac-and-cheese
+Shokku Ramen,3883 Spring Mountain Rd,Las Vegas,NV,89102,ramen
+Monta Ramen,5030 Spring Mountain Rd #6,Las Vegas,NV,89146,ramen
+Ramen Tatsu,3400 S Jones Blvd #6,Las Vegas,NV,89146,ramen
+Tomi Ramen,6350 W Charleston Blvd #120,Las Vegas,NV,89146,ramen
+Lotus of Siam,620 E Flamingo Rd,Las Vegas,NV,89119,pad-thai
+Weera Thai,3839 W Sahara Ave #9,Las Vegas,NV,89102,pad-thai
+Panna Thai,6015 S Fort Apache Rd #100,Las Vegas,NV,89148,pad-thai
+Pinkbox Doughnuts,800 S Rampart Blvd #170,Las Vegas,NV,89145,donuts
+Ronald's Donuts,4600 Spring Mountain Rd,Las Vegas,NV,89102,donuts
+District: Donuts. Sliders. Brew.,3708 Las Vegas Blvd S,Las Vegas,NV,89109,donuts
+Carl's Donuts,3170 E Sunset Rd Ste F,Las Vegas,NV,89120,donuts
+Bake The Cookie Shoppe,6430 S Decatur Blvd Ste 600,Las Vegas,NV,89118,cookies
+Chip Cookies,9875 S Eastern Ave Ste E-4,Las Vegas,NV,89183,cookies
+The Cookie Plug,220 N Maryland Pkwy,Las Vegas,NV,89101,cookies
+Crumbl Cookies,5590 Painted Mirage Rd Ste 110,Las Vegas,NV,89149,cookies
+Pho Vegas,4745 W Spring Mountain Rd A,Las Vegas,NV,89102,pho
+Pho Kim Long,4355 W Spring Mountain Rd #101A,Las Vegas,NV,89102,pho
+Pho So 1,4023 W Spring Mountain Rd,Las Vegas,NV,89102,pho
+Pho 90,4631 Spring Mountain Rd,Las Vegas,NV,89102,pho
+Bowlology,3400 S Hualapai Way,Las Vegas,NV,89117,acai-bowls
+Nekter Juice Bar,1990 Village Center Cir,Las Vegas,NV,89134,acai-bowls
+everbowl,4195 S Grand Canyon Dr Ste 105,Las Vegas,NV,89147,acai-bowls
+Mt. Everest India's Cuisine,3641 W Sahara Ave,Las Vegas,NV,89102,indian-curry
+Mint Indian Bistro,4246 S Durango Dr,Las Vegas,NV,89147,indian-curry
+Curry Leaf Flavors of India,5025 S Fort Apache Rd #101,Las Vegas,NV,89148,indian-curry
+Delhi Indian Cuisine,4022 S Maryland Pkwy Ste B,Las Vegas,NV,89119,indian-curry

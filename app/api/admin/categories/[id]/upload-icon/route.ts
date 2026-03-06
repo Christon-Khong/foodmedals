@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { getSupabaseAdmin, ICON_BUCKET } from '@/lib/supabase'
 import sharp from 'sharp'
 
+const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20 MB
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -21,6 +23,10 @@ export async function POST(
 
   if (!file.type.startsWith('image/')) {
     return NextResponse.json({ error: 'Please select an image file.' }, { status: 400 })
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json({ error: 'File too large. Maximum size is 20 MB.' }, { status: 400 })
   }
 
   const buffer = Buffer.from(await file.arrayBuffer())
