@@ -59,7 +59,7 @@ export async function GET() {
       }
     })
     .filter(c => c.missingCategories.length > 0)
-    .sort((a, b) => b.missingCategories.length - a.missingCategories.length)
+    .sort((a, b) => a.missingCategories.length - b.missingCategories.length)
 
   return NextResponse.json({ cities, totalCategories: categories.length })
 }
