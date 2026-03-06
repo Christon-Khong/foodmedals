@@ -586,37 +586,51 @@ export function DiscoverForm() {
 
           {/* Geocoding API */}
           {(() => {
-            const geoPercent = quota.geocodeLimit > 0 ? Math.min(Math.round(((quota.geocodeUsed ?? 0) / quota.geocodeLimit) * 100), 100) : 0
-            const geoBarColor = geoPercent > 80 ? 'bg-red-500' : 'bg-blue-500'
-            const geoBarBorder = geoPercent > 80 ? 'border-red-500/30' : 'border-blue-500/30'
+            const geoUsed = quota.geocodeUsed ?? 0
+            const geoLimit = quota.geocodeLimit ?? 0
+            const geoRemaining = quota.geocodeRemaining ?? 0
+            const usedPercent = geoLimit > 0 ? Math.min((geoUsed / geoLimit) * 100, 100) : 0
+            const reservePercent = geoLimit > 0 ? Math.min((settingsReserve / geoLimit) * 100, 100 - usedPercent) : 0
+            const geoBarColor = usedPercent > 80 ? 'bg-red-500' : 'bg-blue-500'
+            const geoBarBorder = usedPercent > 80 ? 'border-red-500/30' : 'border-blue-500/30'
+            const freeForOther = Math.max(0, geoRemaining - settingsReserve)
             return (
               <div className="space-y-2">
                 <div className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Geocoding · 10k free/mo</div>
-                <div className={`h-2.5 bg-gray-800 rounded-full overflow-hidden border ${geoBarBorder}`}>
+                <div className={`h-2.5 bg-gray-800 rounded-full overflow-hidden border ${geoBarBorder} flex`}>
+                  {/* Used segment */}
                   <div
-                    className={`h-full ${geoBarColor} rounded-full transition-all duration-500`}
-                    style={{ width: `${geoPercent}%` }}
+                    className={`h-full ${geoBarColor} transition-all duration-500`}
+                    style={{ width: `${usedPercent}%` }}
                   />
+                  {/* Reserved segment */}
+                  {settingsReserve > 0 && reservePercent > 0 && (
+                    <div
+                      className="h-full bg-amber-500/60 transition-all duration-500"
+                      style={{ width: `${reservePercent}%` }}
+                    />
+                  )}
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-3">
                     <span className="text-gray-300">
-                      <strong className="text-white">{quota.geocodeUsed ?? 0}</strong> / {quota.geocodeLimit ?? 0} calls
+                      <strong className="text-white">{geoUsed}</strong> / {geoLimit} calls
                     </span>
                     <span className="text-gray-600">|</span>
-                    <span className={(quota.geocodeRemaining ?? 0) <= 0 ? 'text-red-400 font-medium' : 'text-gray-400'}>
-                      {quota.geocodeRemaining ?? 0} remaining
+                    <span className={geoRemaining <= 0 ? 'text-red-400 font-medium' : 'text-gray-400'}>
+                      {geoRemaining} remaining
                     </span>
                   </div>
                 </div>
-                {/* Verification reserve info */}
+                {/* Legend for reserved segment */}
                 {settingsReserve > 0 && (
                   <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
-                    <span>
-                      {settingsReserve} reserved for address verification
+                    <span className="flex items-center gap-1.5">
+                      <span className="inline-block w-2.5 h-2.5 rounded-sm bg-amber-500/60" />
+                      {settingsReserve} reserved for verification
                     </span>
                     <span>
-                      {Math.max(0, (quota.geocodeRemaining ?? 0) - settingsReserve)} available for other geocoding
+                      {freeForOther} available for other use
                     </span>
                   </div>
                 )}
