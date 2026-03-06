@@ -65,9 +65,9 @@ export default async function CategoryLeaderboardPage({
   const isAdmin = isAdminEmail(session?.user?.email)
   const isLoggedIn = !!session?.user
 
-  // Always fetch statewide for SSR (Googlebot sees full list)
+  // When city/state params are present, fetch filtered data so initial render matches
   const [initialRows, cities, states, pendingRestaurants] = await Promise.all([
-    getLeaderboard(category.id, year),
+    getLeaderboard(category.id, year, city, state),
     getCitiesForCategory(category.id),
     getStatesForCategory(category.id),
     prisma.restaurant.findMany({
