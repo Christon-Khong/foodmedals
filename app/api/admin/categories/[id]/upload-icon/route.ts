@@ -4,9 +4,6 @@ import { prisma } from '@/lib/prisma'
 import { getSupabaseAdmin, ICON_BUCKET } from '@/lib/supabase'
 import sharp from 'sharp'
 
-const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']
-const MAX_SIZE = 2 * 1024 * 1024 // 2 MB
-
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -22,11 +19,8 @@ export async function POST(
   const file = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return NextResponse.json({ error: 'Invalid file type. Use PNG, JPEG, WebP, or SVG.' }, { status: 400 })
-  }
-  if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: 'File too large. Max 2 MB.' }, { status: 400 })
+  if (!file.type.startsWith('image/')) {
+    return NextResponse.json({ error: 'Please select an image file.' }, { status: 400 })
   }
 
   const buffer = Buffer.from(await file.arrayBuffer())

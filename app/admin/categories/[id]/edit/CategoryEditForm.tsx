@@ -255,7 +255,7 @@ export function CategoryEditForm({ category, restaurantCount, medalCount }: Prop
             <div className="space-y-2">
               <input
                 type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                accept="image/*"
                 onChange={handleUploadIcon}
                 ref={fileInputRef}
                 className="hidden"
@@ -278,7 +278,7 @@ export function CategoryEditForm({ category, restaurantCount, medalCount }: Prop
                   Remove image (use emoji)
                 </button>
               )}
-              <p className="text-xs text-gray-600">PNG, JPEG, WebP, or SVG. Max 2 MB. Auto-resized to 256px.</p>
+              <p className="text-xs text-gray-600">Any image format. Auto-compressed to 256px WebP.</p>
             </div>
           </div>
         </div>
