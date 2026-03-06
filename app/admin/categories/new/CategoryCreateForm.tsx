@@ -66,13 +66,20 @@ export function CategoryCreateForm() {
     setSaving(true)
     setError('')
 
+    const emoji = form.iconEmoji.trim() || (iconFile ? '🍽️' : '')
+    if (!emoji) {
+      setError('Either upload an image or provide an emoji.')
+      setSaving(false)
+      return
+    }
+
     const res = await fetch('/api/admin/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: form.name.trim(),
         slug: form.slug.trim(),
-        iconEmoji: form.iconEmoji.trim(),
+        iconEmoji: emoji,
         description: form.description.trim() || null,
         sortOrder: Number(form.sortOrder) || 0,
       }),
@@ -202,10 +209,10 @@ export function CategoryCreateForm() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Icon Emoji <span className="text-red-400">*</span>
+                Icon Emoji {!iconFile && <span className="text-red-400">*</span>}
               </label>
-              <input type="text" value={form.iconEmoji} onChange={update('iconEmoji')} required placeholder="🍔" className={inputClass} />
-              <p className="text-xs text-gray-600 mt-1">Fallback when no image is uploaded.</p>
+              <input type="text" value={form.iconEmoji} onChange={update('iconEmoji')} required={!iconFile} placeholder="🍔" className={inputClass} />
+              <p className="text-xs text-gray-600 mt-1">{iconFile ? 'Optional fallback emoji.' : 'Required if no image is uploaded.'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Sort Order</label>
