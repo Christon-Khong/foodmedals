@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Search, Loader2, CheckSquare, Square, AlertTriangle, ExternalLink, Trash2, FolderOpen, Clock, Settings, Save, Check } from 'lucide-react'
 import { SearchQueue } from './SearchQueue'
+import { CityGaps } from './CityGaps'
 
 /* ---------- Types ---------- */
 type DiscoveredRestaurant = {
@@ -1170,6 +1171,9 @@ export function DiscoverForm() {
           </button>
         </div>
       )}
+
+      {/* ═══════ City Category Gaps ═══════ */}
+      <CityGaps />
     </div>
   )
 }
