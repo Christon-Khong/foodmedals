@@ -14,9 +14,6 @@ export async function POST(req: NextRequest) {
   if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 60) {
     return NextResponse.json({ error: 'Name must be 2–60 characters' }, { status: 400 })
   }
-  if (!iconEmoji || typeof iconEmoji !== 'string') {
-    return NextResponse.json({ error: 'Emoji icon is required' }, { status: 400 })
-  }
 
   const trimmedName = name.trim()
 
@@ -39,7 +36,7 @@ export async function POST(req: NextRequest) {
   const suggestion = await prisma.newCategorySuggestion.create({
     data: {
       name: trimmedName,
-      iconEmoji: iconEmoji.trim(),
+      iconEmoji: iconEmoji?.trim() || '🍽️',
       description: description?.trim() || null,
       submittedBy: session.user.id,
     },

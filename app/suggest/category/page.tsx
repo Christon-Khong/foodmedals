@@ -5,15 +5,8 @@ import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 
-const POPULAR_EMOJIS = [
-  '🍔', '🌮', '🍕', '🍟', '🍗', '🥗', '🍜', '🍣', '🥪', '🌯',
-  '🥘', '🍝', '🥟', '🍱', '🧆', '🥙', '🍲', '🍛', '🥧', '🍰',
-  '🧁', '🍩', '🍪', '🥐', '🥨', '🧇', '🥞', '🍦', '🍨', '🧋',
-]
-
 export default function SuggestCategoryPage() {
   const [name, setName] = useState('')
-  const [iconEmoji, setIconEmoji] = useState('')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -40,16 +33,10 @@ export default function SuggestCategoryPage() {
     setLoading(true)
     setError('')
 
-    if (!iconEmoji.trim()) {
-      setError('Please pick an emoji icon for the category.')
-      setLoading(false)
-      return
-    }
-
     const res = await fetch('/api/categories/suggest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, iconEmoji, description }),
+      body: JSON.stringify({ name, description }),
     })
 
     if (!res.ok) {
@@ -77,7 +64,7 @@ export default function SuggestCategoryPage() {
               View Community Nominations
             </Link>
             <button
-              onClick={() => { setDone(false); setName(''); setIconEmoji(''); setDescription('') }}
+              onClick={() => { setDone(false); setName(''); setDescription('') }}
               className="px-5 py-2.5 border border-gray-200 hover:border-yellow-300 text-gray-700 font-semibold rounded-full text-sm transition-colors"
             >
               Suggest another
@@ -148,43 +135,6 @@ export default function SuggestCategoryPage() {
                 )}
               </div>
             )}
-          </div>
-
-          {/* Emoji picker */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Emoji icon <span className="text-red-400">*</span>
-            </label>
-            <p className="text-xs text-gray-400 mb-2">Pick an emoji that represents this food, or type your own.</p>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center text-2xl bg-gray-50">
-                {iconEmoji || '?'}
-              </div>
-              <input
-                type="text"
-                value={iconEmoji}
-                onChange={e => setIconEmoji(e.target.value)}
-                placeholder="Paste or type emoji"
-                maxLength={4}
-                className="w-24 border border-gray-200 rounded-xl px-3 py-2 text-center text-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              />
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {POPULAR_EMOJIS.map(emoji => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => setIconEmoji(emoji)}
-                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${
-                    iconEmoji === emoji
-                      ? 'bg-yellow-400 ring-2 ring-yellow-500'
-                      : 'bg-gray-50 hover:bg-gray-100'
-                  }`}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Description */}
