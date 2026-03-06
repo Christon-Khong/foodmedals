@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Search, Loader2, CheckSquare, Square, AlertTriangle, ExternalLink, Trash2, FolderOpen, Clock, Settings, Save, Check } from 'lucide-react'
+import { Loader2, CheckSquare, Square, AlertTriangle, ExternalLink, Trash2, FolderOpen, Clock, Settings, Save, Check } from 'lucide-react'
 import { SearchQueue } from './SearchQueue'
 import { CityGaps } from './CityGaps'
 
@@ -321,8 +321,21 @@ export function DiscoverForm() {
   }, [activeBatchId, resetView])
 
   /* ---- Phase 1: Discover (streaming) ---- */
-  const handleDiscover = useCallback(async () => {
-    if (!city.trim() || !state) return
+  const handleDiscover = useCallback(async (overrides?: { city: string; state: string; resultsPerCategory: number }) => {
+    const searchCity = overrides?.city ?? city
+    const searchState = overrides?.state ?? state
+    const searchRpc = overrides?.resultsPerCategory ?? resultsPerCategory
+    const searchCatSlug = overrides ? null : (categorySlug || null)
+
+    if (!searchCity.trim() || !searchState) return
+
+    // Sync UI fields when triggered with overrides
+    if (overrides) {
+      setCity(overrides.city)
+      setState(overrides.state)
+      setResultsPerCategory(overrides.resultsPerCategory)
+      setCategorySlug('')
+    }
 
     setSearching(true)
     setError(null)
@@ -342,10 +355,10 @@ export function DiscoverForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          city: city.trim(),
-          state,
-          resultsPerCategory,
-          categorySlug: categorySlug || null,
+          city: searchCity.trim(),
+          state: searchState,
+          resultsPerCategory: searchRpc,
+          categorySlug: searchCatSlug,
         }),
       })
 
@@ -740,94 +753,6 @@ export function DiscoverForm() {
         </div>
       )}
 
-      {/* ═══════ Phase 1: Search Form ═══════ */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-white">Search Google Places</h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* City */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">City</label>
-            <input
-              type="text"
-              value={city}
-              onChange={e => setCity(e.target.value)}
-              placeholder="e.g. Salt Lake City"
-              disabled={searching}
-              className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 placeholder:text-gray-600 disabled:opacity-50"
-            />
-          </div>
-
-          {/* State */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">State</label>
-            <select
-              value={state}
-              onChange={e => setState(e.target.value)}
-              disabled={searching}
-              className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 disabled:opacity-50"
-            >
-              <option value="">Select…</option>
-              {US_STATES.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Category</label>
-            <select
-              value={categorySlug}
-              onChange={e => setCategorySlug(e.target.value)}
-              disabled={searching}
-              className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 disabled:opacity-50"
-            >
-              <option value="">All Categories</option>
-              {categories.map(cat => (
-                <option key={cat.slug} value={cat.slug}>{cat.iconEmoji} {cat.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Results per category */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Results per category</label>
-            <select
-              value={resultsPerCategory}
-              onChange={e => setResultsPerCategory(Number(e.target.value))}
-              disabled={searching}
-              className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 disabled:opacity-50"
-            >
-              {[1, 3, 5, 7, 10].map(n => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleDiscover}
-          disabled={searching || !city.trim() || !state || quotaExhausted}
-          className="flex items-center justify-center gap-2 w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 font-semibold py-3 rounded-xl transition-colors text-sm"
-        >
-          {searching ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Searching…
-            </>
-          ) : quotaExhausted ? (
-            <>Daily quota reached</>
-          ) : (
-            <>
-              <Search className="w-4 h-4" />
-              Discover Restaurants
-            </>
-          )}
-        </button>
-      </div>
-
       {/* ═══════ Search Progress ═══════ */}
       {(searching || searchComplete) && progress.length > 0 && (
         <div className={`bg-gray-900 border ${searchComplete ? 'border-green-500/30' : 'border-gray-800'} rounded-2xl p-5 space-y-3`}>
@@ -1173,7 +1098,10 @@ export function DiscoverForm() {
       )}
 
       {/* ═══════ City Category Gaps ═══════ */}
-      <CityGaps />
+      <CityGaps onRunCity={(c, s, rpc) => {
+        handleDiscover({ city: c, state: s, resultsPerCategory: rpc })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }} />
     </div>
   )
 }

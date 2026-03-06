@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { MapPin, Loader2, ChevronDown, ChevronRight, AlertTriangle, EyeOff } from 'lucide-react'
+import { MapPin, Loader2, ChevronDown, ChevronRight, AlertTriangle, EyeOff, Play } from 'lucide-react'
 
 type MissingCategory = { name: string; slug: string }
 
@@ -13,6 +13,7 @@ type CityGap = {
   missingCategories: MissingCategory[]
 }
 
+const RESULTS_OPTIONS = [1, 3, 5, 7, 10]
 const EXCLUDED_KEY = 'foodmedals-city-gaps-excluded'
 
 function loadExcluded(): Set<string> {
@@ -33,13 +34,18 @@ function cityKey(city: string, state: string) {
   return `${city}|${state}`
 }
 
-export function CityGaps() {
+type Props = {
+  onRunCity?: (city: string, state: string, resultsPerCategory: number) => void
+}
+
+export function CityGaps({ onRunCity }: Props) {
   const [cities, setCities] = useState<CityGap[]>([])
   const [totalCategories, setTotalCategories] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [excluded, setExcluded] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [resultsPerCategory, setResultsPerCategory] = useState(5)
 
   const fetchGaps = useCallback(async () => {
     setLoading(true)
@@ -99,10 +105,26 @@ export function CityGaps() {
         )}
       </div>
 
-      <p className="text-xs text-gray-400">
-        Cities on FoodMedals that have zero restaurants in one or more categories.
-        Exclude cities you don&apos;t want to discover for.
-      </p>
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-xs text-gray-400">
+          Cities on FoodMedals that have zero restaurants in one or more categories.
+          Exclude cities you don&apos;t want to discover for.
+        </p>
+        {onRunCity && (
+          <div className="flex items-center gap-2 shrink-0">
+            <label className="text-[11px] text-gray-500">Per cat:</label>
+            <select
+              value={resultsPerCategory}
+              onChange={e => setResultsPerCategory(Number(e.target.value))}
+              className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-gray-300 focus:outline-none focus:border-orange-500/50"
+            >
+              {RESULTS_OPTIONS.map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-6 text-gray-500 text-sm gap-2">
@@ -172,7 +194,19 @@ export function CityGaps() {
                     {c.missingCategories.length} missing
                   </span>
 
-                  {/* Exclude checkbox */}
+                  {/* Run discovery */}
+                  {onRunCity && (
+                    <button
+                      type="button"
+                      onClick={() => onRunCity(c.city, c.state, resultsPerCategory)}
+                      className="text-gray-600 hover:text-green-400 transition-colors shrink-0"
+                      title={`Discover ${c.city} (${resultsPerCategory} per category)`}
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
+                  {/* Exclude */}
                   <button
                     type="button"
                     onClick={() => toggleExclude(key)}
