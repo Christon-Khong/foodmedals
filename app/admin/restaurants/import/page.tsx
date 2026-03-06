@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { BulkImportForm } from './BulkImportForm'
+import { ApiReference } from './ApiReference'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +11,8 @@ export default async function BulkImportPage() {
     orderBy: { sortOrder: 'asc' },
   })
 
+  const slugs = categories.map(c => c.slug)
+
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
@@ -19,6 +22,7 @@ export default async function BulkImportPage() {
         </p>
       </div>
       <BulkImportForm categories={categories} />
+      <ApiReference categories={categories} slugs={slugs} />
     </div>
   )
 }
