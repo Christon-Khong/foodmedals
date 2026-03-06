@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Search, Loader2, CheckSquare, Square, AlertTriangle, ExternalLink } from 'lucide-react'
 
 /* ---------- Types ---------- */
@@ -45,6 +45,15 @@ type QuotaInfo = {
   percentUsed: number
 }
 
+type ProgressEntry = {
+  category: string
+  index: number
+  total: number
+  found: number
+  uniqueSoFar: number
+  error?: string
+}
+
 /* ---------- US States ---------- */
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
@@ -76,6 +85,11 @@ export function DiscoverForm() {
   // Quota
   const [quota, setQuota] = useState<QuotaInfo | null>(null)
 
+  // Search progress (streaming)
+  const [progress, setProgress] = useState<ProgressEntry[]>([])
+  const [searchProgress, setSearchProgress] = useState<{ index: number; total: number } | null>(null)
+  const logRef = useRef<HTMLDivElement>(null)
+
   // Status
   const [searching, setSearching] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -98,7 +112,14 @@ export function DiscoverForm() {
     fetchQuota()
   }, [fetchQuota])
 
-  /* ---- Phase 1: Discover ---- */
+  // Auto-scroll progress log
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight
+    }
+  }, [progress])
+
+  /* ---- Phase 1: Discover (streaming) ---- */
   const handleDiscover = useCallback(async () => {
     if (!city.trim() || !state) return
 
@@ -110,6 +131,8 @@ export function DiscoverForm() {
     setSelected(new Set())
     setImportResults(null)
     setImportSummary(null)
+    setProgress([])
+    setSearchProgress(null)
 
     try {
       const res = await fetch('/api/admin/restaurants/discover', {
@@ -122,40 +145,76 @@ export function DiscoverForm() {
         }),
       })
 
-      const data = await res.json().catch(() => ({}))
-
+      // Handle non-streaming error responses (429, 400, etc.)
       if (!res.ok) {
-        // Update quota from 429 response
+        const data = await res.json().catch(() => ({}))
         if (data.quota) {
           setQuota(prev => prev ? { ...prev, ...data.quota } : null)
         }
         throw new Error(data.error || `Server error ${res.status}`)
       }
 
-      setRestaurants(data.restaurants ?? [])
-      setStats(data.stats ?? null)
-      setDiscoveryErrors(data.errors ?? [])
+      // Read the streaming response line by line
+      const reader = res.body?.getReader()
+      if (!reader) throw new Error('No response stream')
 
-      // Update quota from successful response
-      if (data.quota) {
-        setQuota(prev => ({
-          used: data.quota.used,
-          limit: data.quota.limit,
-          remaining: data.quota.remaining,
-          costToday: data.quota.costToday,
-          percentUsed: data.quota.limit > 0
-            ? Math.min(Math.round((data.quota.used / data.quota.limit) * 100), 100)
-            : 0,
-        }))
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Process complete lines
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? '' // Keep incomplete last line in buffer
+
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const event = JSON.parse(line)
+
+            if (event.type === 'progress') {
+              setProgress(prev => [...prev, event as ProgressEntry])
+              setSearchProgress({ index: event.index, total: event.total })
+            }
+
+            if (event.type === 'complete') {
+              setRestaurants(event.restaurants ?? [])
+              setStats(event.stats ?? null)
+              setDiscoveryErrors(event.errors ?? [])
+
+              // Update quota
+              if (event.quota) {
+                setQuota({
+                  used: event.quota.used,
+                  limit: event.quota.limit,
+                  remaining: event.quota.remaining,
+                  costToday: event.quota.costToday,
+                  percentUsed: event.quota.limit > 0
+                    ? Math.min(Math.round((event.quota.used / event.quota.limit) * 100), 100)
+                    : 0,
+                })
+              }
+
+              // Select all by default
+              const allIds = new Set<string>(
+                (event.restaurants ?? []).map((r: DiscoveredRestaurant) => r.placeId),
+              )
+              setSelected(allIds)
+            }
+          } catch {
+            // skip unparseable lines
+          }
+        }
       }
-
-      // Select all by default
-      const allIds = new Set<string>((data.restaurants ?? []).map((r: DiscoveredRestaurant) => r.placeId))
-      setSelected(allIds)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Discovery failed')
     } finally {
       setSearching(false)
+      setSearchProgress(null)
     }
   }, [city, state, resultsPerCategory])
 
@@ -221,14 +280,14 @@ export function DiscoverForm() {
   const hasImportResults = importResults !== null
   const quotaExhausted = quota ? quota.remaining <= 0 : false
 
-  // Progress bar color: yellow normally, red when >80%
-  const barColor = quota && quota.percentUsed > 80
-    ? 'bg-red-500'
-    : 'bg-yellow-500'
+  // Quota bar color
+  const barColor = quota && quota.percentUsed > 80 ? 'bg-red-500' : 'bg-yellow-500'
+  const barBorderColor = quota && quota.percentUsed > 80 ? 'border-red-500/30' : 'border-yellow-500/30'
 
-  const barBorderColor = quota && quota.percentUsed > 80
-    ? 'border-red-500/30'
-    : 'border-yellow-500/30'
+  // Search progress percentage
+  const searchPercent = searchProgress
+    ? Math.round((searchProgress.index / searchProgress.total) * 100)
+    : 0
 
   return (
     <div className="space-y-6">
@@ -334,7 +393,7 @@ export function DiscoverForm() {
           {searching ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Searching all categories…
+              Searching…
             </>
           ) : quotaExhausted ? (
             <>Daily quota reached</>
@@ -345,13 +404,63 @@ export function DiscoverForm() {
             </>
           )}
         </button>
-
-        {searching && (
-          <p className="text-xs text-gray-500 text-center">
-            This may take 30–60 seconds while we search across all food categories.
-          </p>
-        )}
       </div>
+
+      {/* ═══════ Search Progress ═══════ */}
+      {searching && searchProgress && (
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white">
+              Searching categories…
+            </h2>
+            <span className="text-xs text-gray-400 font-mono">
+              {searchProgress.index}/{searchProgress.total} ({searchPercent}%)
+            </span>
+          </div>
+
+          {/* Search progress bar */}
+          <div className="h-2 bg-gray-800 rounded-full overflow-hidden border border-yellow-500/30">
+            <div
+              className="h-full bg-yellow-500 rounded-full transition-all duration-300"
+              style={{ width: `${searchPercent}%` }}
+            />
+          </div>
+
+          {/* Live log */}
+          <div
+            ref={logRef}
+            className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-3 max-h-48 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-0.5"
+          >
+            {progress.map((p, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-gray-600 w-8 text-right shrink-0">{p.index}</span>
+                {p.error ? (
+                  <>
+                    <span className="text-red-400">✗</span>
+                    <span className="text-red-400/70">{p.category}</span>
+                    <span className="text-red-500/50 text-[10px]">error</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-green-400">✓</span>
+                    <span className="text-gray-300">{p.category}</span>
+                    <span className="text-gray-600">—</span>
+                    <span className="text-yellow-400/70">{p.found} found</span>
+                    <span className="text-gray-600 ml-auto">{p.uniqueSoFar} unique</span>
+                  </>
+                )}
+              </div>
+            ))}
+            {searching && progress.length > 0 && (
+              <div className="flex items-center gap-2 text-gray-500">
+                <span className="w-8" />
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Searching next category…</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ═══════ Error ═══════ */}
       {error && (
@@ -587,7 +696,8 @@ export function DiscoverForm() {
               setImportResults(null)
               setImportSummary(null)
               setError(null)
-              fetchQuota() // refresh quota display
+              setProgress([])
+              fetchQuota()
             }}
             className="text-sm text-gray-400 hover:text-yellow-300 transition-colors"
           >

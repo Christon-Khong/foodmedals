@@ -67,72 +67,104 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Deduplicated results keyed by placeId
-  const byPlaceId = new Map<string, DiscoveredRestaurant>()
-  let categoriesSearched = 0
-  let totalPlacesFound = 0
-  const errors: string[] = []
+  // Stream progress events as newline-delimited JSON
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      function send(event: Record<string, unknown>) {
+        controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
+      }
 
-  for (const cat of categories) {
-    const query = `best ${cat.name} restaurants in ${city}, ${state}`
+      const byPlaceId = new Map<string, DiscoveredRestaurant>()
+      let categoriesSearched = 0
+      let totalPlacesFound = 0
+      const errors: string[] = []
 
-    try {
-      const places: PlaceResult[] = await searchPlaces(query, maxResults)
-      totalPlacesFound += places.length
+      for (const cat of categories) {
+        const query = `best ${cat.name} restaurants in ${city}, ${state}`
+        let found = 0
 
-      for (const place of places) {
-        const existing = byPlaceId.get(place.placeId)
-        if (existing) {
-          // Merge category into existing entry
-          if (!existing.categorySlugs.includes(cat.slug)) {
-            existing.categorySlugs.push(cat.slug)
+        try {
+          const places: PlaceResult[] = await searchPlaces(query, maxResults)
+          found = places.length
+          totalPlacesFound += places.length
+
+          for (const place of places) {
+            const existing = byPlaceId.get(place.placeId)
+            if (existing) {
+              if (!existing.categorySlugs.includes(cat.slug)) {
+                existing.categorySlugs.push(cat.slug)
+              }
+            } else {
+              byPlaceId.set(place.placeId, {
+                placeId: place.placeId,
+                name: place.name,
+                address: place.address,
+                city: place.city,
+                state: place.state,
+                zip: place.zip,
+                lat: place.lat,
+                lng: place.lng,
+                websiteUrl: place.websiteUrl,
+                categorySlugs: [cat.slug],
+              })
+            }
           }
-        } else {
-          byPlaceId.set(place.placeId, {
-            placeId: place.placeId,
-            name: place.name,
-            address: place.address,
-            city: place.city,
-            state: place.state,
-            zip: place.zip,
-            lat: place.lat,
-            lng: place.lng,
-            websiteUrl: place.websiteUrl,
-            categorySlugs: [cat.slug],
-          })
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Unknown error'
+          errors.push(`${cat.name}: ${msg}`)
+        }
+
+        categoriesSearched++
+
+        // Send progress event after each category
+        send({
+          type: 'progress',
+          category: cat.name,
+          categorySlug: cat.slug,
+          index: categoriesSearched,
+          total: categories.length,
+          found,
+          uniqueSoFar: byPlaceId.size,
+          error: found === 0 && errors.length > 0 ? errors[errors.length - 1] : undefined,
+        })
+
+        // Small delay between API calls
+        if (categoriesSearched < categories.length) {
+          await new Promise(r => setTimeout(r, 200))
         }
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error'
-      errors.push(`${cat.name}: ${msg}`)
-    }
 
-    categoriesSearched++
+      // Get updated quota status
+      const quota = await getQuotaStatus()
 
-    // Small delay between API calls to be a good citizen
-    if (categoriesSearched < categories.length) {
-      await new Promise(r => setTimeout(r, 200))
-    }
-  }
+      // Send final complete event with all data
+      send({
+        type: 'complete',
+        restaurants: Array.from(byPlaceId.values()),
+        stats: {
+          categoriesSearched,
+          totalPlacesFound,
+          uniqueRestaurants: byPlaceId.size,
+        },
+        quota: {
+          used: quota.used,
+          limit: quota.limit,
+          remaining: quota.remaining,
+          costToday: quota.costToday,
+        },
+        errors: errors.length > 0 ? errors : undefined,
+      })
 
-  const restaurants = Array.from(byPlaceId.values())
-
-  // Get updated quota status after search
-  const quota = await getQuotaStatus()
-
-  return NextResponse.json({
-    restaurants,
-    stats: {
-      categoriesSearched,
-      totalPlacesFound,
-      uniqueRestaurants: restaurants.length,
+      controller.close()
     },
-    quota: {
-      used: quota.used,
-      limit: quota.limit,
-      remaining: quota.remaining,
-      costToday: quota.costToday,
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Transfer-Encoding': 'chunked',
+      'Cache-Control': 'no-cache',
     },
-    errors: errors.length > 0 ? errors : undefined,
   })
 }
