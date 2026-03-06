@@ -35,7 +35,7 @@ function cityKey(city: string, state: string) {
 }
 
 type Props = {
-  onRunCity?: (city: string, state: string, resultsPerCategory: number) => void
+  onRunCity?: (city: string, state: string, resultsPerCategory: number, missingCategories: MissingCategory[]) => void
 }
 
 export function CityGaps({ onRunCity }: Props) {
@@ -198,7 +198,7 @@ export function CityGaps({ onRunCity }: Props) {
                   {onRunCity && (
                     <button
                       type="button"
-                      onClick={() => onRunCity(c.city, c.state, resultsPerCategory)}
+                      onClick={() => onRunCity(c.city, c.state, resultsPerCategory, c.missingCategories)}
                       className="text-gray-600 hover:text-green-400 transition-colors shrink-0"
                       title={`Discover ${c.city} (${resultsPerCategory} per category)`}
                     >

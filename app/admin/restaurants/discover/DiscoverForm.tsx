@@ -1151,12 +1151,17 @@ export function DiscoverForm() {
       )}
 
       {/* ═══════ City Category Gaps ═══════ */}
-      <CityGaps onRunCity={async (c, s, rpc) => {
-        await fetch('/api/admin/restaurants/discover/queue', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ city: c, state: s, resultsPerCategory: rpc, priority: true }),
-        })
+      <CityGaps onRunCity={async (c, s, rpc, missingCategories) => {
+        // Create one queue item per missing category, all at top priority
+        await Promise.all(
+          missingCategories.map(cat =>
+            fetch('/api/admin/restaurants/discover/queue', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ city: c, state: s, resultsPerCategory: rpc, categorySlug: cat.slug, priority: true }),
+            })
+          )
+        )
         setQueueRefreshKey(k => k + 1)
         // Scroll to the search queue section
         document.querySelector('[data-queue]')?.scrollIntoView({ behavior: 'smooth' })
