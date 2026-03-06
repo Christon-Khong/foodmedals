@@ -97,8 +97,12 @@ export async function parseGoogleMapsUrl(url: string): Promise<ParsedMapsResult>
     try {
       const apiKey = process.env.GOOGLE_MAPS_API_KEY
       if (apiKey) {
-        // Track this reverse geocode call
-        await incrementGeocodeCounter(1)
+        // Track this reverse geocode call and enforce daily limit
+        const allowed = await incrementGeocodeCounter(1)
+        if (!allowed) {
+          // Quota exhausted — skip geocode, fields will be empty
+          throw new Error('Daily geocode quota exhausted')
+        }
 
         const params = new URLSearchParams({
           latlng: `${lat},${lng}`,
@@ -121,8 +125,9 @@ export async function parseGoogleMapsUrl(url: string): Promise<ParsedMapsResult>
           }
         }
       }
-    } catch {
-      // Best effort — fields will be empty
+    } catch (e) {
+      // Re-throw quota errors so callers can handle them; swallow other errors
+      if (e instanceof Error && e.message.includes('quota')) throw e
     }
   }
 
