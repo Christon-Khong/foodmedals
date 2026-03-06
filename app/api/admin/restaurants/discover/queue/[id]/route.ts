@@ -36,6 +36,8 @@ export async function PATCH(
       Math.max(Number(body.resultsPerCategory) || 5, 1),
       10,
     )
+  if (body.categorySlug !== undefined)
+    data.categorySlug = body.categorySlug || null
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json(

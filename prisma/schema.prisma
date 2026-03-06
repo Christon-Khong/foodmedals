@@ -287,6 +287,7 @@ model SearchQueueItem {
   city               String
   state              String
   resultsPerCategory Int       @default(5) @map("results_per_category")
+  categorySlug       String?   @map("category_slug") // null = all categories
   sortOrder          Int       @map("sort_order")
   status             String    @default("pending") // pending | processing | completed | failed
   error              String?

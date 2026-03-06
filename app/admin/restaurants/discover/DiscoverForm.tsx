@@ -95,12 +95,20 @@ function timeAgo(dateStr: string) {
   return `${days}d ago`
 }
 
+type CategoryOption = {
+  slug: string
+  name: string
+  iconEmoji: string
+}
+
 /* ---------- Component ---------- */
 export function DiscoverForm() {
   // Phase 1: Search inputs
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
   const [resultsPerCategory, setResultsPerCategory] = useState(5)
+  const [categorySlug, setCategorySlug] = useState<string>('') // '' = all categories
+  const [categories, setCategories] = useState<CategoryOption[]>([])
 
   // Phase 2: Results (can come from fresh search or loaded batch)
   const [restaurants, setRestaurants] = useState<DiscoveredRestaurant[]>([])
@@ -177,10 +185,24 @@ export function DiscoverForm() {
     }
   }, [])
 
+  /* ---- Fetch categories ---- */
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await fetch('/api/categories/list')
+      if (res.ok) {
+        const data = await res.json()
+        setCategories(data ?? [])
+      }
+    } catch {
+      // silently fail
+    }
+  }, [])
+
   useEffect(() => {
     fetchQuota()
     fetchBatches()
-  }, [fetchQuota, fetchBatches])
+    fetchCategories()
+  }, [fetchQuota, fetchBatches, fetchCategories])
 
   // Auto-refresh quota every 30s
   useEffect(() => {
@@ -322,6 +344,7 @@ export function DiscoverForm() {
           city: city.trim(),
           state,
           resultsPerCategory,
+          categorySlug: categorySlug || null,
         }),
       })
 
@@ -415,7 +438,7 @@ export function DiscoverForm() {
       setSearching(false)
       setSearchProgress(null)
     }
-  }, [city, state, resultsPerCategory, fetchBatches])
+  }, [city, state, resultsPerCategory, categorySlug, fetchBatches])
 
   /* ---- Phase 2: Toggle selection ---- */
   const toggleOne = (placeId: string) => {
@@ -720,9 +743,9 @@ export function DiscoverForm() {
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
         <h2 className="text-sm font-semibold text-white">Search Google Places</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* City */}
-          <div className="sm:col-span-1">
+          <div>
             <label className="block text-xs text-gray-500 mb-1">City</label>
             <input
               type="text"
@@ -746,6 +769,22 @@ export function DiscoverForm() {
               <option value="">Select…</option>
               {US_STATES.map(s => (
                 <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Category</label>
+            <select
+              value={categorySlug}
+              onChange={e => setCategorySlug(e.target.value)}
+              disabled={searching}
+              className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 disabled:opacity-50"
+            >
+              <option value="">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat.slug} value={cat.slug}>{cat.iconEmoji} {cat.name}</option>
               ))}
             </select>
           </div>

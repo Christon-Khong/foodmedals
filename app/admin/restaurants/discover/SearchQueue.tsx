@@ -19,6 +19,12 @@ import {
 import { Plus, Loader2, Play, ListOrdered } from 'lucide-react'
 import { SortableQueueItem, type QueueItem } from './SortableQueueItem'
 
+type CategoryOption = {
+  slug: string
+  name: string
+  iconEmoji: string
+}
+
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
   'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
@@ -35,10 +41,14 @@ export function SearchQueue({ onQueueProcessed }: Props) {
   const [items, setItems] = useState<QueueItem[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Categories
+  const [categories, setCategories] = useState<CategoryOption[]>([])
+
   // Add form
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
   const [resultsPerCategory, setResultsPerCategory] = useState(5)
+  const [categorySlug, setCategorySlug] = useState<string>('') // '' = all
   const [adding, setAdding] = useState(false)
 
   // Processing
@@ -67,6 +77,11 @@ export function SearchQueue({ onQueueProcessed }: Props) {
 
   useEffect(() => {
     fetchQueue()
+    // Fetch categories for the dropdown
+    fetch('/api/categories/list')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setCategories(data ?? []))
+      .catch(() => {})
   }, [fetchQueue])
 
   /* ---- Add to queue ---- */
@@ -77,7 +92,7 @@ export function SearchQueue({ onQueueProcessed }: Props) {
       const res = await fetch('/api/admin/restaurants/discover/queue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city: city.trim(), state, resultsPerCategory }),
+        body: JSON.stringify({ city: city.trim(), state, resultsPerCategory, categorySlug: categorySlug || null }),
       })
       if (res.ok) {
         setCity('')
@@ -104,7 +119,7 @@ export function SearchQueue({ onQueueProcessed }: Props) {
   /* ---- Update queue item ---- */
   const handleUpdate = async (
     id: string,
-    data: Partial<Pick<QueueItem, 'city' | 'state' | 'resultsPerCategory'>>,
+    data: Partial<Pick<QueueItem, 'city' | 'state' | 'resultsPerCategory' | 'categorySlug'>>,
   ) => {
     // Optimistic update
     setItems((prev) =>
@@ -202,8 +217,8 @@ export function SearchQueue({ onQueueProcessed }: Props) {
       </div>
 
       {/* ── Add to queue form ── */}
-      <div className="flex items-end gap-2">
-        <div className="flex-1 min-w-0">
+      <div className="flex items-end gap-2 flex-wrap">
+        <div className="flex-1 min-w-[120px]">
           <label className="block text-xs text-gray-500 mb-1">City</label>
           <input
             type="text"
@@ -227,6 +242,21 @@ export function SearchQueue({ onQueueProcessed }: Props) {
             {US_STATES.map((s) => (
               <option key={s} value={s}>
                 {s}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="min-w-[100px] flex-1">
+          <label className="block text-xs text-gray-500 mb-1">Category</label>
+          <select
+            value={categorySlug}
+            onChange={(e) => setCategorySlug(e.target.value)}
+            className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500"
+          >
+            <option value="">All</option>
+            {categories.map((cat) => (
+              <option key={cat.slug} value={cat.slug}>
+                {cat.iconEmoji} {cat.name}
               </option>
             ))}
           </select>
@@ -276,6 +306,7 @@ export function SearchQueue({ onQueueProcessed }: Props) {
                 <SortableQueueItem
                   key={item.id}
                   item={item}
+                  categories={categories}
                   onDelete={handleDelete}
                   onUpdate={handleUpdate}
                   deleting={deletingId === item.id}

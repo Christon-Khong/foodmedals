@@ -67,6 +67,7 @@ async function processQueue(): Promise<{
         quotaReserve: reserve,
         minRating: settings.minRating,
         minReviews: settings.minReviews,
+        categorySlug: item.categorySlug,
       })
 
       await prisma.searchQueueItem.update({

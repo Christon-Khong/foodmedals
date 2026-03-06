@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { city, state, resultsPerCategory } = body
+  const { city, state, resultsPerCategory, categorySlug } = body
 
   if (!city?.trim() || !state?.trim()) {
     return NextResponse.json(
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       city: city.trim(),
       state: state.trim().toUpperCase(),
       resultsPerCategory: resultsPerCategory ?? 5,
+      categorySlug: categorySlug || null,
       sortOrder: nextOrder,
       status: 'pending',
     },

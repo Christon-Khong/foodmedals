@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  let body: { city?: string; state?: string; resultsPerCategory?: number }
+  let body: { city?: string; state?: string; resultsPerCategory?: number; categorySlug?: string | null }
   try {
     body = await req.json()
   } catch {
@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
           quotaReserve: settings.verificationReserve,
           minRating: settings.minRating,
           minReviews: settings.minReviews,
+          categorySlug: body.categorySlug || null,
           onProgress: (event) => send({ type: 'progress', ...event }),
         })
 

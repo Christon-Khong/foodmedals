@@ -18,6 +18,7 @@ export type QueueItem = {
   city: string
   state: string
   resultsPerCategory: number
+  categorySlug?: string | null
   sortOrder: number
   status: string
   error?: string | null
@@ -26,14 +27,21 @@ export type QueueItem = {
   processedAt?: string | null
 }
 
+type CategoryOption = {
+  slug: string
+  name: string
+  iconEmoji: string
+}
+
 type Props = {
   item: QueueItem
+  categories?: CategoryOption[]
   onDelete: (id: string) => void
-  onUpdate: (id: string, data: Partial<Pick<QueueItem, 'city' | 'state' | 'resultsPerCategory'>>) => void
+  onUpdate: (id: string, data: Partial<Pick<QueueItem, 'city' | 'state' | 'resultsPerCategory' | 'categorySlug'>>) => void
   deleting: boolean
 }
 
-export function SortableQueueItem({ item, onDelete, onUpdate, deleting }: Props) {
+export function SortableQueueItem({ item, categories = [], onDelete, onUpdate, deleting }: Props) {
   const {
     attributes,
     listeners,
@@ -46,9 +54,11 @@ export function SortableQueueItem({ item, onDelete, onUpdate, deleting }: Props)
   const [editingCity, setEditingCity] = useState(false)
   const [editingState, setEditingState] = useState(false)
   const [editingRpc, setEditingRpc] = useState(false)
+  const [editingCat, setEditingCat] = useState(false)
   const [cityValue, setCityValue] = useState(item.city)
   const [stateValue, setStateValue] = useState(item.state)
   const [rpcValue, setRpcValue] = useState(item.resultsPerCategory)
+  const [catValue, setCatValue] = useState(item.categorySlug ?? '')
   const cityRef = useRef<HTMLInputElement>(null)
 
   const isPending = item.status === 'pending'
@@ -84,6 +94,19 @@ export function SortableQueueItem({ item, onDelete, onUpdate, deleting }: Props)
       onUpdate(item.id, { resultsPerCategory: val })
     }
   }
+
+  const saveCat = (val: string) => {
+    setEditingCat(false)
+    setCatValue(val)
+    const newSlug = val || null
+    if (newSlug !== (item.categorySlug ?? null)) {
+      onUpdate(item.id, { categorySlug: newSlug })
+    }
+  }
+
+  const catLabel = item.categorySlug
+    ? categories.find(c => c.slug === item.categorySlug)
+    : null
 
   return (
     <div
@@ -188,6 +211,42 @@ export function SortableQueueItem({ item, onDelete, onUpdate, deleting }: Props)
         )}
       </div>
 
+      {/* Category — click to edit */}
+      {editingCat && isPending ? (
+        <select
+          value={catValue}
+          onChange={(e) => saveCat(e.target.value)}
+          onBlur={() => setEditingCat(false)}
+          autoFocus
+          className="bg-gray-700 border border-gray-600 text-gray-100 rounded px-1 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-yellow-500 max-w-[120px]"
+        >
+          <option value="">All</option>
+          {categories.map((cat) => (
+            <option key={cat.slug} value={cat.slug}>
+              {cat.iconEmoji} {cat.name}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            if (isPending) {
+              setEditingCat(true)
+              setCatValue(item.categorySlug ?? '')
+            }
+          }}
+          className={`text-[11px] px-1.5 py-0.5 rounded border shrink-0 truncate max-w-[100px] ${
+            isPending
+              ? 'bg-gray-800 border-gray-700 text-gray-500 hover:border-yellow-500/50 hover:text-yellow-300 cursor-pointer'
+              : 'bg-gray-800/50 border-gray-700/50 text-gray-600 cursor-default'
+          }`}
+          title={isPending ? 'Click to edit category' : undefined}
+        >
+          {catLabel ? `${catLabel.iconEmoji} ${catLabel.name}` : 'All'}
+        </button>
+      )}
+
       {/* Results per category — click to edit */}
       {editingRpc && isPending ? (
         <select
@@ -197,7 +256,7 @@ export function SortableQueueItem({ item, onDelete, onUpdate, deleting }: Props)
           autoFocus
           className="bg-gray-700 border border-gray-600 text-gray-100 rounded px-1 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-yellow-500"
         >
-          {[3, 5, 7, 10].map((n) => (
+          {[1, 3, 5, 7, 10].map((n) => (
             <option key={n} value={n}>
               {n}/cat
             </option>

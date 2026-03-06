@@ -70,17 +70,21 @@ export async function discoverCity(options: {
   quotaReserve?: number
   minRating?: number
   minReviews?: number
+  categorySlug?: string | null
   onProgress?: ProgressCallback
 }): Promise<DiscoverCityResult> {
   const {
     city, state, resultsPerCategory = 5, quotaReserve = 0,
-    minRating = 4.5, minReviews = 100, onProgress,
+    minRating = 4.5, minReviews = 100, categorySlug, onProgress,
   } = options
   const maxResults = Math.min(Math.max(resultsPerCategory, 1), 10)
 
-  // Fetch all active categories
+  // Fetch categories — either a specific one or all active
   const categories = await prisma.foodCategory.findMany({
-    where: { status: 'active' },
+    where: {
+      status: 'active',
+      ...(categorySlug ? { slug: categorySlug } : {}),
+    },
     select: { name: true, slug: true },
     orderBy: { sortOrder: 'asc' },
   })
