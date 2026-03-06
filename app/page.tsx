@@ -56,13 +56,13 @@ export default async function HomePage() {
         <div className="relative max-w-4xl mx-auto px-4 py-20 sm:py-28 text-center">
           <div className="flex justify-center gap-3 mb-6">
             <span className="animate-bounce inline-block" style={{ animationDelay: '0ms' }}>
-              <Image src="/medals/gold.png" alt="gold medal" width={64} height={64} />
+              <Image src="/medals/gold.webp" alt="gold medal" width={64} height={64} />
             </span>
             <span className="animate-bounce inline-block" style={{ animationDelay: '120ms' }}>
-              <Image src="/medals/silver.png" alt="silver medal" width={64} height={64} />
+              <Image src="/medals/silver.webp" alt="silver medal" width={64} height={64} />
             </span>
             <span className="animate-bounce inline-block" style={{ animationDelay: '240ms' }}>
-              <Image src="/medals/bronze.png" alt="bronze medal" width={64} height={64} />
+              <Image src="/medals/bronze.webp" alt="bronze medal" width={64} height={64} />
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight mb-4 drop-shadow-lg">
@@ -101,7 +101,7 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
             {[
               { icon: '🍔', step: '1', title: 'Browse Categories', href: '/categories', desc: 'Burgers, tacos, pizza, wings — dozens of food categories.' },
-              { icon: <Image src="/medals/gold.png" alt="medal" width={36} height={36} />, step: '2', title: 'Award Your Medals', href: '/categories', desc: 'Give Gold, Silver & Bronze to the three restaurants you love most.' },
+              { icon: <Image src="/medals/gold.webp" alt="medal" width={36} height={36} />, step: '2', title: 'Award Your Medals', href: '/categories', desc: 'Give Gold, Silver & Bronze to the three restaurants you love most.' },
               { icon: '🏆', step: '3', title: 'See the Rankings', href: '/categories', desc: 'Community votes aggregate into leaderboards that reset every year.' },
             ].map(item => (
               <div key={item.step} className="text-center">

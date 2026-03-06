@@ -27,9 +27,9 @@ type Props = {
 
 const MEDAL_TYPES: MedalType[] = ['gold', 'silver', 'bronze']
 const MEDAL_IMG: Record<MedalType, string> = {
-  gold:   '/medals/gold.png',
-  silver: '/medals/silver.png',
-  bronze: '/medals/bronze.png',
+  gold:   '/medals/gold.webp',
+  silver: '/medals/silver.webp',
+  bronze: '/medals/bronze.webp',
 }
 const MEDAL_ACTIVE_BG: Record<MedalType, string> = {
   gold:   'bg-yellow-50 ring-2 ring-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.4)]',
@@ -146,9 +146,9 @@ function computeRanks(rows: LeaderboardRow[]): number[] {
 }
 
 const RANK_MEDAL_IMG: Record<number, { src: string; alt: string }> = {
-  1: { src: '/medals/gold.png', alt: '1st' },
-  2: { src: '/medals/silver.png', alt: '2nd' },
-  3: { src: '/medals/bronze.png', alt: '3rd' },
+  1: { src: '/medals/gold.webp', alt: '1st' },
+  2: { src: '/medals/silver.webp', alt: '2nd' },
+  3: { src: '/medals/bronze.webp', alt: '3rd' },
 }
 
 export function LeaderboardResults({

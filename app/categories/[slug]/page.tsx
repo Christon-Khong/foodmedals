@@ -195,7 +195,7 @@ export default async function CategoryLeaderboardPage({
       <div className="bg-gradient-to-b from-amber-50 to-white border-t border-amber-100">
         <div className="max-w-3xl mx-auto px-4 py-12 text-center">
           <div className="mb-3 flex justify-center">
-            <Image src="/medals/gold.png" alt="medal" width={48} height={48} />
+            <Image src="/medals/gold.webp" alt="medal" width={48} height={48} />
           </div>
           <h2 className="text-2xl font-extrabold text-gray-900 mb-2">
             Have a favorite {category.name}?

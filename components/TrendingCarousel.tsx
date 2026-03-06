@@ -7,7 +7,7 @@ import type { TrendingCategory } from '@/lib/queries'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { MapPin } from 'lucide-react'
 
-const MEDAL_IMG = ['/medals/gold.png', '/medals/silver.png', '/medals/bronze.png']
+const MEDAL_IMG = ['/medals/gold.webp', '/medals/silver.webp', '/medals/bronze.webp']
 const MEDAL_ALT = ['1st', '2nd', '3rd']
 
 const ROW_STYLE = [

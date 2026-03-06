@@ -110,6 +110,7 @@ model FoodCategory {
   categorySuggVotes  CategorySuggestionVote[]
   goldMedalComments  GoldMedalComment[]
 
+  @@index([parentId])
   @@map("food_categories")
 }
 
@@ -127,6 +128,7 @@ model RestaurantCategory {
 
   @@unique([restaurantId, foodCategoryId])
   @@index([foodCategoryId, verified])
+  @@index([restaurantId, verified])
   @@map("restaurant_categories")
 }
 
@@ -221,6 +223,7 @@ model AddressReport {
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([restaurantId, userId])
+  @@index([status])
   @@map("address_reports")
 }
 
@@ -236,6 +239,7 @@ model ClosureReport {
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([restaurantId, userId])
+  @@index([status])
   @@map("closure_reports")
 }
 

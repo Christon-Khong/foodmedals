@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { CategoryIcon } from '@/components/CategoryIcon'
-import { GoldCommentModal } from '@/components/GoldCommentModal'
+const GoldCommentModal = dynamic(() => import('@/components/GoldCommentModal').then(m => m.GoldCommentModal), { ssr: false })
 import { LayoutGrid, Map, Lock, Search, X, Plus, TrendingUp, Quote, ThumbsUp, MessageSquare, Pencil, EyeOff } from 'lucide-react'
 
 const ProfileMapInner = dynamic(() => import('./ProfileMapInner'), {
@@ -70,9 +70,9 @@ type Props = {
 
 function MedalImage({ type, size }: { type: string; size: number }) {
   const src =
-    type === 'gold'   ? '/medals/gold.png'   :
-    type === 'silver' ? '/medals/silver.png' :
-                        '/medals/bronze.png'
+    type === 'gold'   ? '/medals/gold.webp'   :
+    type === 'silver' ? '/medals/silver.webp' :
+                        '/medals/bronze.webp'
   return <Image src={src} alt={type} width={size} height={size} className="medal-hover cursor-pointer" />
 }
 

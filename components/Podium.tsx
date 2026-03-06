@@ -10,7 +10,7 @@ import type { LeaderboardRow } from '@/lib/queries'
 
 const MEDAL_CONFIG = {
   1: {
-    src:         '/medals/gold.png',
+    src:         '/medals/gold.webp',
     label:       '1st Place',
     blockHeight: 176,
     gradient:    'linear-gradient(160deg, #FFE566 0%, #FFD700 45%, #B8860B 100%)',
@@ -21,7 +21,7 @@ const MEDAL_CONFIG = {
     auraGlowDim: '0 0 10px 4px rgba(234,179,8,0.2), 0 0 22px 8px rgba(245,158,11,0.08)',
   },
   2: {
-    src:         '/medals/silver.png',
+    src:         '/medals/silver.webp',
     label:       '2nd Place',
     blockHeight: 128,
     gradient:    'linear-gradient(160deg, #E8E8E8 0%, #C0C0C0 45%, #808080 100%)',
@@ -32,7 +32,7 @@ const MEDAL_CONFIG = {
     auraGlowDim: '0 0 8px 3px rgba(148,163,184,0.15), 0 0 18px 6px rgba(100,116,139,0.06)',
   },
   3: {
-    src:         '/medals/bronze.png',
+    src:         '/medals/bronze.webp',
     label:       '3rd Place',
     blockHeight: 96,
     gradient:    'linear-gradient(160deg, #E8A060 0%, #CD7F32 45%, #7B4010 100%)',
@@ -130,17 +130,17 @@ function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
         <div className="flex justify-center gap-0.5 mt-1 flex-wrap">
           {row.goldCount   > 0 && (
             <span className="text-[10px] bg-yellow-100 rounded px-1 inline-flex items-center gap-0.5">
-              <Image src="/medals/gold.png" alt="" width={10} height={10} />{row.goldCount}
+              <Image src="/medals/gold.webp" alt="" width={10} height={10} />{row.goldCount}
             </span>
           )}
           {row.silverCount > 0 && (
             <span className="text-[10px] bg-gray-100 rounded px-1 inline-flex items-center gap-0.5">
-              <Image src="/medals/silver.png" alt="" width={10} height={10} />{row.silverCount}
+              <Image src="/medals/silver.webp" alt="" width={10} height={10} />{row.silverCount}
             </span>
           )}
           {row.bronzeCount > 0 && (
             <span className="text-[10px] bg-orange-50 rounded px-1 inline-flex items-center gap-0.5">
-              <Image src="/medals/bronze.png" alt="" width={10} height={10} />{row.bronzeCount}
+              <Image src="/medals/bronze.webp" alt="" width={10} height={10} />{row.bronzeCount}
             </span>
           )}
         </div>

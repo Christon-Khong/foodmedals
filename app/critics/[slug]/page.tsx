@@ -243,7 +243,7 @@ export default async function CriticProfilePage({ params }: Props) {
         {medals.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-amber-100">
             <div className="mb-4 flex justify-center">
-              <Image src="/medals/gold.png" alt="medals" width={48} height={48} />
+              <Image src="/medals/gold.webp" alt="medals" width={48} height={48} />
             </div>
             <h3 className="text-lg font-bold text-gray-600 mb-1">No medals yet</h3>
             <p className="text-gray-400 text-sm mb-6">
@@ -271,7 +271,7 @@ export default async function CriticProfilePage({ params }: Props) {
               ) : isOwner ? (
                 <div className="mb-8 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl border border-yellow-200/60 p-5">
                   <div className="flex items-start gap-3">
-                    <Image src="/medals/gold.png" alt="Gold Medal" width={36} height={36} className="flex-shrink-0 mt-0.5 opacity-40" />
+                    <Image src="/medals/gold.webp" alt="Gold Medal" width={36} height={36} className="flex-shrink-0 mt-0.5 opacity-40" />
                     <div>
                       <h3 className="text-sm font-bold text-yellow-800">Crown Jewel</h3>
                       <p className="text-xs text-yellow-700/70 mt-1 leading-relaxed">

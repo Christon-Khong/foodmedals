@@ -82,7 +82,7 @@ export default async function HallOfFamePage() {
 
                       {/* Winner */}
                       <div className="px-4 py-3 flex items-center gap-3">
-                        <Image src="/medals/gold.png" alt="gold medal" width={28} height={28} className="shrink-0" />
+                        <Image src="/medals/gold.webp" alt="gold medal" width={28} height={28} className="shrink-0" />
                         <div className="min-w-0 flex-1">
                           <Link
                             href={`/restaurants/${row.restaurantSlug}`}

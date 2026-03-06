@@ -4,8 +4,10 @@ import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CategoryIcon } from '@/components/CategoryIcon'
+import dynamic from 'next/dynamic'
 import { Sparkles, Loader2, Quote, Award, X, Pencil, EyeOff } from 'lucide-react'
-import { GoldCommentModal } from '@/components/GoldCommentModal'
+
+const GoldCommentModal = dynamic(() => import('@/components/GoldCommentModal').then(m => m.GoldCommentModal), { ssr: false })
 
 type Highlight = {
   id:           string
@@ -337,7 +339,7 @@ function HighlightCard({
               </Link>
               <span className="text-[10px] text-gray-400">·</span>
               <span className="text-[10px] font-medium text-gray-400 flex items-center gap-0.5">
-                <Image src="/medals/gold.png" alt="gold" width={10} height={10} />
+                <Image src="/medals/gold.webp" alt="gold" width={10} height={10} />
                 {highlight.year}
               </span>
             </div>

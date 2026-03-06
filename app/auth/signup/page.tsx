@@ -84,7 +84,7 @@ export default function SignUpPage() {
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8">
         <div className="text-center mb-8">
           <div className="mb-2 flex justify-center">
-            <Image src="/medals/gold.png" alt="FoodMedals" width={48} height={48} />
+            <Image src="/medals/gold.webp" alt="FoodMedals" width={48} height={48} />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Create account</h1>
           <p className="text-sm text-gray-600 mt-1">Start awarding medals</p>

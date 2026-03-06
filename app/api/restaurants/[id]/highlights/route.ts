@@ -14,12 +14,15 @@ export async function GET(
 
   const { highlights, total } = await getRestaurantHighlights(id, { limit, offset, sort })
 
-  return NextResponse.json({
-    highlights: highlights.map(h => ({
-      ...h,
-      createdAt: h.createdAt.toISOString(),
-    })),
-    total,
-    hasMore: offset + highlights.length < total,
-  })
+  return NextResponse.json(
+    {
+      highlights: highlights.map(h => ({
+        ...h,
+        createdAt: h.createdAt.toISOString(),
+      })),
+      total,
+      hasMore: offset + highlights.length < total,
+    },
+    { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } },
+  )
 }

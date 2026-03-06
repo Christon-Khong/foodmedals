@@ -19,5 +19,8 @@ export async function GET(
   if (!category) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const medals = await getUserMedalsForCategory(session.user.id, category.id, year)
-  return NextResponse.json({ medals, year })
+  return NextResponse.json(
+    { medals, year },
+    { headers: { 'Cache-Control': 'private, no-store' } },
+  )
 }

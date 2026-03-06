@@ -10,9 +10,9 @@ import type { CategoryRankingRow } from '@/lib/queries'
 const RANK_LABELS: Record<number, string> = { 1: '1st', 2: '2nd', 3: '3rd' }
 
 const RANK_MEDAL: Record<number, string> = {
-  1: '/medals/gold.png',
-  2: '/medals/silver.png',
-  3: '/medals/bronze.png',
+  1: '/medals/gold.webp',
+  2: '/medals/silver.webp',
+  3: '/medals/bronze.webp',
 }
 
 const CARD_ACCENT: Record<number, string> = {

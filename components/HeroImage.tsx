@@ -4,7 +4,7 @@ export function HeroImage() {
   return (
     <div className="relative w-full h-48 sm:h-56 overflow-hidden">
       <Image
-        src="/images/hero.png"
+        src="/images/hero.webp"
         alt="A spread of delicious food dishes"
         fill
         className="object-cover"

@@ -107,7 +107,7 @@ export function GoldCommentModal({ medalId, restaurantName, categoryName, initia
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
-              <Image src="/medals/gold.png" alt="Gold" width={24} height={24} />
+              <Image src="/medals/gold.webp" alt="Gold" width={24} height={24} />
             </div>
             <div>
               <h3 className="text-base font-bold text-gray-900">Share your pick!</h3>

@@ -312,19 +312,19 @@ export default async function RestaurantPage({
                         <div className="flex gap-1.5 flex-wrap">
                           {t.goldCount > 0 && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-full px-2 py-0.5">
-                              <Image src="/medals/gold.png" alt="" width={12} height={12} />
+                              <Image src="/medals/gold.webp" alt="" width={12} height={12} />
                               {t.goldCount} Gold
                             </span>
                           )}
                           {t.silverCount > 0 && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-gray-50 border border-gray-200 text-gray-600 rounded-full px-2 py-0.5">
-                              <Image src="/medals/silver.png" alt="" width={12} height={12} />
+                              <Image src="/medals/silver.webp" alt="" width={12} height={12} />
                               {t.silverCount} Silver
                             </span>
                           )}
                           {t.bronzeCount > 0 && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-orange-50 border border-orange-200 text-orange-700 rounded-full px-2 py-0.5">
-                              <Image src="/medals/bronze.png" alt="" width={12} height={12} />
+                              <Image src="/medals/bronze.webp" alt="" width={12} height={12} />
                               {t.bronzeCount} Bronze
                             </span>
                           )}
@@ -357,13 +357,13 @@ export default async function RestaurantPage({
                     <th className="text-left px-4 py-3 text-gray-500 font-semibold">Year</th>
                     <th className="text-left px-4 py-3 text-gray-500 font-semibold">Category</th>
                     <th className="text-center px-2 py-3 text-gray-500 font-semibold">
-                      <Image src="/medals/gold.png" alt="Gold" width={16} height={16} className="mx-auto" />
+                      <Image src="/medals/gold.webp" alt="Gold" width={16} height={16} className="mx-auto" />
                     </th>
                     <th className="text-center px-2 py-3 text-gray-500 font-semibold">
-                      <Image src="/medals/silver.png" alt="Silver" width={16} height={16} className="mx-auto" />
+                      <Image src="/medals/silver.webp" alt="Silver" width={16} height={16} className="mx-auto" />
                     </th>
                     <th className="text-center px-2 py-3 text-gray-500 font-semibold">
-                      <Image src="/medals/bronze.png" alt="Bronze" width={16} height={16} className="mx-auto" />
+                      <Image src="/medals/bronze.webp" alt="Bronze" width={16} height={16} className="mx-auto" />
                     </th>
                     <th className="text-right px-4 py-3 text-gray-500 font-semibold">Community Score</th>
                   </tr>

@@ -41,11 +41,14 @@ export const CategoryIcon = memo(function CategoryIcon({ slug, iconEmoji, iconUr
     }
     // Use 1em so the image auto-matches the parent's text size
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={src}
         alt={slug.replace(/-/g, ' ')}
-        style={{ width: '1em', height: '1em', display: 'inline-block', verticalAlign: 'middle' }}
+        width={0}
+        height={0}
+        sizes="1em"
+        className="inline-block align-middle"
+        style={{ width: '1em', height: '1em' }}
       />
     )
   }

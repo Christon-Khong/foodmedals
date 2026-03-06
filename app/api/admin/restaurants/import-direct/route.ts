@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
+import { verifyApiKey } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 import { toSlug, geocode } from '@/lib/restaurant-utils'
 
@@ -25,13 +26,8 @@ type ImportResult = {
 }
 
 export async function POST(req: NextRequest) {
-  // Dual auth: admin session cookie OR ADMIN_API_KEY bearer token
-  const apiKey = process.env.ADMIN_API_KEY
-  const authHeader = req.headers.get('authorization')
-  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
-
-  const isApiKeyAuth = apiKey && bearerToken && bearerToken === apiKey
-  if (!isApiKeyAuth) {
+  // Dual auth: admin session cookie OR ADMIN_API_KEY bearer token (timing-safe)
+  if (!verifyApiKey(req.headers.get('authorization'))) {
     const session = await getAdminSession()
     if (!session) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

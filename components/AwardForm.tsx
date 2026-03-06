@@ -3,8 +3,10 @@
 import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { Confetti } from './Confetti'
-import { GoldCommentModal } from './GoldCommentModal'
+
+const GoldCommentModal = dynamic(() => import('./GoldCommentModal').then(m => m.GoldCommentModal), { ssr: false })
 import { MessageSquare, Pencil } from 'lucide-react'
 
 type MedalType = 'gold' | 'silver' | 'bronze'
@@ -33,9 +35,9 @@ type AwardFormProps = {
 }
 
 const MEDAL_META: Record<MedalType, { src: string; label: string; color: string; bg: string }> = {
-  gold:   { src: '/medals/gold.png',   label: 'Gold',   color: 'text-yellow-700', bg: 'bg-yellow-100 border-yellow-300' },
-  silver: { src: '/medals/silver.png', label: 'Silver', color: 'text-gray-600',   bg: 'bg-gray-100   border-gray-300'   },
-  bronze: { src: '/medals/bronze.png', label: 'Bronze', color: 'text-amber-700',  bg: 'bg-amber-100  border-amber-300'  },
+  gold:   { src: '/medals/gold.webp',   label: 'Gold',   color: 'text-yellow-700', bg: 'bg-yellow-100 border-yellow-300' },
+  silver: { src: '/medals/silver.webp', label: 'Silver', color: 'text-gray-600',   bg: 'bg-gray-100   border-gray-300'   },
+  bronze: { src: '/medals/bronze.webp', label: 'Bronze', color: 'text-amber-700',  bg: 'bg-amber-100  border-amber-300'  },
 }
 
 const MEDAL_TYPES: MedalType[] = ['gold', 'silver', 'bronze']

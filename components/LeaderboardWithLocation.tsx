@@ -5,8 +5,10 @@ import { NearMeToggle } from '@/components/NearMeToggle'
 import { StateFilter } from '@/components/StateFilter'
 import { CityFilter } from '@/components/CityFilter'
 import { LeaderboardResults } from '@/components/LeaderboardResults'
+import dynamic from 'next/dynamic'
 import { Confetti } from '@/components/Confetti'
-import { GoldCommentModal } from '@/components/GoldCommentModal'
+
+const GoldCommentModal = dynamic(() => import('@/components/GoldCommentModal').then(m => m.GoldCommentModal), { ssr: false })
 import { NominationsSection } from '@/app/categories/[slug]/NominationsSection'
 import type { LeaderboardRow, CityOption, StateOption } from '@/lib/queries'
 

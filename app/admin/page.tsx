@@ -38,7 +38,7 @@ export default async function AdminDashboard() {
     { label: 'Active Restaurants', value: stats.activeRestaurants,    icon: '🍽️', href: '/admin/restaurants/all' },
     { label: 'Pending Review',     value: stats.pendingRestaurants,    icon: '⏳', href: '/admin/restaurants',    alert: stats.pendingRestaurants > 0 },
     { label: 'Registered Users',   value: stats.totalUsers,            icon: '👥', href: '/admin/users' },
-    { label: `${stats.year} Medals`, value: stats.totalMedalsThisYear, icon: <Image src="/medals/gold.png" alt="medals" width={24} height={24} />, href: null },
+    { label: `${stats.year} Medals`, value: stats.totalMedalsThisYear, icon: <Image src="/medals/gold.webp" alt="medals" width={24} height={24} />, href: null },
     { label: 'Address Reports',    value: stats.pendingAddressReports,  icon: '📍', href: '/admin/reports',        alert: stats.pendingAddressReports > 0 },
     { label: 'Food Categories',    value: stats.totalCategories,       icon: '📂', href: '/admin/categories' },
   ]
