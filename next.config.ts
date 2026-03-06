@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: *.supabase.co *.tile.openstreetmap.org",
+              "img-src 'self' data: blob: *.supabase.co *.basemaps.cartocdn.com",
               "font-src 'self' fonts.gstatic.com",
               "connect-src 'self' *.supabase.co maps.googleapis.com",
               "frame-ancestors 'none'",
