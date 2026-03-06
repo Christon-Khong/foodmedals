@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { toSlug, geocode } from '@/lib/restaurant-utils'
+import { toSlug, geocodeWithQuota } from '@/lib/restaurant-utils'
 
 export type RestaurantImportEntry = {
   name: string
@@ -117,7 +117,7 @@ export async function importRestaurants(
         lat = entry.lat
         lng = entry.lng
       } else {
-        const geo = await geocode(address, city, state, zip)
+        const geo = await geocodeWithQuota(address, city, state, zip)
         if (!geo) {
           results[index] = {
             name,
@@ -149,6 +149,7 @@ export async function importRestaurants(
           websiteUrl: entry.websiteUrl?.trim() || null,
           description: entry.description?.trim() || null,
           status: 'active',
+          lastGeocodedAt: new Date(),
         },
       })
 

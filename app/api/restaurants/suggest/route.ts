@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { toSlug, geocode } from '@/lib/restaurant-utils'
+import { toSlug, geocodeWithQuota } from '@/lib/restaurant-utils'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   if (existing) slug = `${slug}-${Date.now()}`
 
   // Geocode the address via Google Maps (best-effort — won't block creation if it fails)
-  const coords = await geocode(address.trim(), city.trim(), state.trim(), zip.trim())
+  const coords = await geocodeWithQuota(address.trim(), city.trim(), state.trim(), zip.trim())
 
   const restaurant = await prisma.restaurant.create({
     data: {
@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       submittedBy: session.user.id,
       lat:         coords?.lat ?? null,
       lng:         coords?.lng ?? null,
+      lastGeocodedAt: coords ? new Date() : null,
     },
   })
 

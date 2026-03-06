@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
 import { discoverCity, QuotaExhaustedError } from '@/lib/discover-city'
-import { getQuotaStatus } from '@/lib/google-places-quota'
+import { getQuotaStatus, getVerificationReserve } from '@/lib/google-places-quota'
+import { verifyAddresses } from '@/lib/verify-addresses'
 
 export const maxDuration = 300
 
@@ -30,14 +31,16 @@ async function isAuthorized(req: NextRequest): Promise<boolean> {
 
 async function processQueue(): Promise<{
   results: ProcessResult[]
+  verification: { checked: number; updated: number; failed: number; skipped: number } | null
   quota: Awaited<ReturnType<typeof getQuotaStatus>>
 }> {
   const results: ProcessResult[] = []
+  const reserve = await getVerificationReserve()
 
   while (true) {
-    // Check remaining quota — need ~30+ calls for a city search
+    // Check remaining quota — need ~30+ calls for a city search, plus reserve for verification
     const quota = await getQuotaStatus()
-    if (quota.remaining < 30) {
+    if (quota.remaining < 30 + reserve) {
       break
     }
 
@@ -60,6 +63,7 @@ async function processQueue(): Promise<{
         city: item.city,
         state: item.state,
         resultsPerCategory: item.resultsPerCategory,
+        quotaReserve: reserve,
       })
 
       await prisma.searchQueueItem.update({
@@ -112,8 +116,17 @@ async function processQueue(): Promise<{
     }
   }
 
+  // After queue processing, use remaining quota for address verification
+  let verification = null
+  const quotaAfterQueue = await getQuotaStatus()
+  const checksAvailable = Math.min(quotaAfterQueue.remaining, reserve)
+
+  if (checksAvailable > 0) {
+    verification = await verifyAddresses(checksAvailable)
+  }
+
   const quota = await getQuotaStatus()
-  return { results, quota }
+  return { results, verification, quota }
 }
 
 // POST — process queue (manual trigger from UI)

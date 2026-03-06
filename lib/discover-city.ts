@@ -64,9 +64,10 @@ export async function discoverCity(options: {
   city: string
   state: string
   resultsPerCategory?: number
+  quotaReserve?: number
   onProgress?: ProgressCallback
 }): Promise<DiscoverCityResult> {
-  const { city, state, resultsPerCategory = 5, onProgress } = options
+  const { city, state, resultsPerCategory = 5, quotaReserve = 0, onProgress } = options
   const maxResults = Math.min(Math.max(resultsPerCategory, 1), 10)
 
   // Fetch all active categories
@@ -80,8 +81,8 @@ export async function discoverCity(options: {
     throw new Error('No active categories found')
   }
 
-  // Check quota before starting (reserve calls for all categories)
-  const quotaCheck = await checkAndIncrementQuota(categories.length)
+  // Check quota before starting (reserve calls for all categories + verification reserve)
+  const quotaCheck = await checkAndIncrementQuota(categories.length, quotaReserve)
   if (!quotaCheck.allowed) {
     throw new QuotaExhaustedError(
       `Daily API quota exceeded. ${quotaCheck.used}/${quotaCheck.limit} calls used today. ` +

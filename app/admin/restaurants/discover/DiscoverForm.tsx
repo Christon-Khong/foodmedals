@@ -44,6 +44,7 @@ type QuotaInfo = {
   remaining: number
   costToday: number
   percentUsed: number
+  verificationReserve?: number
 }
 
 type ProgressEntry = {
@@ -474,6 +475,18 @@ export function DiscoverForm() {
                 ${quota.costToday.toFixed(2)} spent today
               </span>
             </div>
+
+            {/* Verification reserve info */}
+            {(quota.verificationReserve ?? 0) > 0 && (
+              <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
+                <span>
+                  {quota.verificationReserve} reserved for address verification
+                </span>
+                <span>
+                  {Math.max(0, quota.limit - quota.used - (quota.verificationReserve ?? 0))} available for discovery
+                </span>
+              </div>
+            )}
           </div>
 
           {quotaExhausted && (

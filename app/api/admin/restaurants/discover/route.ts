@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
 import { discoverCity, QuotaExhaustedError } from '@/lib/discover-city'
-import { getQuotaStatus } from '@/lib/google-places-quota'
+import { getQuotaStatus, getVerificationReserve } from '@/lib/google-places-quota'
 
 export const maxDuration = 300
 
@@ -36,10 +36,12 @@ export async function POST(req: NextRequest) {
       }
 
       try {
+        const reserve = await getVerificationReserve()
         const result = await discoverCity({
           city,
           state,
           resultsPerCategory: body.resultsPerCategory,
+          quotaReserve: reserve,
           onProgress: (event) => send({ type: 'progress', ...event }),
         })
 

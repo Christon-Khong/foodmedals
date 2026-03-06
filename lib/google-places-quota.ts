@@ -69,9 +69,16 @@ export async function getQuotaStatus(): Promise<QuotaStatus> {
  * increment the counter and return allowed: true. If not, return
  * allowed: false without incrementing.
  *
+ * @param callCount - number of API calls to reserve
+ * @param reserve - extra headroom to leave in the quota (e.g. for address verification).
+ *                  The check becomes: used + callCount + reserve <= limit
+ *
  * Handles day rollover automatically.
  */
-export async function checkAndIncrementQuota(callCount: number): Promise<{
+export async function checkAndIncrementQuota(
+  callCount: number,
+  reserve: number = 0,
+): Promise<{
   allowed: boolean
   used: number
   limit: number
@@ -81,7 +88,7 @@ export async function checkAndIncrementQuota(callCount: number): Promise<{
   const limit = row.placesApiDailyLimit
   const currentUsed = row.placesApiCallsToday
 
-  if (currentUsed + callCount > limit) {
+  if (currentUsed + callCount + reserve > limit) {
     return {
       allowed: false,
       used: currentUsed,
@@ -104,4 +111,13 @@ export async function checkAndIncrementQuota(callCount: number): Promise<{
     limit,
     remaining: Math.max(0, limit - updated.placesApiCallsToday),
   }
+}
+
+/**
+ * Get the verification reserve from AdminSettings.
+ * This is the number of daily API calls reserved for address verification.
+ */
+export async function getVerificationReserve(): Promise<number> {
+  const row = await getOrResetSettings()
+  return row.apiVerificationReserve
 }

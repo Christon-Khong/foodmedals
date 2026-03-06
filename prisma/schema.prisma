@@ -75,8 +75,9 @@ model Restaurant {
   imageUrl    String?  @map("image_url")
   status      String   @default("active") // active | pending_review | inactive | closed
   submittedBy String?  @map("submitted_by")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  lastGeocodedAt DateTime? @map("last_geocoded_at")
 
   submitter       User?                @relation("SubmittedRestaurants", fields: [submittedBy], references: [id])
   categories      RestaurantCategory[]
@@ -319,6 +320,7 @@ model AdminSettings {
   placesApiDailyLimit    Int      @default(200) @map("places_api_daily_limit")
   placesApiCallsToday    Int      @default(0)   @map("places_api_calls_today")
   placesApiLastResetDate String   @default("")  @map("places_api_last_reset_date")
+  apiVerificationReserve Int      @default(40)  @map("api_verification_reserve")
   updatedAt              DateTime @updatedAt    @map("updated_at")
 
   @@map("admin_settings")

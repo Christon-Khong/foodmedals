@@ -1,3 +1,5 @@
+import { checkAndIncrementQuota } from './google-places-quota'
+
 export function toSlug(name: string, city: string) {
   return `${name}-${city}`
     .toLowerCase()
@@ -40,4 +42,19 @@ export async function geocode(
   } catch {
     return null
   }
+}
+
+/**
+ * Geocode with quota tracking — increments the unified daily API counter
+ * before making the call. Returns null if quota is exhausted.
+ */
+export async function geocodeWithQuota(
+  address: string,
+  city: string,
+  state: string,
+  zip: string,
+): Promise<{ lat: number; lng: number } | null> {
+  const check = await checkAndIncrementQuota(1)
+  if (!check.allowed) return null
+  return geocode(address, city, state, zip)
 }

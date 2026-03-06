@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
-import { geocode } from '@/lib/restaurant-utils'
+import { geocodeWithQuota } from '@/lib/restaurant-utils'
 
 /** GET — list all active restaurants with missing coordinates */
 export async function GET() {
@@ -49,11 +49,11 @@ export async function POST(req: NextRequest) {
   const results: Array<{ id: string; name: string; status: 'fixed' | 'failed' }> = []
 
   for (const r of restaurants) {
-    const coords = await geocode(r.address, r.city, r.state, r.zip)
+    const coords = await geocodeWithQuota(r.address, r.city, r.state, r.zip)
     if (coords) {
       await prisma.restaurant.update({
         where: { id: r.id },
-        data: { lat: coords.lat, lng: coords.lng },
+        data: { lat: coords.lat, lng: coords.lng, lastGeocodedAt: new Date() },
       })
       results.push({ id: r.id, name: r.name, status: 'fixed' })
     } else {

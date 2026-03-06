@@ -15,6 +15,7 @@ export async function GET() {
   return NextResponse.json({
     maxCommunityScore: row?.maxCommunityScore ?? DEFAULT_MAX_COMMUNITY_SCORE,
     placesApiDailyLimit: row?.placesApiDailyLimit ?? 200,
+    apiVerificationReserve: row?.apiVerificationReserve ?? 40,
   })
 }
 
@@ -50,6 +51,17 @@ export async function PUT(req: NextRequest) {
     updateData.placesApiDailyLimit = val
   }
 
+  if (body.apiVerificationReserve !== undefined) {
+    const val = Number(body.apiVerificationReserve)
+    if (!Number.isInteger(val) || val < 0 || val > 500) {
+      return NextResponse.json(
+        { error: 'apiVerificationReserve must be between 0 and 500' },
+        { status: 400 },
+      )
+    }
+    updateData.apiVerificationReserve = val
+  }
+
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json(
       { error: 'No valid settings provided' },
@@ -66,5 +78,6 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({
     maxCommunityScore: row.maxCommunityScore,
     placesApiDailyLimit: row.placesApiDailyLimit,
+    apiVerificationReserve: row.apiVerificationReserve,
   })
 }

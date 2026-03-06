@@ -1,3 +1,5 @@
+import { checkAndIncrementQuota } from './google-places-quota'
+
 export const ALLOWED_HOSTS = [
   'google.com',
   'www.google.com',
@@ -95,6 +97,14 @@ export async function parseGoogleMapsUrl(url: string): Promise<ParsedMapsResult>
     try {
       const apiKey = process.env.GOOGLE_MAPS_API_KEY
       if (apiKey) {
+        // Track this reverse geocode against the unified quota
+        const quotaCheck = await checkAndIncrementQuota(1)
+        if (!quotaCheck.allowed) {
+          // Quota exhausted — skip geocoding, fields will be empty
+          if (!name) throw new Error('Could not extract restaurant name from URL')
+          return { name, address, city, state, zip, lat, lng }
+        }
+
         const params = new URLSearchParams({
           latlng: `${lat},${lng}`,
           key: apiKey,
