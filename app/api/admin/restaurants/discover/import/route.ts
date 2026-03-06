@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/adminAuth'
-import { verifyApiKey } from '@/lib/api-auth'
 import { importRestaurants, type RestaurantImportEntry } from '@/lib/restaurant-import'
 
 export const maxDuration = 120
 
 export async function POST(req: NextRequest) {
-  // Dual auth: admin session cookie OR ADMIN_API_KEY bearer token (timing-safe)
-  if (!verifyApiKey(req.headers.get('authorization'))) {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  const session = await getAdminSession()
+  if (!session) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   let body: { restaurants?: RestaurantImportEntry[] }
@@ -24,10 +20,10 @@ export async function POST(req: NextRequest) {
   const { restaurants } = body
 
   if (!Array.isArray(restaurants) || restaurants.length === 0) {
-    return NextResponse.json({ error: 'restaurants array is required and must be non-empty' }, { status: 400 })
+    return NextResponse.json({ error: 'restaurants array is required' }, { status: 400 })
   }
-  if (restaurants.length > 50) {
-    return NextResponse.json({ error: 'Maximum 50 restaurants per request' }, { status: 400 })
+  if (restaurants.length > 100) {
+    return NextResponse.json({ error: 'Maximum 100 restaurants per request' }, { status: 400 })
   }
 
   const result = await importRestaurants(restaurants)
