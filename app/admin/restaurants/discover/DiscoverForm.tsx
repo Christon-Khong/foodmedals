@@ -559,9 +559,6 @@ export function DiscoverForm() {
         <div className={`bg-gray-900 border ${quotaExhausted ? 'border-red-500/40' : 'border-gray-800'} rounded-2xl p-5 space-y-3`}>
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white">API Usage Today</h2>
-            <span className="text-xs text-gray-500">
-              ${(quota.totalCostToday ?? quota.costToday).toFixed(3)} total spent
-            </span>
           </div>
 
           {/* Text Search API */}
@@ -584,9 +581,6 @@ export function DiscoverForm() {
                   {quota.remaining} remaining
                 </span>
               </div>
-              <span className="text-gray-400">
-                ${quota.costToday.toFixed(3)}
-              </span>
             </div>
           </div>
 
@@ -614,9 +608,6 @@ export function DiscoverForm() {
                       {quota.geocodeRemaining ?? 0} remaining
                     </span>
                   </div>
-                  <span className="text-gray-400">
-                    ${(quota.geocodeCostToday ?? 0).toFixed(3)}
-                  </span>
                 </div>
                 {/* Verification reserve info */}
                 {(quota.verificationReserve ?? 0) > 0 && (
