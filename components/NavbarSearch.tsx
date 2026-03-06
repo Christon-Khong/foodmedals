@@ -96,6 +96,10 @@ export function NavbarSearch() {
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Escape') close()
+    if (e.key === 'Enter' && query.trim().length >= 2) {
+      close()
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+    }
   }
 
   const hasResults = results && (results.restaurants.length > 0 || results.categories.length > 0)
