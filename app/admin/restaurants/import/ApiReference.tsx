@@ -8,6 +8,7 @@ type Category = { id: string; name: string; iconEmoji: string; slug: string }
 type Props = {
   categories: Category[]
   slugs: string[]
+  apiKey: string
 }
 
 function CopyButton({ text, label }: { text: string; label?: string }) {
@@ -40,7 +41,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
   )
 }
 
-export function ApiReference({ categories, slugs }: Props) {
+export function ApiReference({ categories, slugs, apiKey }: Props) {
   const [open, setOpen] = useState(false)
   const [city, setCity] = useState('')
 
@@ -73,7 +74,7 @@ For each restaurant found, collect: name, street address, city, state, zip, and 
 
 After researching all categories, send the results to the FoodMedals bulk import API:
 - Endpoint: POST https://foodmedals.com/api/admin/restaurants/import-direct
-- Auth header: Authorization: Bearer [PASTE_YOUR_ADMIN_API_KEY]
+- Auth header: Authorization: Bearer ${apiKey}
 - Content-Type: application/json
 - Body: { "restaurants": [{ "name", "address", "city", "state", "zip", "websiteUrl?", "description?", "categorySlugs?": [...] }] }
 - Max 50 restaurants per request (split into multiple requests if needed)
@@ -121,16 +122,16 @@ Safeguards (already built into the API):
             </div>
             {!city.trim() && (
               <p className="text-xs text-yellow-500/70">
-                Enter a city above and it will be inserted into the prompt automatically. Also replace <code className="bg-gray-700 px-1 rounded text-yellow-300">[PASTE_YOUR_ADMIN_API_KEY]</code> after copying.
+                Enter a city above and it will be inserted into the prompt automatically.
               </p>
             )}
             {city.trim() && (
-              <p className="text-xs text-gray-500">
-                Replace <code className="bg-gray-700 px-1 rounded text-yellow-300">[PASTE_YOUR_ADMIN_API_KEY]</code> after copying.
+              <p className="text-xs text-green-400/70">
+                Ready to copy — city and API key are both filled in.
               </p>
             )}
             <pre className="bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 text-xs text-gray-300 whitespace-pre-wrap overflow-x-auto max-h-80 overflow-y-auto leading-relaxed">
-              {claudePrompt}
+              {apiKey ? claudePrompt.replace(apiKey, apiKey.slice(0, 8) + '...' + apiKey.slice(-4)) : claudePrompt}
             </pre>
           </div>
 

@@ -12,6 +12,7 @@ export default async function BulkImportPage() {
   })
 
   const slugs = categories.map(c => c.slug)
+  const apiKey = process.env.ADMIN_API_KEY ?? ''
 
   return (
     <div className="max-w-3xl">
@@ -22,7 +23,7 @@ export default async function BulkImportPage() {
         </p>
       </div>
       <BulkImportForm categories={categories} />
-      <ApiReference categories={categories} slugs={slugs} />
+      <ApiReference categories={categories} slugs={slugs} apiKey={apiKey} />
     </div>
   )
 }
