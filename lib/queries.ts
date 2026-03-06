@@ -867,6 +867,8 @@ const STATE_NAMES: Record<string, string> = {
   DC:'District of Columbia',
 }
 
+export { STATE_NAMES }
+
 export type SearchCity = { city: string; state: string; restaurantCount: number }
 export type SearchState = { state: string; stateCode: string; restaurantCount: number }
 export type SearchCategory = { slug: string; name: string; iconEmoji: string; iconUrl: string | null; restaurantCount: number }
@@ -883,9 +885,39 @@ export type FullSearchResults = {
   critics: SearchCritic[]
 }
 
-export async function searchFull(query: string): Promise<FullSearchResults> {
+/** Resolve a term to a state code, e.g. "Utah"→"UT", "ut"→"UT" */
+function resolveStateCode(term: string): string | null {
+  const lower = term.toLowerCase()
+  // Exact abbreviation match
+  for (const code of Object.keys(STATE_NAMES)) {
+    if (code.toLowerCase() === lower) return code
+  }
+  // Exact full name match
+  for (const [code, name] of Object.entries(STATE_NAMES)) {
+    if (name.toLowerCase() === lower) return code
+  }
+  return null
+}
+
+export type SearchFilters = {
+  state?: string
+  city?: string
+  categorySlug?: string
+}
+
+export async function searchFull(query: string, filters?: SearchFilters): Promise<FullSearchResults> {
   const q = query.trim()
   if (q.length < 2) return { combos: [], categories: [], restaurants: [], cities: [], states: [], critics: [] }
+
+  // Build optional restaurant filter clauses
+  const restaurantFilters: Record<string, unknown> = {}
+  if (filters?.state) restaurantFilters.state = filters.state
+  if (filters?.city) restaurantFilters.city = { equals: filters.city, mode: 'insensitive' }
+  if (filters?.categorySlug) {
+    restaurantFilters.categories = {
+      some: { foodCategory: { slug: filters.categorySlug }, verified: true },
+    }
+  }
 
   // Run all queries in parallel
   const [categories, restaurants, cityRows, critics] = await Promise.all([
@@ -896,9 +928,9 @@ export async function searchFull(query: string): Promise<FullSearchResults> {
       orderBy: { sortOrder: 'asc' },
     }),
 
-    // Restaurants matching name
+    // Restaurants matching name (with optional filters)
     prisma.restaurant.findMany({
-      where: { status: 'active', name: { contains: q, mode: 'insensitive' } },
+      where: { status: 'active', name: { contains: q, mode: 'insensitive' }, ...restaurantFilters },
       select: { slug: true, name: true, city: true, state: true },
       take: 20,
       orderBy: { name: 'asc' },
@@ -972,52 +1004,109 @@ export async function searchFull(query: string): Promise<FullSearchResults> {
     state: u.state,
   }))
 
-  // Build category + city combos
-  // If query has multiple words, check if some words match categories and others match cities
-  const combos: SearchCombo[] = []
+  // --- Cross-referenced restaurant search (name + location) for multi-word queries ---
+  const allRestaurants: SearchRestaurant[] = [...restaurants]
+  const seenSlugs = new Set(restaurants.map(r => r.slug))
+
   if (q.includes(' ')) {
     const words = q.split(/\s+/)
-    // Try every split point: [category words] + [city words]
+    for (let i = 1; i < words.length; i++) {
+      const partA = words.slice(0, i).join(' ')
+      const partB = words.slice(i).join(' ')
+
+      // Try both orderings: partA=name + partB=location, and reverse
+      for (const [namePart, locPart] of [[partA, partB], [partB, partA]]) {
+        const stateCode = resolveStateCode(locPart)
+        const locFilter: Record<string, unknown> = stateCode
+          ? { state: stateCode }
+          : { city: { contains: locPart, mode: 'insensitive' } }
+
+        const crossRef = await prisma.restaurant.findMany({
+          where: {
+            status: 'active',
+            name: { contains: namePart, mode: 'insensitive' },
+            ...locFilter,
+            ...restaurantFilters,
+          },
+          select: { slug: true, name: true, city: true, state: true },
+          take: 15,
+          orderBy: { name: 'asc' },
+        })
+
+        for (const r of crossRef) {
+          if (!seenSlugs.has(r.slug)) {
+            seenSlugs.add(r.slug)
+            allRestaurants.push(r)
+          }
+        }
+      }
+    }
+  }
+
+  // --- Category→restaurant cross-search ---
+  if (categories.length > 0) {
+    const categoryIds = categories.map(c => c.id)
+    const catRestaurants = await prisma.restaurant.findMany({
+      where: {
+        status: 'active',
+        categories: { some: { foodCategoryId: { in: categoryIds }, verified: true } },
+        ...restaurantFilters,
+      },
+      select: { slug: true, name: true, city: true, state: true },
+      take: 20,
+      orderBy: { name: 'asc' },
+    })
+    for (const r of catRestaurants) {
+      if (!seenSlugs.has(r.slug)) {
+        seenSlugs.add(r.slug)
+        allRestaurants.push(r)
+      }
+    }
+  }
+
+  // --- Build combos (category + city AND category + state) ---
+  const combos: SearchCombo[] = []
+  const comboKeys = new Set<string>()
+
+  if (q.includes(' ')) {
+    const words = q.split(/\s+/)
     for (let i = 1; i < words.length; i++) {
       const catPart = words.slice(0, i).join(' ')
       const locPart = words.slice(i).join(' ')
 
-      // Check if catPart matches any category and locPart matches any city
-      const matchedCats = mappedCategories.filter(c => c.name.toLowerCase().includes(catPart.toLowerCase()))
-      const matchedCities = cities.filter(c => c.city.toLowerCase().includes(locPart.toLowerCase()))
+      // Try both orderings
+      for (const [cp, lp] of [[catPart, locPart], [locPart, catPart]]) {
+        const matchedCats = mappedCategories.filter(c => c.name.toLowerCase().includes(cp.toLowerCase()))
 
-      for (const cat of matchedCats) {
-        for (const city of matchedCities) {
-          const key = `${cat.slug}|${city.city}|${city.state}`
-          if (!combos.find(c => `${c.categorySlug}|${c.city}|${c.state}` === key)) {
-            combos.push({
-              categorySlug: cat.slug,
-              categoryName: cat.name,
-              iconEmoji: cat.iconEmoji,
-              iconUrl: cat.iconUrl,
-              city: city.city,
-              state: city.state,
-            })
+        // Category × city combos
+        const matchedCitiesForLoc = cities.filter(c => c.city.toLowerCase().includes(lp.toLowerCase()))
+        for (const cat of matchedCats) {
+          for (const city of matchedCitiesForLoc) {
+            const key = `${cat.slug}|${city.city}|${city.state}`
+            if (!comboKeys.has(key)) {
+              comboKeys.add(key)
+              combos.push({
+                categorySlug: cat.slug, categoryName: cat.name,
+                iconEmoji: cat.iconEmoji, iconUrl: cat.iconUrl,
+                city: city.city, state: city.state,
+              })
+            }
           }
         }
-      }
 
-      // Also try reverse: [city words] + [category words]
-      const matchedCatsRev = mappedCategories.filter(c => c.name.toLowerCase().includes(locPart.toLowerCase()))
-      const matchedCitiesRev = cities.filter(c => c.city.toLowerCase().includes(catPart.toLowerCase()))
-
-      for (const cat of matchedCatsRev) {
-        for (const city of matchedCitiesRev) {
-          const key = `${cat.slug}|${city.city}|${city.state}`
-          if (!combos.find(c => `${c.categorySlug}|${c.city}|${c.state}` === key)) {
-            combos.push({
-              categorySlug: cat.slug,
-              categoryName: cat.name,
-              iconEmoji: cat.iconEmoji,
-              iconUrl: cat.iconUrl,
-              city: city.city,
-              state: city.state,
-            })
+        // Category × state combos
+        const stateCode = resolveStateCode(lp)
+        if (stateCode) {
+          for (const cat of matchedCats) {
+            const key = `${cat.slug}||${stateCode}`
+            if (!comboKeys.has(key)) {
+              comboKeys.add(key)
+              combos.push({
+                categorySlug: cat.slug, categoryName: cat.name,
+                iconEmoji: cat.iconEmoji, iconUrl: cat.iconUrl,
+                city: '', state: stateCode,
+              })
+            }
           }
         }
       }
@@ -1027,7 +1116,7 @@ export async function searchFull(query: string): Promise<FullSearchResults> {
   return {
     combos,
     categories: mappedCategories,
-    restaurants,
+    restaurants: allRestaurants,
     cities,
     states,
     critics: mappedCritics,
