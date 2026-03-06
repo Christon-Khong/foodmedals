@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import dynamic from 'next/dynamic'
 import { Sparkles, Loader2, Quote, Award, X, Pencil, EyeOff } from 'lucide-react'
+import { useModalBack } from '@/lib/useModalBack'
 
 const GoldCommentModal = dynamic(() => import('@/components/GoldCommentModal').then(m => m.GoldCommentModal), { ssr: false })
 
@@ -370,6 +371,8 @@ export function RestaurantHighlights({ highlights: initialHighlights, totalCount
 
   const [currentSort, setCurrentSort] = useState<SortMode>('popular')
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const closeLightbox = useCallback(() => setLightboxUrl(null), [])
+  useModalBack(!!lightboxUrl, closeLightbox)
   const [commentPrompt, setCommentPrompt] = useState<{
     medalId: string
     restaurantName: string

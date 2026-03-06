@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { X, Loader2, MessageSquare, Camera } from 'lucide-react'
 import imageCompression from 'browser-image-compression'
+import { useModalBack } from '@/lib/useModalBack'
 
 type Props = {
   medalId: string
@@ -16,6 +17,9 @@ type Props = {
 }
 
 export function GoldCommentModal({ medalId, restaurantName, categoryName, initialComment, initialPhotoUrl, onClose, onSaved }: Props) {
+  const stableOnClose = useCallback(onClose, [onClose])
+  useModalBack(true, stableOnClose)
+
   const [comment, setComment] = useState(initialComment ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)

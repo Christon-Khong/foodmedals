@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import { Camera, X, Check, Loader2 } from 'lucide-react'
+import { useModalBack } from '@/lib/useModalBack'
 
 type Props = {
   currentAvatarUrl: string | null
@@ -26,6 +27,9 @@ function Initials({ name }: { name: string }) {
 export function ProfileAvatarUpload({ currentAvatarUrl, displayName }: Props) {
   const [avatarUrl, setAvatarUrl] = useState(currentAvatarUrl)
   const [showCropModal, setShowCropModal] = useState(false)
+  const closeCropModal = useCallback(() => setShowCropModal(false), [])
+  useModalBack(showCropModal, closeCropModal)
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)

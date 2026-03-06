@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, X } from 'lucide-react'
 import { CategoryIcon } from '@/components/CategoryIcon'
+import { useModalBack } from '@/lib/useModalBack'
 
 type Restaurant = {
   slug: string
@@ -42,6 +43,8 @@ export function NavbarSearch() {
     setQuery('')
     setResults(null)
   }, [])
+
+  useModalBack(mobileOpen, close)
 
   // Close on click outside
   useEffect(() => {

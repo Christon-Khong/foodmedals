@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useModalBack } from '@/lib/useModalBack'
 
 type Props = {
   restaurantId: string
@@ -10,6 +11,9 @@ type Props = {
 
 export function ReportClosedButton({ restaurantId, isLoggedIn, hasReported }: Props) {
   const [open, setOpen] = useState(false)
+  const closeModal = useCallback(() => setOpen(false), [])
+  useModalBack(open, closeModal)
+
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(hasReported)
