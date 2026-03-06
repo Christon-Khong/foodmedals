@@ -281,6 +281,22 @@ model CommentUpvote {
   @@map("comment_upvotes")
 }
 
+model DiscoveryBatch {
+  id                 String   @id @default(cuid())
+  city               String
+  state              String
+  resultsPerCategory Int      @default(5) @map("results_per_category")
+  totalResults       Int      @map("total_results")
+  uniqueRestaurants  Int      @map("unique_restaurants")
+  categoriesSearched Int      @map("categories_searched")
+  restaurants        Json     // Array of discovered restaurant objects
+  status             String   @default("pending") // pending | imported | partial
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([status])
+  @@map("discovery_batches")
+}
+
 model AdminSettings {
   id                     String   @id @default("singleton")
   maxCommunityScore      Int      @default(150) @map("max_community_score")

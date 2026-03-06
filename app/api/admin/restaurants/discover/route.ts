@@ -135,17 +135,40 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      const restaurants = Array.from(byPlaceId.values())
+
+      // Save batch to DB for later review
+      let batchId: string | undefined
+      try {
+        const batch = await prisma.discoveryBatch.create({
+          data: {
+            city,
+            state,
+            resultsPerCategory: maxResults,
+            totalResults: totalPlacesFound,
+            uniqueRestaurants: restaurants.length,
+            categoriesSearched,
+            restaurants: JSON.parse(JSON.stringify(restaurants)),
+            status: 'pending',
+          },
+        })
+        batchId = batch.id
+      } catch (err) {
+        console.error('Failed to save discovery batch:', err)
+      }
+
       // Get updated quota status
       const quota = await getQuotaStatus()
 
       // Send final complete event with all data
       send({
         type: 'complete',
-        restaurants: Array.from(byPlaceId.values()),
+        batchId,
+        restaurants,
         stats: {
           categoriesSearched,
           totalPlacesFound,
-          uniqueRestaurants: byPlaceId.size,
+          uniqueRestaurants: restaurants.length,
         },
         quota: {
           used: quota.used,

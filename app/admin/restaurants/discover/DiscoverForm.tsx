@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Search, Loader2, CheckSquare, Square, AlertTriangle, ExternalLink } from 'lucide-react'
+import { Search, Loader2, CheckSquare, Square, AlertTriangle, ExternalLink, Trash2, FolderOpen, Clock } from 'lucide-react'
 
 /* ---------- Types ---------- */
 type DiscoveredRestaurant = {
@@ -54,6 +54,18 @@ type ProgressEntry = {
   error?: string
 }
 
+type SavedBatch = {
+  id: string
+  city: string
+  state: string
+  resultsPerCategory: number
+  totalResults: number
+  uniqueRestaurants: number
+  categoriesSearched: number
+  status: string
+  createdAt: string
+}
+
 /* ---------- US States ---------- */
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
@@ -65,6 +77,17 @@ const US_STATES = [
 
 const COST_PER_CALL = 0.032
 
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
+
 /* ---------- Component ---------- */
 export function DiscoverForm() {
   // Phase 1: Search inputs
@@ -72,11 +95,12 @@ export function DiscoverForm() {
   const [state, setState] = useState('')
   const [resultsPerCategory, setResultsPerCategory] = useState(5)
 
-  // Phase 2: Results
+  // Phase 2: Results (can come from fresh search or loaded batch)
   const [restaurants, setRestaurants] = useState<DiscoveredRestaurant[]>([])
   const [stats, setStats] = useState<DiscoverStats | null>(null)
   const [discoveryErrors, setDiscoveryErrors] = useState<string[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [activeBatchId, setActiveBatchId] = useState<string | null>(null)
 
   // Phase 3: Import results
   const [importResults, setImportResults] = useState<ImportResult[] | null>(null)
@@ -88,7 +112,13 @@ export function DiscoverForm() {
   // Search progress (streaming)
   const [progress, setProgress] = useState<ProgressEntry[]>([])
   const [searchProgress, setSearchProgress] = useState<{ index: number; total: number } | null>(null)
+  const [searchComplete, setSearchComplete] = useState(false)
   const logRef = useRef<HTMLDivElement>(null)
+
+  // Saved batches queue
+  const [batches, setBatches] = useState<SavedBatch[]>([])
+  const [loadingBatchId, setLoadingBatchId] = useState<string | null>(null)
+  const [deletingBatchId, setDeletingBatchId] = useState<string | null>(null)
 
   // Status
   const [searching, setSearching] = useState(false)
@@ -108,9 +138,23 @@ export function DiscoverForm() {
     }
   }, [])
 
+  /* ---- Fetch saved batches ---- */
+  const fetchBatches = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/restaurants/discover/batches')
+      if (res.ok) {
+        const data = await res.json()
+        setBatches(data.batches ?? [])
+      }
+    } catch {
+      // silently fail
+    }
+  }, [])
+
   useEffect(() => {
     fetchQuota()
-  }, [fetchQuota])
+    fetchBatches()
+  }, [fetchQuota, fetchBatches])
 
   // Auto-scroll progress log
   useEffect(() => {
@@ -118,6 +162,77 @@ export function DiscoverForm() {
       logRef.current.scrollTop = logRef.current.scrollHeight
     }
   }, [progress])
+
+  /* ---- Reset to search view ---- */
+  const resetView = useCallback(() => {
+    setRestaurants([])
+    setStats(null)
+    setDiscoveryErrors([])
+    setSelected(new Set())
+    setImportResults(null)
+    setImportSummary(null)
+    setError(null)
+    setProgress([])
+    setSearchProgress(null)
+    setSearchComplete(false)
+    setActiveBatchId(null)
+    fetchQuota()
+    fetchBatches()
+  }, [fetchQuota, fetchBatches])
+
+  /* ---- Load a saved batch ---- */
+  const loadBatch = useCallback(async (batchId: string) => {
+    setLoadingBatchId(batchId)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/admin/restaurants/discover/batches/${batchId}`)
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to load batch')
+      }
+
+      const { batch } = await res.json()
+      const batchRestaurants = batch.restaurants as DiscoveredRestaurant[]
+
+      setRestaurants(batchRestaurants)
+      setStats({
+        categoriesSearched: batch.categoriesSearched,
+        totalPlacesFound: batch.totalResults,
+        uniqueRestaurants: batch.uniqueRestaurants,
+      })
+      setDiscoveryErrors([])
+      setSelected(new Set(batchRestaurants.map((r: DiscoveredRestaurant) => r.placeId)))
+      setActiveBatchId(batchId)
+      setImportResults(null)
+      setImportSummary(null)
+      setProgress([])
+      setSearchComplete(false)
+      setCity(batch.city)
+      setState(batch.state)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load batch')
+    } finally {
+      setLoadingBatchId(null)
+    }
+  }, [])
+
+  /* ---- Delete a saved batch ---- */
+  const deleteBatch = useCallback(async (batchId: string) => {
+    setDeletingBatchId(batchId)
+    try {
+      await fetch(`/api/admin/restaurants/discover/batches/${batchId}`, { method: 'DELETE' })
+      setBatches(prev => prev.filter(b => b.id !== batchId))
+      // If this was the active batch, reset
+      if (activeBatchId === batchId) {
+        resetView()
+      }
+    } catch {
+      setError('Failed to delete batch')
+    } finally {
+      setDeletingBatchId(null)
+    }
+  }, [activeBatchId, resetView])
 
   /* ---- Phase 1: Discover (streaming) ---- */
   const handleDiscover = useCallback(async () => {
@@ -133,6 +248,8 @@ export function DiscoverForm() {
     setImportSummary(null)
     setProgress([])
     setSearchProgress(null)
+    setSearchComplete(false)
+    setActiveBatchId(null)
 
     try {
       const res = await fetch('/api/admin/restaurants/discover', {
@@ -161,6 +278,54 @@ export function DiscoverForm() {
       const decoder = new TextDecoder()
       let buffer = ''
 
+      // Helper to process complete NDJSON lines from buffer
+      function processLine(line: string) {
+        if (!line.trim()) return
+        try {
+          const event = JSON.parse(line)
+
+          if (event.type === 'progress') {
+            setProgress(prev => [...prev, event as ProgressEntry])
+            setSearchProgress({ index: event.index, total: event.total })
+          }
+
+          if (event.type === 'complete') {
+            setRestaurants(event.restaurants ?? [])
+            setStats(event.stats ?? null)
+            setDiscoveryErrors(event.errors ?? [])
+            setSearchComplete(true)
+
+            // Track the saved batch
+            if (event.batchId) {
+              setActiveBatchId(event.batchId)
+              // Refresh batches list
+              fetchBatches()
+            }
+
+            // Update quota
+            if (event.quota) {
+              setQuota({
+                used: event.quota.used,
+                limit: event.quota.limit,
+                remaining: event.quota.remaining,
+                costToday: event.quota.costToday,
+                percentUsed: event.quota.limit > 0
+                  ? Math.min(Math.round((event.quota.used / event.quota.limit) * 100), 100)
+                  : 0,
+              })
+            }
+
+            // Select all by default
+            const allIds = new Set<string>(
+              (event.restaurants ?? []).map((r: DiscoveredRestaurant) => r.placeId),
+            )
+            setSelected(allIds)
+          }
+        } catch {
+          // skip unparseable lines
+        }
+      }
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -172,43 +337,13 @@ export function DiscoverForm() {
         buffer = lines.pop() ?? '' // Keep incomplete last line in buffer
 
         for (const line of lines) {
-          if (!line.trim()) continue
-          try {
-            const event = JSON.parse(line)
-
-            if (event.type === 'progress') {
-              setProgress(prev => [...prev, event as ProgressEntry])
-              setSearchProgress({ index: event.index, total: event.total })
-            }
-
-            if (event.type === 'complete') {
-              setRestaurants(event.restaurants ?? [])
-              setStats(event.stats ?? null)
-              setDiscoveryErrors(event.errors ?? [])
-
-              // Update quota
-              if (event.quota) {
-                setQuota({
-                  used: event.quota.used,
-                  limit: event.quota.limit,
-                  remaining: event.quota.remaining,
-                  costToday: event.quota.costToday,
-                  percentUsed: event.quota.limit > 0
-                    ? Math.min(Math.round((event.quota.used / event.quota.limit) * 100), 100)
-                    : 0,
-                })
-              }
-
-              // Select all by default
-              const allIds = new Set<string>(
-                (event.restaurants ?? []).map((r: DiscoveredRestaurant) => r.placeId),
-              )
-              setSelected(allIds)
-            }
-          } catch {
-            // skip unparseable lines
-          }
+          processLine(line)
         }
+      }
+
+      // Process any remaining data left in the buffer after stream closes
+      if (buffer.trim()) {
+        processLine(buffer)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Discovery failed')
@@ -216,7 +351,7 @@ export function DiscoverForm() {
       setSearching(false)
       setSearchProgress(null)
     }
-  }, [city, state, resultsPerCategory])
+  }, [city, state, resultsPerCategory, fetchBatches])
 
   /* ---- Phase 2: Toggle selection ---- */
   const toggleOne = (placeId: string) => {
@@ -268,12 +403,23 @@ export function DiscoverForm() {
       const data = await res.json()
       setImportResults(data.results ?? [])
       setImportSummary(data.summary ?? null)
+
+      // Mark batch as imported
+      if (activeBatchId) {
+        const allImported = selected.size === restaurants.length
+        await fetch(`/api/admin/restaurants/discover/batches/${activeBatchId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: allImported ? 'imported' : 'partial' }),
+        }).catch(() => {})
+        fetchBatches()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import failed')
     } finally {
       setImporting(false)
     }
-  }, [restaurants, selected])
+  }, [restaurants, selected, activeBatchId, fetchBatches])
 
   /* ---- Render helpers ---- */
   const hasResults = restaurants.length > 0
@@ -288,6 +434,9 @@ export function DiscoverForm() {
   const searchPercent = searchProgress
     ? Math.round((searchProgress.index / searchProgress.total) * 100)
     : 0
+
+  // Pending batches (not yet imported)
+  const pendingBatches = batches.filter(b => b.status === 'pending' || b.status === 'partial')
 
   return (
     <div className="space-y-6">
@@ -331,6 +480,71 @@ export function DiscoverForm() {
               Daily limit reached. Quota resets at midnight UTC.
             </div>
           )}
+        </div>
+      )}
+
+      {/* ═══════ Pending Batches Queue ═══════ */}
+      {pendingBatches.length > 0 && !hasResults && (
+        <div className="bg-gray-900 border border-yellow-500/20 rounded-2xl p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Clock className="w-4 h-4 text-yellow-400" />
+              Pending Discoveries ({pendingBatches.length})
+            </h2>
+            <span className="text-xs text-gray-500">Click to review &amp; import</span>
+          </div>
+
+          <div className="space-y-2">
+            {pendingBatches.map(batch => (
+              <div
+                key={batch.id}
+                className="flex items-center justify-between bg-gray-800/60 border border-gray-700/50 rounded-xl px-4 py-3 group hover:border-yellow-500/30 transition-colors"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => loadBatch(batch.id)}
+                    disabled={loadingBatchId === batch.id}
+                    className="flex items-center gap-2 text-sm text-gray-200 hover:text-yellow-300 transition-colors font-medium truncate disabled:opacity-50"
+                  >
+                    {loadingBatchId === batch.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    ) : (
+                      <FolderOpen className="w-4 h-4 shrink-0 text-yellow-400/70" />
+                    )}
+                    {batch.city}, {batch.state}
+                  </button>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span>{batch.uniqueRestaurants} restaurants</span>
+                    <span className="text-gray-700">·</span>
+                    <span>{timeAgo(batch.createdAt)}</span>
+                    {batch.status === 'partial' && (
+                      <>
+                        <span className="text-gray-700">·</span>
+                        <span className="text-yellow-400/70">partially imported</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    deleteBatch(batch.id)
+                  }}
+                  disabled={deletingBatchId === batch.id}
+                  className="text-gray-600 hover:text-red-400 transition-colors p-1 opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                  title="Delete batch"
+                >
+                  {deletingBatchId === batch.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -407,58 +621,84 @@ export function DiscoverForm() {
       </div>
 
       {/* ═══════ Search Progress ═══════ */}
-      {searching && searchProgress && (
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
+      {(searching || searchComplete) && progress.length > 0 && (
+        <div className={`bg-gray-900 border ${searchComplete ? 'border-green-500/30' : 'border-gray-800'} rounded-2xl p-5 space-y-3`}>
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white">
-              Searching categories…
+              {searchComplete ? '✓ Search Complete' : 'Searching categories…'}
             </h2>
             <span className="text-xs text-gray-400 font-mono">
-              {searchProgress.index}/{searchProgress.total} ({searchPercent}%)
+              {searchComplete
+                ? `${progress.length}/${progress.length} done`
+                : searchProgress
+                  ? `${searchProgress.index}/${searchProgress.total} (${searchPercent}%)`
+                  : ''}
             </span>
           </div>
 
           {/* Search progress bar */}
-          <div className="h-2 bg-gray-800 rounded-full overflow-hidden border border-yellow-500/30">
+          <div className={`h-2 bg-gray-800 rounded-full overflow-hidden border ${searchComplete ? 'border-green-500/30' : 'border-yellow-500/30'}`}>
             <div
-              className="h-full bg-yellow-500 rounded-full transition-all duration-300"
-              style={{ width: `${searchPercent}%` }}
+              className={`h-full ${searchComplete ? 'bg-green-500' : 'bg-yellow-500'} rounded-full transition-all duration-300`}
+              style={{ width: searchComplete ? '100%' : `${searchPercent}%` }}
             />
           </div>
 
+          {/* Completion summary */}
+          {searchComplete && stats && (
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="bg-green-500/15 border border-green-500/30 rounded-lg px-2.5 py-1 text-green-400">
+                {stats.uniqueRestaurants} unique restaurants found
+              </span>
+              <span className="bg-gray-800 border border-gray-700/50 rounded-lg px-2.5 py-1 text-gray-400">
+                {stats.totalPlacesFound} total results across {stats.categoriesSearched} categories
+              </span>
+              {activeBatchId && (
+                <span className="bg-blue-500/15 border border-blue-500/30 rounded-lg px-2.5 py-1 text-blue-400">
+                  Saved — you can leave and come back later
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Live log */}
-          <div
-            ref={logRef}
-            className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-3 max-h-48 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-0.5"
-          >
-            {progress.map((p, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-gray-600 w-8 text-right shrink-0">{p.index}</span>
-                {p.error ? (
-                  <>
-                    <span className="text-red-400">✗</span>
-                    <span className="text-red-400/70">{p.category}</span>
-                    <span className="text-red-500/50 text-[10px]">error</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-green-400">✓</span>
-                    <span className="text-gray-300">{p.category}</span>
-                    <span className="text-gray-600">—</span>
-                    <span className="text-yellow-400/70">{p.found} found</span>
-                    <span className="text-gray-600 ml-auto">{p.uniqueSoFar} unique</span>
-                  </>
-                )}
-              </div>
-            ))}
-            {searching && progress.length > 0 && (
-              <div className="flex items-center gap-2 text-gray-500">
-                <span className="w-8" />
-                <Loader2 className="w-3 h-3 animate-spin" />
-                <span>Searching next category…</span>
-              </div>
-            )}
-          </div>
+          <details open={!searchComplete} className="group">
+            <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-300 transition-colors select-none">
+              {searchComplete ? 'Show search log' : 'Search log'}
+            </summary>
+            <div
+              ref={logRef}
+              className="mt-2 bg-gray-800/60 border border-gray-700/50 rounded-xl p-3 max-h-48 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-0.5"
+            >
+              {progress.map((p, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-gray-600 w-8 text-right shrink-0">{p.index}</span>
+                  {p.error ? (
+                    <>
+                      <span className="text-red-400">✗</span>
+                      <span className="text-red-400/70">{p.category}</span>
+                      <span className="text-red-500/50 text-[10px]">error</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-green-400">✓</span>
+                      <span className="text-gray-300">{p.category}</span>
+                      <span className="text-gray-600">—</span>
+                      <span className="text-yellow-400/70">{p.found} found</span>
+                      <span className="text-gray-600 ml-auto">{p.uniqueSoFar} unique</span>
+                    </>
+                  )}
+                </div>
+              ))}
+              {searching && progress.length > 0 && (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <span className="w-8" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Searching next category…</span>
+                </div>
+              )}
+            </div>
+          </details>
         </div>
       )}
 
@@ -473,6 +713,13 @@ export function DiscoverForm() {
       {/* ═══════ Phase 2: Results Table ═══════ */}
       {hasResults && !hasImportResults && (
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+          {/* Header with city name when viewing a loaded batch */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white">
+              {activeBatchId && !searchComplete ? `${city}, ${state} — Review & Import` : 'Discovered Restaurants'}
+            </h2>
+          </div>
+
           {/* Stats bar */}
           {stats && (
             <div className="flex flex-wrap items-center gap-3 text-xs">
@@ -594,22 +841,31 @@ export function DiscoverForm() {
             </table>
           </div>
 
-          {/* Import button */}
-          <button
-            type="button"
-            onClick={handleImport}
-            disabled={importing || selected.size === 0}
-            className="flex items-center justify-center gap-2 w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 font-semibold py-3 rounded-xl transition-colors text-sm"
-          >
-            {importing ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Importing {selected.size} restaurants…
-              </>
-            ) : (
-              <>Import {selected.size} Selected Restaurants</>
-            )}
-          </button>
+          {/* Action buttons */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleImport}
+              disabled={importing || selected.size === 0}
+              className="flex items-center justify-center gap-2 flex-1 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 font-semibold py-3 rounded-xl transition-colors text-sm"
+            >
+              {importing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Importing {selected.size} restaurants…
+                </>
+              ) : (
+                <>Import {selected.size} Selected Restaurants</>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={resetView}
+              className="px-4 py-3 bg-gray-800 border border-gray-700 hover:border-gray-600 text-gray-400 hover:text-white rounded-xl transition-colors text-sm"
+            >
+              Back
+            </button>
+          </div>
         </div>
       )}
 
@@ -685,23 +941,13 @@ export function DiscoverForm() {
             </table>
           </div>
 
-          {/* Search again button */}
+          {/* Back to queue */}
           <button
             type="button"
-            onClick={() => {
-              setRestaurants([])
-              setStats(null)
-              setDiscoveryErrors([])
-              setSelected(new Set())
-              setImportResults(null)
-              setImportSummary(null)
-              setError(null)
-              setProgress([])
-              fetchQuota()
-            }}
+            onClick={resetView}
             className="text-sm text-gray-400 hover:text-yellow-300 transition-colors"
           >
-            ← Search another city
+            ← Back to Discover
           </button>
         </div>
       )}
