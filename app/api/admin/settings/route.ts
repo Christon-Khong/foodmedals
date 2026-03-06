@@ -14,7 +14,6 @@ export async function GET() {
 
   return NextResponse.json({
     maxCommunityScore: row?.maxCommunityScore ?? DEFAULT_MAX_COMMUNITY_SCORE,
-    placesApiDailyLimit: row?.placesApiDailyLimit ?? 200,
     apiVerificationReserve: row?.apiVerificationReserve ?? 40,
     discoverMinRating: row?.discoverMinRating ?? 4.5,
     discoverMinReviews: row?.discoverMinReviews ?? 100,
@@ -40,17 +39,6 @@ export async function PUT(req: NextRequest) {
       )
     }
     updateData.maxCommunityScore = val
-  }
-
-  if (body.placesApiDailyLimit !== undefined) {
-    const val = Number(body.placesApiDailyLimit)
-    if (!Number.isInteger(val) || val < 1 || val > 10000) {
-      return NextResponse.json(
-        { error: 'placesApiDailyLimit must be between 1 and 10000' },
-        { status: 400 },
-      )
-    }
-    updateData.placesApiDailyLimit = val
   }
 
   if (body.apiVerificationReserve !== undefined) {
@@ -101,7 +89,6 @@ export async function PUT(req: NextRequest) {
 
   return NextResponse.json({
     maxCommunityScore: row.maxCommunityScore,
-    placesApiDailyLimit: row.placesApiDailyLimit,
     apiVerificationReserve: row.apiVerificationReserve,
     discoverMinRating: row.discoverMinRating,
     discoverMinReviews: row.discoverMinReviews,

@@ -128,7 +128,6 @@ export function DiscoverForm() {
 
   // Settings panel
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [settingsDailyLimit, setSettingsDailyLimit] = useState<number>(200)
   const [settingsReserve, setSettingsReserve] = useState<number>(40)
   const [settingsMinRating, setSettingsMinRating] = useState<number>(4.5)
   const [settingsMinReviews, setSettingsMinReviews] = useState<number>(100)
@@ -163,7 +162,6 @@ export function DiscoverForm() {
         // which would overwrite the user's in-progress edits)
         if (!settingsInitialized.current) {
           settingsInitialized.current = true
-          setSettingsDailyLimit(data.limit)
           setSettingsReserve(data.verificationReserve ?? 40)
           setSettingsMinRating(data.minRating ?? 4.5)
           setSettingsMinReviews(data.minReviews ?? 100)
@@ -245,7 +243,6 @@ export function DiscoverForm() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          placesApiDailyLimit: settingsDailyLimit,
           apiVerificationReserve: settingsReserve,
           discoverMinRating: settingsMinRating,
           discoverMinReviews: settingsMinReviews,
@@ -265,7 +262,7 @@ export function DiscoverForm() {
     } finally {
       setSavingSettings(false)
     }
-  }, [settingsDailyLimit, settingsReserve, settingsMinRating, settingsMinReviews, fetchQuota])
+  }, [settingsReserve, settingsMinRating, settingsMinReviews, fetchQuota])
 
   /* ---- Load a saved batch ---- */
   const loadBatch = useCallback(async (batchId: string) => {
@@ -623,17 +620,13 @@ export function DiscoverForm() {
               Settings
             </summary>
             <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {/* Daily API Limit */}
+              {/* Daily API Limit (computed) */}
               <div>
-                <label className="block text-[11px] text-gray-500 mb-1">Daily API limit</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={10000}
-                  value={settingsDailyLimit}
-                  onChange={e => setSettingsDailyLimit(Number(e.target.value))}
-                  className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 font-mono"
-                />
+                <label className="block text-[11px] text-gray-500 mb-1">Daily limit (auto)</label>
+                <div className="w-full bg-gray-800/50 border border-gray-700/50 text-gray-400 rounded-lg px-2.5 py-1.5 text-sm font-mono">
+                  {quota?.limit ?? '—'}
+                </div>
+                <p className="text-[10px] text-gray-600 mt-0.5">$200 ÷ days in month</p>
               </div>
 
               {/* Verification Reserve */}

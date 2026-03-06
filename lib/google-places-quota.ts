@@ -1,7 +1,24 @@
 import { prisma } from './prisma'
 
+const GOOGLE_MONTHLY_CREDIT = 200   // $200 free credit per calendar month
 const COST_PER_PLACES_CALL = 0.032  // Google Places API (Text Search)
 const COST_PER_GEOCODE_CALL = 0.005 // Google Geocoding API
+
+/**
+ * Get the number of days in the current month (UTC).
+ */
+function getDaysInCurrentMonth(): number {
+  const now = new Date()
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate()
+}
+
+/**
+ * Compute the daily Places API call limit based on the current month's length.
+ * $200 monthly credit / $0.032 per call / days in month.
+ */
+export function getDailyPlacesLimit(): number {
+  return Math.floor(GOOGLE_MONTHLY_CREDIT / COST_PER_PLACES_CALL / getDaysInCurrentMonth())
+}
 
 export type QuotaStatus = {
   used: number
@@ -56,7 +73,7 @@ async function getOrResetSettings() {
 export async function getQuotaStatus(): Promise<QuotaStatus> {
   const row = await getOrResetSettings()
   const used = row.placesApiCallsToday
-  const limit = row.placesApiDailyLimit
+  const limit = getDailyPlacesLimit()
   const remaining = Math.max(0, limit - used)
   const percentUsed = limit > 0 ? Math.round((used / limit) * 100) : 0
   const geocodeUsed = row.geocodeCallsToday
@@ -96,7 +113,7 @@ export async function checkAndIncrementQuota(
   remaining: number
 }> {
   const row = await getOrResetSettings()
-  const limit = row.placesApiDailyLimit
+  const limit = getDailyPlacesLimit()
   const currentUsed = row.placesApiCallsToday
 
   if (currentUsed + callCount + reserve > limit) {
