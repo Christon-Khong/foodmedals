@@ -610,13 +610,13 @@ export function DiscoverForm() {
                   </div>
                 </div>
                 {/* Verification reserve info */}
-                {(quota.verificationReserve ?? 0) > 0 && (
+                {settingsReserve > 0 && (
                   <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
                     <span>
-                      {quota.verificationReserve} reserved for address verification
+                      {settingsReserve} reserved for address verification
                     </span>
                     <span>
-                      {Math.max(0, (quota.geocodeRemaining ?? 0) - (quota.verificationReserve ?? 0))} available for other geocoding
+                      {Math.max(0, (quota.geocodeRemaining ?? 0) - settingsReserve)} available for other geocoding
                     </span>
                   </div>
                 )}
