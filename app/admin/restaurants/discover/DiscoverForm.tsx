@@ -507,6 +507,7 @@ export function DiscoverForm() {
         zip: r.zip,
         lat: r.lat,
         lng: r.lng,
+        placeId: r.placeId,
         websiteUrl: r.websiteUrl,
         categorySlugs: r.categorySlugs,
       }))

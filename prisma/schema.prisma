@@ -71,6 +71,7 @@ model Restaurant {
   lat         Float?
   lng         Float?
   description String?
+  googlePlaceId String? @unique @map("google_place_id")
   websiteUrl  String?  @map("website_url")
   imageUrl    String?  @map("image_url")
   status      String   @default("active") // active | pending_review | inactive | closed

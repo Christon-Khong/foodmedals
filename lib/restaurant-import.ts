@@ -10,6 +10,8 @@ export type RestaurantImportEntry = {
   websiteUrl?: string
   description?: string
   categorySlugs?: string[]
+  /** Google Places ID — used for deduplication and stored on the restaurant */
+  placeId?: string
   /** Pre-geocoded coordinates (e.g. from Google Places) — skips geocoding when provided */
   lat?: number
   lng?: number
@@ -90,14 +92,26 @@ export async function importRestaurants(
     const zip = entry.zip.trim()
 
     try {
-      // Check for duplicates (name + city, case-insensitive)
-      const duplicate = await prisma.restaurant.findFirst({
-        where: {
-          name: { equals: name, mode: 'insensitive' },
-          city: { equals: city, mode: 'insensitive' },
-        },
-        select: { id: true, name: true, slug: true },
-      })
+      // Check for duplicates: placeId first (exact match), then name+city+address
+      let duplicate: { id: string; name: string; slug: string } | null = null
+
+      if (entry.placeId) {
+        duplicate = await prisma.restaurant.findUnique({
+          where: { googlePlaceId: entry.placeId },
+          select: { id: true, name: true, slug: true },
+        })
+      }
+
+      if (!duplicate) {
+        duplicate = await prisma.restaurant.findFirst({
+          where: {
+            name: { equals: name, mode: 'insensitive' },
+            city: { equals: city, mode: 'insensitive' },
+            address: { equals: address, mode: 'insensitive' },
+          },
+          select: { id: true, name: true, slug: true },
+        })
+      }
 
       if (duplicate) {
         // Merge new categories into the existing restaurant
@@ -166,6 +180,7 @@ export async function importRestaurants(
           zip,
           lat,
           lng,
+          googlePlaceId: entry.placeId || null,
           websiteUrl: entry.websiteUrl?.trim() || null,
           description: entry.description?.trim() || null,
           status: 'active',
