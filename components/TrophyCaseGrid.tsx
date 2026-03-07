@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic'
 import { CategoryIcon } from '@/components/CategoryIcon'
 const GoldCommentModal = dynamic(() => import('@/components/GoldCommentModal').then(m => m.GoldCommentModal), { ssr: false })
 import { LayoutGrid, Map, Lock, Search, X, Plus, TrendingUp, Quote, ThumbsUp, MessageSquare, Pencil, EyeOff } from 'lucide-react'
+import { getNextUserTier, USER_TIERS } from '@/lib/user-points'
 
 const ProfileMapInner = dynamic(() => import('./ProfileMapInner'), {
   ssr: false,
@@ -64,6 +65,7 @@ type Props = {
   isAdmin?: boolean
   totalCategories?: number
   rankedCount?: number
+  userPoints?: number
   unrankedCategories?: UnrankedCategory[]
   userCity?: string
 }
@@ -257,45 +259,17 @@ function CategoryCard({ catMedals, isOwner, isAdmin, onOpenComment, onHideCommen
   )
 }
 
-const TIER_THRESHOLDS = [
-  { min: 80, label: 'Oracle' },
-  { min: 60, label: 'Vanguard' },
-  { min: 45, label: 'The Palate' },
-  { min: 30, label: 'Grand Curator' },
-  { min: 20, label: 'Master Critic' },
-  { min: 12, label: 'Local Legend' },
-  { min:  7, label: 'Silver Spoon' },
-  { min:  4, label: 'Flavor Chaser' },
-  { min:  2, label: 'Food Scout' },
-  { min:  1, label: 'Taste Tester' },
-]
-
-function getNextTierInfo(rankedCount: number): { needed: number; tierName: string } | null {
-  // Find the next tier above current count
-  for (let i = TIER_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (rankedCount < TIER_THRESHOLDS[i].min) {
-      return { needed: TIER_THRESHOLDS[i].min - rankedCount, tierName: TIER_THRESHOLDS[i].label }
-    }
-  }
-  return null // already at max tier
-}
-
-function getCurrentTierLabel(rankedCount: number): string | null {
-  for (const tier of TIER_THRESHOLDS) {
-    if (rankedCount >= tier.min) return tier.label
-  }
-  return null
-}
-
-function CategoryProgressBar({ rankedCount, totalCategories }: { rankedCount: number; totalCategories: number }) {
-  const pct = totalCategories > 0 ? Math.round((rankedCount / totalCategories) * 100) : 0
-  const nextTier = getNextTierInfo(rankedCount)
+function PointsProgressBar({ points }: { points: number }) {
+  const nextTier = getNextUserTier(points)
+  // Find current and next tier thresholds for the progress bar
+  const maxTierPts = USER_TIERS[0].min // Oracle threshold
+  const pct = Math.min(100, Math.round((points / maxTierPts) * 100))
 
   return (
     <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-5 mb-5">
       <div className="flex items-center justify-between mb-2.5">
         <p className="text-sm font-semibold text-gray-800">
-          You&apos;ve ranked <span className="text-yellow-700">{rankedCount}</span> of {totalCategories} categories
+          <span className="text-yellow-700">{points}</span> critic points
         </p>
         <span className="text-xs font-bold text-yellow-700">{pct}%</span>
       </div>
@@ -307,10 +281,10 @@ function CategoryProgressBar({ rankedCount, totalCategories }: { rankedCount: nu
       </div>
       {nextTier && (
         <p className="text-xs text-gray-500 mt-2">
-          {nextTier.needed} more to reach <span className="font-semibold text-yellow-700">{nextTier.tierName}</span>
+          {nextTier.needed} more point{nextTier.needed !== 1 ? 's' : ''} to reach <span className="font-semibold text-yellow-700">{nextTier.tierName}</span>
         </p>
       )}
-      {!nextTier && rankedCount > 0 && (
+      {!nextTier && points > 0 && (
         <p className="text-xs text-amber-700 font-medium mt-2">
           You&apos;ve reached Oracle — the highest rank!
         </p>
@@ -373,7 +347,7 @@ function SuggestCategoryCard() {
   )
 }
 
-export function TrophyCaseGrid({ byCategory, year, isOwner, isAdmin, totalCategories, rankedCount, unrankedCategories, userCity }: Props) {
+export function TrophyCaseGrid({ byCategory, year, isOwner, isAdmin, totalCategories, rankedCount, userPoints, unrankedCategories, userCity }: Props) {
   const [view, setView] = useState<'grid' | 'map'>('grid')
   const [search, setSearch] = useState('')
   const [commentPrompt, setCommentPrompt] = useState<{
@@ -543,9 +517,9 @@ export function TrophyCaseGrid({ byCategory, year, isOwner, isAdmin, totalCatego
       )}
 
       {/* Owner engagement features */}
-      {isOwner && totalCategories != null && rankedCount != null && (
+      {isOwner && userPoints != null && (
         <div className="mt-6">
-          <CategoryProgressBar rankedCount={rankedCount} totalCategories={totalCategories} />
+          <PointsProgressBar points={userPoints} />
         </div>
       )}
 
