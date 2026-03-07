@@ -165,7 +165,7 @@ export function LeaderboardResults({
   goldCommentText,
   onOpenComment,
 }: Props) {
-  if (loading) return <Skeleton />
+  if (loading && rows.length === 0) return <Skeleton />
 
   const medalled = rows.filter(r => r.totalScore > 0)
   const ranks = computeRanks(medalled)
@@ -177,7 +177,7 @@ export function LeaderboardResults({
   const fullRanks = computeRanks(rows)
 
   return (
-    <>
+    <div className={loading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
       {/* Map + Podium */}
       <div>
         <h2 className="text-center text-xs font-bold text-gray-500 pt-6 pb-2 tracking-wide uppercase">
@@ -318,6 +318,6 @@ export function LeaderboardResults({
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

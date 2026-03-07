@@ -274,7 +274,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── Podium entrance animations ────────────────────────────────────────── */
 @keyframes podium-rise {
-  from { height: 0; }
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
 }
 
 @keyframes podium-fade-in {

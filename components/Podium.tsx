@@ -185,6 +185,7 @@ function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
           height: cfg.blockHeight,
           background:  cfg.gradient,
           boxShadow:   `3px 6px 0 ${cfg.shadowColor}`,
+          transformOrigin: 'bottom',
           animation: `podium-rise 0.65s cubic-bezier(0.34, 1.2, 0.64, 1) ${delay}s both`,
         }}
       >
