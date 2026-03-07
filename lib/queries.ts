@@ -30,6 +30,47 @@ export async function getHomepageStats() {
   return { totalMedals, totalRestaurants, totalCategories }
 }
 
+// ─── Annual Awards ───────────────────────────────────────────────────────────
+
+export type AnnualAwardRow = {
+  id:           string
+  year:         number
+  rank:         number
+  geoScope:     string
+  geoValue:     string | null
+  geoState:     string | null
+  totalScore:   number
+  categoryName: string
+  categorySlug: string
+  iconEmoji:    string
+  iconUrl:      string | null
+}
+
+export async function getRestaurantAnnualAwards(restaurantId: string): Promise<AnnualAwardRow[]> {
+  const rows = await prisma.annualAward.findMany({
+    where: { restaurantId },
+    include: {
+      foodCategory: {
+        select: { name: true, slug: true, iconEmoji: true, iconUrl: true },
+      },
+    },
+    orderBy: [{ year: 'desc' }, { rank: 'asc' }],
+  })
+  return rows.map(r => ({
+    id:           r.id,
+    year:         r.year,
+    rank:         r.rank,
+    geoScope:     r.geoScope,
+    geoValue:     r.geoValue,
+    geoState:     r.geoState,
+    totalScore:   r.totalScore,
+    categoryName: r.foodCategory.name,
+    categorySlug: r.foodCategory.slug,
+    iconEmoji:    r.foodCategory.iconEmoji,
+    iconUrl:      r.foodCategory.iconUrl,
+  }))
+}
+
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
 
 export type LeaderboardRow = {

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { motion, useInView } from 'framer-motion'
 
 type Stats = {
   totalMedals: number
@@ -11,24 +10,35 @@ type Stats = {
 
 function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-50px' })
   const [display, setDisplay] = useState(0)
+  const hasAnimated = useRef(false)
 
   useEffect(() => {
-    if (!inView) return
-    const duration = 1200
-    const steps = 40
-    const increment = value / steps
-    let current = 0
-    let step = 0
-    const timer = setInterval(() => {
-      step++
-      current = Math.min(Math.round(increment * step), value)
-      setDisplay(current)
-      if (step >= steps) clearInterval(timer)
-    }, duration / steps)
-    return () => clearInterval(timer)
-  }, [inView, value])
+    const el = ref.current
+    if (!el || hasAnimated.current) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting || hasAnimated.current) return
+        hasAnimated.current = true
+        observer.disconnect()
+
+        const duration = 1200
+        const start = performance.now()
+        const animate = (now: number) => {
+          const progress = Math.min((now - start) / duration, 1)
+          // Ease-out cubic
+          const eased = 1 - Math.pow(1 - progress, 3)
+          setDisplay(Math.round(eased * value))
+          if (progress < 1) requestAnimationFrame(animate)
+        }
+        requestAnimationFrame(animate)
+      },
+      { rootMargin: '-50px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [value])
 
   return (
     <span ref={ref}>
@@ -48,14 +58,11 @@ export function StatsBar({ stats }: { stats: Stats }) {
     <section className="bg-white/80 backdrop-blur-sm border-b border-amber-100">
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="grid grid-cols-3 divide-x divide-amber-100">
-          {items.map(item => (
-            <motion.div
+          {items.map((item, i) => (
+            <div
               key={item.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-col items-center text-center px-2"
+              className="flex flex-col items-center text-center px-2 animate-[fadeInUp_0.5s_ease_both]"
+              style={{ animationDelay: `${i * 100}ms` }}
             >
               <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-heading tabular-nums mb-1">
                 <AnimatedNumber value={item.value} />
@@ -63,7 +70,7 @@ export function StatsBar({ stats }: { stats: Stats }) {
               <span className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {item.label}
               </span>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

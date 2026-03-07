@@ -44,6 +44,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Comments are only for gold medals' }, { status: 400 })
   }
 
+  const currentUTCYear = new Date().getUTCFullYear()
+  if (medal.year < currentUTCYear) {
+    return NextResponse.json({ error: 'Comments on past-year medals are locked' }, { status: 403 })
+  }
+
   // Process photo if provided
   let photoUrl: string | null | undefined = undefined // undefined = don't change
   if (photo && photo.size > 0) {

@@ -1,18 +1,20 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getAllActiveCategories, getTopRestaurantsPerCategory, getHomepageStats } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
-import { TrendingCarousel } from '@/components/TrendingCarousel'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { HeroSearch } from '@/components/HeroSearch'
 import { HeroVideo } from '@/components/HeroVideo'
 import { RotatingCategoryText } from '@/components/RotatingCategoryText'
-import { StatsBar } from '@/components/StatsBar'
-import { HowItWorks } from '@/components/HowItWorks'
 import { Footer } from '@/components/Footer'
+
+// Lazy-load below-fold client components to reduce initial JS bundle
+const StatsBar = dynamic(() => import('@/components/StatsBar').then(m => ({ default: m.StatsBar })))
+const TrendingCarousel = dynamic(() => import('@/components/TrendingCarousel').then(m => ({ default: m.TrendingCarousel })))
+const HowItWorks = dynamic(() => import('@/components/HowItWorks').then(m => ({ default: m.HowItWorks })))
 
 export const metadata: Metadata = {
   title: 'FoodMedals — Community Food Rankings for Utah Restaurants',

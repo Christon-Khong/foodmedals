@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getRestaurantBySlug, getRestaurantTrophies, getCategorySuggestions, getRestaurantCategoryRankings, getRestaurantHighlights } from '@/lib/queries'
+import { getRestaurantBySlug, getRestaurantTrophies, getCategorySuggestions, getRestaurantCategoryRankings, getRestaurantHighlights, getRestaurantAnnualAwards } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { CategoryIcon } from '@/components/CategoryIcon'
@@ -13,6 +13,7 @@ import { CategoryRankingBadges } from '@/components/CategoryRankingBadges'
 import { ReportAddressButton } from '@/components/ReportAddressButton'
 import { ReportClosedButton } from '@/components/ReportClosedButton'
 import { RestaurantHighlights } from '@/components/RestaurantHighlights'
+import { AnnualAwardBadges } from '@/components/AnnualAwardBadges'
 import { CommunityScore } from '@/components/CommunityScore'
 import { getTierCardAura } from '@/lib/tiers'
 import { getMaxCommunityScore } from '@/lib/settings'
@@ -54,7 +55,7 @@ export default async function RestaurantPage({
 
   const year = new Date().getFullYear()
 
-  const [trophies, categorySuggestions, allCategories, rankings, highlights, maxCommunityScore] = await Promise.all([
+  const [trophies, categorySuggestions, allCategories, rankings, highlights, maxCommunityScore, annualAwards] = await Promise.all([
     getRestaurantTrophies(restaurant.id),
     getCategorySuggestions(restaurant.id),
     prisma.foodCategory.findMany({
@@ -65,6 +66,7 @@ export default async function RestaurantPage({
     getRestaurantCategoryRankings(restaurant.id, year),
     getRestaurantHighlights(restaurant.id),
     getMaxCommunityScore(),
+    getRestaurantAnnualAwards(restaurant.id),
   ])
 
   const thisYearTrophies = trophies.filter(t => t.year === year)
@@ -205,7 +207,7 @@ export default async function RestaurantPage({
               {restaurant.categories.map(rc => (
                 <Link
                   key={rc.id}
-                  href={`/categories/${rc.foodCategory.slug}`}
+                  href={`/categories/${rc.foodCategory.slug}?city=${encodeURIComponent(restaurant.city)}&state=${encodeURIComponent(restaurant.state)}`}
                   className="flex items-center gap-1 text-xs bg-amber-50 border border-amber-200 rounded-full px-3 py-1 text-gray-700 hover:border-yellow-400 transition-colors"
                 >
                   <span><CategoryIcon slug={rc.foodCategory.slug} iconEmoji={rc.foodCategory.iconEmoji} iconUrl={rc.foodCategory.iconUrl} /></span>
@@ -230,6 +232,11 @@ export default async function RestaurantPage({
         {/* ── Top Rankings ──────────────────────────────────────────── */}
         {rankings.length > 0 && (
           <CategoryRankingBadges rankings={rankings} year={year} maxCommunityScore={maxCommunityScore} />
+        )}
+
+        {/* ── Annual Awards ────────────────────────────────────────── */}
+        {annualAwards.length > 0 && (
+          <AnnualAwardBadges awards={annualAwards} />
         )}
 
         {/* ── Highlights ────────────────────────────────────────────── */}
@@ -271,7 +278,7 @@ export default async function RestaurantPage({
                 return (
                   <Link
                     key={t.categoryId}
-                    href={`/categories/${t.categorySlug}`}
+                    href={`/categories/${t.categorySlug}?city=${encodeURIComponent(restaurant.city)}&state=${encodeURIComponent(restaurant.state)}`}
                     className={`group bg-white rounded-2xl border border-amber-100 hover:border-yellow-300 overflow-hidden transition-all hover:shadow-md ${cardAura}`}
                   >
                     {/* Top: Hero medal + category */}
@@ -373,7 +380,7 @@ export default async function RestaurantPage({
                     <tr key={`${t.categoryId}-${t.year}`} className="hover:bg-amber-50 transition-colors">
                       <td className="px-4 py-2.5 font-medium text-gray-600">{t.year}</td>
                       <td className="px-4 py-2.5">
-                        <Link href={`/categories/${t.categorySlug}`} className="flex items-center gap-1.5 hover:text-yellow-700 transition-colors text-gray-700">
+                        <Link href={`/categories/${t.categorySlug}?city=${encodeURIComponent(restaurant.city)}&state=${encodeURIComponent(restaurant.state)}`} className="flex items-center gap-1.5 hover:text-yellow-700 transition-colors text-gray-700">
                           <span><CategoryIcon slug={t.categorySlug} iconEmoji={t.iconEmoji} iconUrl={t.iconUrl} /></span>
                           <span>{t.categoryName}</span>
                         </Link>

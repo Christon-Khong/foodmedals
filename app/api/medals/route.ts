@@ -19,9 +19,12 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid medal type' }, { status: 400 })
   }
 
-  const currentYear = new Date().getFullYear()
-  if (typeof year !== 'number' || year < 2020 || year > currentYear + 1) {
+  const currentUTCYear = new Date().getUTCFullYear()
+  if (typeof year !== 'number' || year < 2020 || year > currentUTCYear + 1) {
     return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
+  }
+  if (year < currentUTCYear) {
+    return NextResponse.json({ error: 'Medals for past years are locked and cannot be changed' }, { status: 403 })
   }
 
   const userId = session.user.id
@@ -140,9 +143,12 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid medal type' }, { status: 400 })
   }
 
-  const currentYear = new Date().getFullYear()
-  if (typeof year !== 'number' || year < 2020 || year > currentYear + 1) {
+  const currentUTCYear = new Date().getUTCFullYear()
+  if (typeof year !== 'number' || year < 2020 || year > currentUTCYear + 1) {
     return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
+  }
+  if (year < currentUTCYear) {
+    return NextResponse.json({ error: 'Medals for past years are locked and cannot be removed' }, { status: 403 })
   }
 
   // If deleting a gold medal, disconnect & deactivate its comment (preserved for re-award)

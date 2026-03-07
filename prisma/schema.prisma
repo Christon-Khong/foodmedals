@@ -88,6 +88,7 @@ model Restaurant {
   addressReports     AddressReport[]
   closureReports     ClosureReport[]
   goldMedalComments  GoldMedalComment[]
+  annualAwards       AnnualAward[]
 
   @@index([status, city, state])
   @@map("restaurants")
@@ -111,6 +112,7 @@ model FoodCategory {
   medals             Medal[]
   categorySuggVotes  CategorySuggestionVote[]
   goldMedalComments  GoldMedalComment[]
+  annualAwards       AnnualAward[]
 
   @@index([parentId])
   @@map("food_categories")
@@ -332,4 +334,25 @@ model AdminSettings {
   updatedAt              DateTime @updatedAt    @map("updated_at")
 
   @@map("admin_settings")
+}
+
+model AnnualAward {
+  id             String   @id @default(cuid())
+  year           Int
+  restaurantId   String   @map("restaurant_id")
+  foodCategoryId String   @map("food_category_id")
+  rank           Int      // 1, 2, or 3
+  geoScope       String   @map("geo_scope")   // "overall" | "state" | "city"
+  geoValue       String?  @map("geo_value")   // null for overall, state code for state, city name for city
+  geoState       String?  @map("geo_state")   // state code when geoScope="city" (disambiguates city names)
+  totalScore     Int      @map("total_score")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id])
+  foodCategory FoodCategory @relation(fields: [foodCategoryId], references: [id])
+
+  @@unique([year, foodCategoryId, geoScope, geoValue, geoState, rank])
+  @@index([restaurantId])
+  @@index([year])
+  @@map("annual_awards")
 }

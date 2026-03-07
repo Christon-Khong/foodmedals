@@ -1,8 +1,8 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
 
 const steps = [
   { icon: '🍔', step: '1', title: 'Browse Categories', href: '/categories', desc: 'Burgers, tacos, pizza, wings — dozens of food categories.' },
@@ -11,27 +11,36 @@ const steps = [
 ]
 
 export function HowItWorks() {
+  const sectionRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('is-visible')
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '-50px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <section className="bg-white border-b border-amber-100">
+    <section ref={sectionRef} className="bg-white border-b border-amber-100 how-it-works-section">
       <div className="max-w-4xl mx-auto px-4 py-12 sm:py-16">
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ duration: 0.5 }}
-          className="text-center text-2xl font-bold text-gray-900 mb-10"
-        >
+        <h2 className="text-center text-2xl font-bold text-gray-900 mb-10 how-it-works-heading">
           How it works
-        </motion.h2>
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
           {steps.map((item, i) => (
-            <motion.div
+            <div
               key={item.step}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.5, delay: i * 0.15 }}
-              className="text-center"
+              className="text-center how-it-works-step"
+              style={{ '--step-delay': `${i * 150}ms` } as React.CSSProperties}
             >
               <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm border border-amber-100">
                 {item.icon === 'medal' ? (
@@ -45,7 +54,7 @@ export function HowItWorks() {
                 <h3>{item.title}</h3>
               </Link>
               <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

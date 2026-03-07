@@ -4,6 +4,10 @@
     {
       "path": "/api/admin/restaurants/discover/queue/process",
       "schedule": "5 0 * * *"
+    },
+    {
+      "path": "/api/cron/generate-awards",
+      "schedule": "0 1 1 1 *"
     }
   ]
 }

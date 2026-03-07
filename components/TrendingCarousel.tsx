@@ -203,11 +203,21 @@ export function TrendingCarousel({ categories, year }: Props) {
     const el = scrollRef.current
     if (!el) return
 
-    // Auto-scroll ~1px every 30ms ≈ 33px/s
-    const interval = setInterval(() => {
-      if (userInteracting.current || isResetting.current) return
-      el.scrollLeft += 1
-    }, 30)
+    // Auto-scroll using rAF — ~33px/s
+    let rafId: number
+    let lastTime = 0
+    const speed = 0.033 // px per ms (≈33px/s)
+    const tick = (time: number) => {
+      if (lastTime) {
+        const delta = time - lastTime
+        if (!userInteracting.current && !isResetting.current) {
+          el.scrollLeft += speed * delta
+        }
+      }
+      lastTime = time
+      rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
 
     // Pause on hover / touch
     const onEnter = () => pauseAutoScroll()
@@ -230,7 +240,7 @@ export function TrendingCarousel({ categories, year }: Props) {
     el.addEventListener('wheel', onWheel, { passive: true })
 
     return () => {
-      clearInterval(interval)
+      cancelAnimationFrame(rafId)
       clearTimeout(resumeTimer.current)
       clearTimeout(scrollTimeout)
       el.removeEventListener('mouseenter', onEnter)

@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   // Verify the medal belongs to this user and is gold
   const medal = await prisma.medal.findUnique({
     where: { id: medalId },
-    select: { userId: true, medalType: true },
+    select: { userId: true, medalType: true, year: true },
   })
 
   if (!medal || medal.userId !== session.user.id) {
@@ -26,6 +26,11 @@ export async function POST(req: Request) {
 
   if (medal.medalType !== 'gold') {
     return NextResponse.json({ error: 'Only gold medals can be Crown Jewel' }, { status: 400 })
+  }
+
+  const currentUTCYear = new Date().getUTCFullYear()
+  if (medal.year < currentUTCYear) {
+    return NextResponse.json({ error: 'Cannot set a past-year medal as Crown Jewel' }, { status: 403 })
   }
 
   await prisma.user.update({
