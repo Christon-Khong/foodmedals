@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/admin/restaurants/discover/queue/process",
-      "schedule": "5 0 * * *"
+      "schedule": "20 5 * * *"
     }
   ]
 }
