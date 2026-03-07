@@ -1,0 +1,35 @@
+name: Discover Queue
+
+# Runs daily to process the restaurant discover queue.
+# Schedule is in UTC — update via admin Deploy Schedule button.
+on:
+  schedule:
+    - cron: '43 5 * * *'    # 5:43 AM UTC = 10:43 PM MST
+  workflow_dispatch:         # Allow manual trigger from Actions tab
+
+jobs:
+  process:
+    name: Process Discover Queue
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Call process endpoint
+        run: |
+          RESPONSE=$(curl --silent --write-out "\nHTTP_STATUS:%{http_code}" \
+            --max-time 300 \
+            --request GET \
+            "https://www.foodmedals.com/api/admin/restaurants/discover/queue/process" \
+            --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -1 | sed 's/HTTP_STATUS://')
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Status: $HTTP_STATUS"
+          echo "Response: $BODY"
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Endpoint returned non-200 status"
+            exit 1
+          fi
+
+          echo "Queue processed successfully"
