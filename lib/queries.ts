@@ -19,6 +19,17 @@ export async function getAllActiveCategories() {
   })
 }
 
+// ─── Homepage Stats ──────────────────────────────────────────────────────────
+
+export async function getHomepageStats() {
+  const [totalMedals, totalRestaurants, totalCategories] = await Promise.all([
+    prisma.medal.count(),
+    prisma.restaurant.count({ where: { status: 'active' } }),
+    prisma.foodCategory.count({ where: { status: 'active' } }),
+  ])
+  return { totalMedals, totalRestaurants, totalCategories }
+}
+
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
 
 export type LeaderboardRow = {

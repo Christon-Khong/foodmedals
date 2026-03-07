@@ -3,12 +3,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getAllActiveCategories, getTopRestaurantsPerCategory } from '@/lib/queries'
+import { getAllActiveCategories, getTopRestaurantsPerCategory, getHomepageStats } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { TrendingCarousel } from '@/components/TrendingCarousel'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { HeroSearch } from '@/components/HeroSearch'
 import { HeroVideo } from '@/components/HeroVideo'
+import { RotatingCategoryText } from '@/components/RotatingCategoryText'
+import { StatsBar } from '@/components/StatsBar'
+import { HowItWorks } from '@/components/HowItWorks'
 import { Footer } from '@/components/Footer'
 
 export const metadata: Metadata = {
@@ -24,14 +27,27 @@ export const metadata: Metadata = {
   },
 }
 
+// Categories to feature in the rotating hero text (curated for variety)
+const HERO_CATEGORY_SLUGS = [
+  'burgers', 'tacos', 'pizza', 'wings', 'fries', 'burritos',
+  'ramen', 'nachos', 'milkshakes', 'pulled-pork', 'fried-chicken-sandwich', 'pad-thai',
+]
+
 export default async function HomePage() {
   const currentYear = new Date().getFullYear()
-  const [categories, session, trending] = await Promise.all([
+  const [categories, session, trending, stats] = await Promise.all([
     getAllActiveCategories(),
     getServerSession(authOptions),
     getTopRestaurantsPerCategory(currentYear),
+    getHomepageStats(),
   ])
   const isLoggedIn = !!session?.user
+
+  // Build the rotating category list from actual DB categories
+  const heroCategories = HERO_CATEGORY_SLUGS
+    .map(slug => categories.find(c => c.slug === slug))
+    .filter(Boolean)
+    .map(c => ({ name: c!.name, slug: c!.slug }))
 
   return (
     <div className="min-h-screen bg-amber-50">
@@ -50,23 +66,13 @@ export default async function HomePage() {
 
       {/* ── Hero with background video ────────────────────────────────────── */}
       <section className="relative border-b border-amber-100 z-10">
-        {/* Poster image + lazy-loaded video + dark overlay */}
         <HeroVideo />
 
-        <div className="relative max-w-4xl mx-auto px-4 py-20 sm:py-28 text-center">
-          <div className="flex justify-center gap-3 mb-6">
-            <span className="animate-bounce inline-block" style={{ animationDelay: '0ms' }}>
-              <Image src="/medals/gold.webp" alt="gold medal" width={64} height={64} />
-            </span>
-            <span className="animate-bounce inline-block" style={{ animationDelay: '120ms' }}>
-              <Image src="/medals/silver.webp" alt="silver medal" width={64} height={64} />
-            </span>
-            <span className="animate-bounce inline-block" style={{ animationDelay: '240ms' }}>
-              <Image src="/medals/bronze.webp" alt="bronze medal" width={64} height={64} />
-            </span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight mb-4 drop-shadow-lg">
-            Award Medals to<br className="hidden sm:inline" /> the Best Food Near You
+        <div className="relative max-w-4xl mx-auto px-4 py-24 sm:py-32 text-center">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4 drop-shadow-lg">
+            <span className="block">Find the best</span>
+            <RotatingCategoryText categories={heroCategories} />
+            <span className="block">near you</span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-200 max-w-xl mx-auto mb-8">
             Community-powered rankings. Pick your Gold, Silver &amp; Bronze for each food category — new year, new picks.
@@ -91,33 +97,14 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── Social proof stats ─────────────────────────────────────────────── */}
+      <StatsBar stats={stats} />
+
       {/* ── Trending carousel ─────────────────────────────────────────────── */}
       {trending.length > 0 && <TrendingCarousel categories={trending} year={currentYear} />}
 
       {/* ── How it works ─────────────────────────────────────────────────── */}
-      <section className="bg-white border-b border-amber-100">
-        <div className="max-w-4xl mx-auto px-4 py-12 sm:py-16">
-          <h2 className="text-center text-2xl font-bold text-gray-900 mb-10">How it works</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
-            {[
-              { icon: '🍔', step: '1', title: 'Browse Categories', href: '/categories', desc: 'Burgers, tacos, pizza, wings — dozens of food categories.' },
-              { icon: <Image src="/medals/gold.webp" alt="medal" width={36} height={36} />, step: '2', title: 'Award Your Medals', href: '/categories', desc: 'Give Gold, Silver & Bronze to the three restaurants you love most.' },
-              { icon: '🏆', step: '3', title: 'See the Rankings', href: '/categories', desc: 'Community votes aggregate into leaderboards that reset every year.' },
-            ].map(item => (
-              <div key={item.step} className="text-center">
-                <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm border border-amber-100">
-                  {item.icon}
-                </div>
-                <div className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-1">Step {item.step}</div>
-                <Link href={item.href} className="font-bold text-gray-900 mb-2 hover:text-yellow-700 transition-colors inline-block">
-                  <h3>{item.title}</h3>
-                </Link>
-                <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <HowItWorks />
 
       {/* ── Category grid ────────────────────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-4 py-12">
@@ -146,18 +133,18 @@ export default async function HomePage() {
       </section>
 
       {/* ── CTA banner ───────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-r from-yellow-400 to-amber-400 mx-4 mb-12 rounded-3xl">
-        <div className="max-w-2xl mx-auto px-6 py-10 sm:py-14 text-center">
+      <section className="bg-gradient-to-r from-yellow-400 to-amber-400 mx-4 mb-12 rounded-3xl overflow-hidden relative">
+        <div className="max-w-2xl mx-auto px-6 py-10 sm:py-14 text-center relative z-10">
           <div className="text-4xl mb-4">🏆</div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-3">
-            Your opinion matters
+            Every vote shapes the leaderboard
           </h2>
           <p className="text-gray-800 mb-6 text-sm sm:text-base">
             Join the community ranking the best restaurants in your city. One Gold, one Silver, one Bronze per category — make yours count.
           </p>
           <Link
             href={isLoggedIn ? '/categories' : '/auth/signup'}
-            className="inline-block bg-white hover:bg-amber-50 text-gray-900 font-bold px-8 py-3 rounded-full transition-colors shadow-sm"
+            className="inline-block bg-gray-900 hover:bg-gray-800 text-white font-bold px-8 py-3 rounded-full transition-colors shadow-md"
           >
             Start awarding medals
           </Link>
