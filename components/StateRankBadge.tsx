@@ -1,13 +1,13 @@
 /**
- * Rank badge rendered inside a stylized state outline.
- * Supports all 50 US states via the state-outlines data file.
+ * Rank badge with a state outline silhouette and rank number.
+ * State outline is decorative; rank number is displayed alongside.
  */
 import { STATE_OUTLINES } from '@/lib/state-outlines'
 
-const RANK_COLORS: Record<number, { fill: string; stroke: string; text: string; glow: string }> = {
-  1: { fill: '#FEF9C3', stroke: '#EAB308', text: '#92400E', glow: 'rgba(234,179,8,0.25)' },
-  2: { fill: '#F3F4F6', stroke: '#9CA3AF', text: '#4B5563', glow: 'rgba(156,163,175,0.2)' },
-  3: { fill: '#FFF7ED', stroke: '#F97316', text: '#9A3412', glow: 'rgba(249,115,22,0.2)' },
+const RANK_STYLES: Record<number, { fill: string; stroke: string; text: string; bg: string; border: string }> = {
+  1: { fill: '#EAB308', stroke: '#CA8A04', text: 'text-yellow-800', bg: 'bg-yellow-50', border: 'border-yellow-300' },
+  2: { fill: '#9CA3AF', stroke: '#6B7280', text: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-300' },
+  3: { fill: '#F97316', stroke: '#EA580C', text: 'text-orange-800', bg: 'bg-orange-50', border: 'border-orange-300' },
 }
 
 type Props = {
@@ -17,61 +17,39 @@ type Props = {
 }
 
 export function StateRankBadge({ rank, state, size = 48 }: Props) {
-  const colors = RANK_COLORS[rank]
-  if (!colors) return null
+  const style = RANK_STYLES[rank]
+  if (!style) return null
 
   const outline = STATE_OUTLINES[state]
-  // Fallback: generic rectangle if state not found
-  const path = outline?.path ?? 'M 10,8 L 90,8 L 90,112 L 10,112 Z'
-  const viewBox = outline?.viewBox ?? '0 0 100 120'
-  const center = outline?.center ?? [50, 60]
+  if (!outline) return null
 
-  const fontSize = size * 0.48
+  const stateSize = size * 0.7
 
   return (
     <div
-      className="relative inline-flex items-center justify-center flex-shrink-0"
-      style={{ width: size, height: size * 1.2 }}
+      className={`inline-flex flex-col items-center gap-0.5 ${style.bg} ${style.border} border rounded-xl px-2 py-1.5`}
       title={`Ranked #${rank} in ${state}`}
     >
       <svg
-        viewBox={viewBox}
-        width={size}
-        height={size * 1.2}
+        viewBox={outline.viewBox}
+        width={stateSize}
+        height={stateSize}
         className="drop-shadow-sm"
+        style={{ maxHeight: stateSize }}
+        preserveAspectRatio="xMidYMid meet"
       >
-        <defs>
-          <filter id={`state-glow-${state}-${rank}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feFlood floodColor={colors.glow} result="color" />
-            <feComposite in2="blur" operator="in" result="shadow" />
-            <feMerge>
-              <feMergeNode in="shadow" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
         <path
-          d={path}
-          fill={colors.fill}
-          stroke={colors.stroke}
-          strokeWidth="3"
+          d={outline.path}
+          fill={style.fill}
+          stroke={style.stroke}
+          strokeWidth="2"
           strokeLinejoin="round"
-          filter={`url(#state-glow-${state}-${rank})`}
+          opacity={0.85}
         />
-        <text
-          x={center[0]}
-          y={center[1]}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fill={colors.text}
-          fontWeight="900"
-          fontSize={fontSize}
-          fontFamily="system-ui, sans-serif"
-        >
-          {rank}
-        </text>
       </svg>
+      <span className={`text-[11px] font-black ${style.text} leading-none`}>
+        {rank === 1 ? '1st' : rank === 2 ? '2nd' : '3rd'}
+      </span>
     </div>
   )
 }
