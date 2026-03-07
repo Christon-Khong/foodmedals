@@ -182,6 +182,8 @@ export async function getDiscoverSettings(): Promise<{
   verificationIntervalDays: number
   minRating: number
   minReviews: number
+  cronHourUtc: number
+  cronMinuteUtc: number
 }> {
   const row = await getOrResetSettings()
   return {
@@ -189,6 +191,8 @@ export async function getDiscoverSettings(): Promise<{
     verificationIntervalDays: row.verificationIntervalDays,
     minRating: row.discoverMinRating,
     minReviews: row.discoverMinReviews,
+    cronHourUtc: row.cronHourUtc,
+    cronMinuteUtc: row.cronMinuteUtc,
   }
 }
 

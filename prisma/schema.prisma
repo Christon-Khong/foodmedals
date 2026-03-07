@@ -326,6 +326,8 @@ model AdminSettings {
   verificationIntervalDays  Int      @default(30)  @map("verification_interval_days")
   discoverMinRating         Float    @default(4.5) @map("discover_min_rating")
   discoverMinReviews     Int      @default(100) @map("discover_min_reviews")
+  cronHourUtc            Int      @default(0)   @map("cron_hour_utc")
+  cronMinuteUtc          Int      @default(5)   @map("cron_minute_utc")
   updatedAt              DateTime @updatedAt    @map("updated_at")
 
   @@map("admin_settings")

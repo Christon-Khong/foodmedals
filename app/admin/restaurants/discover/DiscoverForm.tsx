@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Loader2, CheckSquare, Square, AlertTriangle, ExternalLink, Trash2, FolderOpen, Clock, Settings, Save, Check } from 'lucide-react'
+import { Loader2, CheckSquare, Square, AlertTriangle, ExternalLink, Trash2, FolderOpen, Clock, Settings, Save, Check, Rocket } from 'lucide-react'
 import { SearchQueue } from './SearchQueue'
 import { CityGaps } from './CityGaps'
 
@@ -136,8 +136,12 @@ export function DiscoverForm() {
   const [settingsInterval, setSettingsInterval] = useState<number>(30)
   const [settingsMinRating, setSettingsMinRating] = useState<number>(4.5)
   const [settingsMinReviews, setSettingsMinReviews] = useState<number>(100)
+  const [settingsCronHour, setSettingsCronHour] = useState<number>(0)
+  const [settingsCronMinute, setSettingsCronMinute] = useState<number>(5)
   const [savingSettings, setSavingSettings] = useState(false)
   const [settingsSaved, setSettingsSaved] = useState(false)
+  const [deploying, setDeploying] = useState(false)
+  const [deployStatus, setDeployStatus] = useState<string | null>(null)
 
   // Search progress (streaming)
   const [progress, setProgress] = useState<ProgressEntry[]>([])
@@ -174,6 +178,8 @@ export function DiscoverForm() {
           setSettingsInterval(data.verificationIntervalDays ?? 30)
           setSettingsMinRating(data.minRating ?? 4.5)
           setSettingsMinReviews(data.minReviews ?? 100)
+          setSettingsCronHour(data.cronHourUtc ?? 0)
+          setSettingsCronMinute(data.cronMinuteUtc ?? 5)
         }
       }
     } catch {
@@ -256,6 +262,8 @@ export function DiscoverForm() {
           verificationIntervalDays: settingsInterval,
           discoverMinRating: settingsMinRating,
           discoverMinReviews: settingsMinReviews,
+          cronHourUtc: settingsCronHour,
+          cronMinuteUtc: settingsCronMinute,
         }),
       })
       if (!res.ok) {
@@ -272,7 +280,7 @@ export function DiscoverForm() {
     } finally {
       setSavingSettings(false)
     }
-  }, [settingsReserve, settingsInterval, settingsMinRating, settingsMinReviews, fetchQuota])
+  }, [settingsReserve, settingsInterval, settingsMinRating, settingsMinReviews, settingsCronHour, settingsCronMinute, fetchQuota])
 
   /* ---- Load a saved batch ---- */
   const loadBatch = useCallback(async (batchId: string) => {
@@ -715,6 +723,76 @@ export function DiscoverForm() {
                   onChange={e => setSettingsMinReviews(Number(e.target.value))}
                   className="w-full bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 font-mono"
                 />
+              </div>
+            </div>
+
+            {/* Cron schedule */}
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+              <div>
+                <label className="block text-[11px] text-gray-500 mb-1">Queue runs at (UTC)</label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={settingsCronHour}
+                    onChange={e => setSettingsCronHour(Number(e.target.value))}
+                    className="w-16 bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 font-mono"
+                  />
+                  <span className="text-gray-500">:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={settingsCronMinute}
+                    onChange={e => setSettingsCronMinute(Number(e.target.value))}
+                    className="w-16 bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 font-mono"
+                  />
+                  <span className="text-[11px] text-gray-500 ml-1">UTC</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500">
+                  Local: {(() => {
+                    const d = new Date()
+                    d.setUTCHours(settingsCronHour, settingsCronMinute, 0, 0)
+                    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                  })()}
+                </p>
+                <p className="text-[10px] text-gray-600 mt-0.5">Cron: {settingsCronMinute} {settingsCronHour} * * *</p>
+              </div>
+              <div className="col-span-2 sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setDeploying(true)
+                    setDeployStatus(null)
+                    try {
+                      const res = await fetch('/api/admin/deploy-cron', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cronHourUtc: settingsCronHour, cronMinuteUtc: settingsCronMinute }),
+                      })
+                      const data = await res.json()
+                      setDeployStatus(res.ok ? 'Deployed! New schedule active in ~1 min.' : (data.error || 'Deploy failed'))
+                      if (res.ok) setTimeout(() => setDeployStatus(null), 5000)
+                    } catch {
+                      setDeployStatus('Deploy failed')
+                    } finally {
+                      setDeploying(false)
+                    }
+                  }}
+                  disabled={deploying}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-gray-900 font-semibold rounded-lg transition-colors text-xs disabled:opacity-50"
+                >
+                  {deploying ? <Loader2 className="w-3 h-3 animate-spin" /> : <Rocket className="w-3 h-3" />}
+                  {deploying ? 'Deploying...' : 'Deploy Schedule'}
+                </button>
+                {deployStatus && (
+                  <p className={`text-[11px] mt-1 ${deployStatus.includes('failed') ? 'text-red-400' : 'text-green-400'}`}>
+                    {deployStatus}
+                  </p>
+                )}
               </div>
             </div>
 

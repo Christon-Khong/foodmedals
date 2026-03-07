@@ -18,6 +18,8 @@ export async function GET() {
     verificationIntervalDays: row?.verificationIntervalDays ?? 30,
     discoverMinRating: row?.discoverMinRating ?? 4.5,
     discoverMinReviews: row?.discoverMinReviews ?? 100,
+    cronHourUtc: row?.cronHourUtc ?? 0,
+    cronMinuteUtc: row?.cronMinuteUtc ?? 5,
   })
 }
 
@@ -86,6 +88,28 @@ export async function PUT(req: NextRequest) {
     updateData.discoverMinReviews = val
   }
 
+  if (body.cronHourUtc !== undefined) {
+    const val = Number(body.cronHourUtc)
+    if (!Number.isInteger(val) || val < 0 || val > 23) {
+      return NextResponse.json(
+        { error: 'cronHourUtc must be between 0 and 23' },
+        { status: 400 },
+      )
+    }
+    updateData.cronHourUtc = val
+  }
+
+  if (body.cronMinuteUtc !== undefined) {
+    const val = Number(body.cronMinuteUtc)
+    if (!Number.isInteger(val) || val < 0 || val > 59) {
+      return NextResponse.json(
+        { error: 'cronMinuteUtc must be between 0 and 59' },
+        { status: 400 },
+      )
+    }
+    updateData.cronMinuteUtc = val
+  }
+
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json(
       { error: 'No valid settings provided' },
@@ -105,5 +129,7 @@ export async function PUT(req: NextRequest) {
     verificationIntervalDays: row.verificationIntervalDays,
     discoverMinRating: row.discoverMinRating,
     discoverMinReviews: row.discoverMinReviews,
+    cronHourUtc: row.cronHourUtc,
+    cronMinuteUtc: row.cronMinuteUtc,
   })
 }
