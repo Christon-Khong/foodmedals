@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import { useState } from 'react'
 import { NavbarSearch } from '@/components/NavbarSearch'
+import { NavbarProfile } from '@/components/NavbarProfile'
 
 export function Navbar() {
   const { data: session } = useSession()
@@ -27,18 +28,7 @@ export function Navbar() {
           <Link href="/categories"   className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">Categories</Link>
           <Link href="/suggest/vote" className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">Nominations</Link>
           {session ? (
-            <>
-              <Link href={session.user?.slug ? `/critics/${session.user.slug}` : '/my-medals'} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">My Profile</Link>
-              {session.user?.isAdmin && (
-                <Link href="/admin" className="px-3 py-1.5 text-sm text-yellow-700 hover:text-yellow-900 rounded-lg hover:bg-yellow-50 transition-colors font-medium">Admin</Link>
-              )}
-              <button
-                onClick={() => signOut({ callbackUrl: '/' })}
-                className="ml-1 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors"
-              >
-                Sign out
-              </button>
-            </>
+            <NavbarProfile />
           ) : (
             <>
               <Link href="/auth/signin" className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-amber-50 transition-colors">Sign in</Link>
@@ -70,6 +60,16 @@ export function Navbar() {
           <Link href="/suggest/vote" onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">Nominations</Link>
           {session ? (
             <>
+              <div className="flex items-center gap-3 py-2 mb-1">
+                {session.user?.image ? (
+                  <Image src={session.user.image} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-semibold">
+                    {(session.user?.name?.[0] ?? '?').toUpperCase()}
+                  </div>
+                )}
+                <span className="text-sm font-semibold text-gray-900 truncate">{session.user?.name ?? 'User'}</span>
+              </div>
               <Link href={session.user?.slug ? `/critics/${session.user.slug}` : '/my-medals'} onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">My Profile</Link>
               {session.user?.isAdmin && (
                 <Link href="/admin" onClick={() => setOpen(false)} className="py-2 text-sm font-medium text-yellow-700">Admin</Link>
