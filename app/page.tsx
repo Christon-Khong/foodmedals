@@ -17,15 +17,20 @@ const TrendingCarousel = dynamic(() => import('@/components/TrendingCarousel').t
 const HowItWorks = dynamic(() => import('@/components/HowItWorks').then(m => ({ default: m.HowItWorks })))
 
 export const metadata: Metadata = {
-  title: 'FoodMedals — Community Food Rankings for Utah Restaurants',
+  title: 'FoodMedals — Rank the Best Restaurants Near You',
   description:
-    'Vote for the best burgers, tacos, fries, and more. Award Gold, Silver & Bronze medals to your favorite Utah restaurants.',
+    'Award Gold, Silver & Bronze medals to the best restaurants in your city. Community-powered rankings for burgers, tacos, pizza & more.',
   alternates: { canonical: 'https://foodmedals.com' },
   openGraph: {
-    title: 'FoodMedals — Community Food Rankings for Utah Restaurants',
-    description: 'Vote for the best burgers, tacos, fries, and more. Award Gold, Silver & Bronze medals to your favorite Utah restaurants.',
+    title: 'FoodMedals — Rank the Best Restaurants Near You',
+    description: 'Award Gold, Silver & Bronze medals to the best restaurants in your city. Community-powered rankings for burgers, tacos, pizza & more.',
     type: 'website',
     url: 'https://foodmedals.com',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'FoodMedals — Rank the Best Restaurants Near You',
+    description: 'Award Gold, Silver & Bronze medals to the best restaurants in your city. Community-powered rankings for burgers, tacos, pizza & more.',
   },
 }
 

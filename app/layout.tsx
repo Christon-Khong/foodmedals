@@ -32,9 +32,9 @@ const lora = Lora({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://foodmedals.com'),
-  title: 'FoodMedals — Community Food Rankings',
+  title: 'FoodMedals — Rank the Best Restaurants Near You',
   description:
-    'Community-powered restaurant rankings. Award Gold, Silver & Bronze medals to the best food in your city.',
+    'Award Gold, Silver & Bronze medals to the best restaurants in your city. Community-powered rankings for burgers, tacos, pizza & more.',
   manifest: '/site.webmanifest',
   icons: {
     icon: [
@@ -44,16 +44,16 @@ export const metadata: Metadata = {
     apple: '/android-chrome-192x192.png',
   },
   openGraph: {
-    title: 'FoodMedals — Community Food Rankings',
-    description: 'Community-powered restaurant rankings. Award Gold, Silver & Bronze medals to the best food in your city.',
+    title: 'FoodMedals — Rank the Best Restaurants Near You',
+    description: 'Award Gold, Silver & Bronze medals to the best restaurants in your city. Community-powered rankings for burgers, tacos, pizza & more.',
     type: 'website',
     url: 'https://foodmedals.com',
     siteName: 'FoodMedals',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FoodMedals — Community Food Rankings',
-    description: 'Community-powered restaurant rankings. Award Gold, Silver & Bronze medals to the best food in your city.',
+    title: 'FoodMedals — Rank the Best Restaurants Near You',
+    description: 'Award Gold, Silver & Bronze medals to the best restaurants in your city. Community-powered rankings for burgers, tacos, pizza & more.',
   },
 }
 
