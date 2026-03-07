@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono, Lexend, Playfair_Display, Lora } from 'next/font/google'
+import { Geist_Mono, Lexend, Playfair_Display, Lora, DM_Sans } from 'next/font/google'
 import { Providers } from '@/components/providers'
 import './globals.css'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -63,7 +64,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${lexend.variable} ${playfair.variable} ${lora.variable} antialiased overflow-x-hidden`}>
+      <body className={`${dmSans.variable} ${geistMono.variable} ${lexend.variable} ${playfair.variable} ${lora.variable} antialiased overflow-x-hidden`}>
         <Providers>{children}</Providers>
       </body>
     </html>
