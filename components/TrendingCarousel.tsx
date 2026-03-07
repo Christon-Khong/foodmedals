@@ -301,12 +301,6 @@ export function TrendingCarousel({ categories, year }: Props) {
         ))}
       </div>
 
-      {/* Category count indicator */}
-      <div className="text-center pb-5">
-        <span className="text-xs text-gray-400">
-          {count} categories · Scroll to explore
-        </span>
-      </div>
     </section>
   )
 }
