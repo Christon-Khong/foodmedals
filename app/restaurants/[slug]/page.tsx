@@ -15,6 +15,7 @@ import { ReportClosedButton } from '@/components/ReportClosedButton'
 import { RestaurantHighlights } from '@/components/RestaurantHighlights'
 import { AnnualAwardBadges } from '@/components/AnnualAwardBadges'
 import { CommunityScore } from '@/components/CommunityScore'
+import { RestaurantMap } from '@/components/RestaurantMap'
 import { getTierCardAura } from '@/lib/tiers'
 import { getMaxCommunityScore } from '@/lib/settings'
 import { prisma } from '@/lib/prisma'
@@ -202,6 +203,15 @@ export default async function RestaurantPage({
               </>
             )}
           </div>
+
+          {restaurant.lat != null && restaurant.lng != null && (
+            <RestaurantMap
+              lat={restaurant.lat}
+              lng={restaurant.lng}
+              name={restaurant.name}
+              address={`${restaurant.address}, ${restaurant.city}, ${restaurant.state} ${restaurant.zip}`}
+            />
+          )}
 
           <div className="flex items-center gap-3 flex-wrap">
             <ReportAddressButton
