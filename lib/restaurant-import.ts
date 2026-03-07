@@ -100,11 +100,31 @@ export async function importRestaurants(
       })
 
       if (duplicate) {
+        // Merge new categories into the existing restaurant
+        const categoryIds = (entry.categorySlugs ?? [])
+          .map(s => slugToId.get(s.toLowerCase().trim()))
+          .filter((id): id is string => !!id)
+
+        let categoriesAdded = 0
+        if (categoryIds.length > 0) {
+          const result = await prisma.restaurantCategory.createMany({
+            data: categoryIds.map(foodCategoryId => ({
+              restaurantId: duplicate.id,
+              foodCategoryId,
+              verified: true,
+            })),
+            skipDuplicates: true,
+          })
+          categoriesAdded = result.count
+        }
+
         results[index] = {
           name: duplicate.name,
           status: 'duplicate',
           slug: duplicate.slug,
-          error: `Already exists: ${duplicate.name}`,
+          error: categoriesAdded > 0
+            ? `Already exists: ${duplicate.name} (+${categoriesAdded} new categories)`
+            : `Already exists: ${duplicate.name}`,
         }
         continue
       }
