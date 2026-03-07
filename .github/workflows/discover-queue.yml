@@ -4,7 +4,7 @@ name: Discover Queue
 # Schedule is in UTC — update via admin Deploy Schedule button.
 on:
   schedule:
-    - cron: '28 7 * * *'
+    - cron: '40 14 * * *'
   workflow_dispatch:         # Allow manual trigger from Actions tab
 
 jobs:
