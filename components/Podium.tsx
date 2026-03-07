@@ -87,7 +87,7 @@ function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: delay + 0.35, duration: 0.5, ease: 'easeOut' }}
-        className="text-center mb-3 px-1 w-28 sm:w-36"
+        className="text-center mb-3 px-1 w-[4.5rem] sm:w-36"
       >
         {/* medal image with aura glow */}
         <style>{`
@@ -163,7 +163,7 @@ function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
         initial={{ height: 0 }}
         animate={{ height: cfg.blockHeight }}
         transition={{ delay, duration: 0.65, ease: [0.34, 1.2, 0.64, 1] }}
-        className="w-20 sm:w-28 rounded-t-lg relative overflow-hidden"
+        className="w-[3.75rem] sm:w-28 rounded-t-lg relative overflow-hidden"
         style={{
           background:  cfg.gradient,
           boxShadow:   `3px 6px 0 ${cfg.shadowColor}`,
@@ -192,14 +192,14 @@ function EmptySlot({ place }: { place: 1 | 2 | 3 }) {
   const cfg = MEDAL_CONFIG[place]
   return (
     <div className="flex flex-col items-center opacity-30">
-      <div className="w-24 sm:w-32 text-center mb-3">
+      <div className="w-[4.5rem] sm:w-32 text-center mb-3">
         <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-2">
           <Image src={cfg.src} alt={cfg.label} width={28} height={28} />
         </div>
         <p className="text-xs text-gray-400">—</p>
       </div>
       <div
-        className="w-20 sm:w-28 rounded-t-lg"
+        className="w-[3.75rem] sm:w-28 rounded-t-lg"
         style={{ height: cfg.blockHeight, background: cfg.gradient }}
       />
     </div>
@@ -267,7 +267,7 @@ export function Podium({ rows, ranks, userMedals = { gold: null, silver: null, b
   }
 
   return (
-    <div className="flex items-end justify-center gap-3 sm:gap-6 py-8 px-4">
+    <div className="flex items-end justify-center gap-1.5 sm:gap-6 py-8 px-1 sm:px-4 overflow-x-auto">
       {renderGroup(silver, 2)}
       {renderGroup(gold, 1)}
       {renderGroup(bronze, 3)}

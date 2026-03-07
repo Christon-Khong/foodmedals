@@ -188,9 +188,9 @@ export default async function CriticProfilePage({ params }: Props) {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <h1 className="text-2xl font-bold text-gray-900">{user.displayName}</h1>
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{user.displayName}</h1>
                   {achievementTier && (
                     <span className={`inline-flex items-center gap-1 text-[11px] font-bold bg-gradient-to-r ${achievementTier.color} px-2.5 py-0.5 rounded-full border`}>
                       <Award className="w-3 h-3" />
@@ -219,7 +219,7 @@ export default async function CriticProfilePage({ params }: Props) {
               )}
 
               {/* Stats bar */}
-              <div className="flex items-center gap-5 mt-3 text-sm text-gray-500">
+              <div className="flex items-center gap-3 sm:gap-5 mt-3 text-sm text-gray-500 flex-wrap">
                 <span className="flex items-center gap-1.5">
                   <Trophy className="w-4 h-4 text-yellow-500" />
                   <span className="font-semibold text-gray-700">{medals.length}</span> medal{medals.length !== 1 ? 's' : ''}

@@ -63,7 +63,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${lexend.variable} ${playfair.variable} ${lora.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${lexend.variable} ${playfair.variable} ${lora.variable} antialiased overflow-x-hidden`}>
         <Providers>{children}</Providers>
       </body>
     </html>
