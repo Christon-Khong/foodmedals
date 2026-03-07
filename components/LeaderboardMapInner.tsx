@@ -29,7 +29,7 @@ function createIcon(index: number) {
   })
 }
 
-export default function LeaderboardMapInner({ rows }: { rows: LeaderboardRow[] }) {
+export default function LeaderboardMapInner({ rows, ranks }: { rows: LeaderboardRow[]; ranks?: number[] }) {
   const mappableRows = useMemo(
     () => rows.filter(r => r.lat != null && r.lng != null),
     [rows],
@@ -59,11 +59,15 @@ export default function LeaderboardMapInner({ rows }: { rows: LeaderboardRow[] }
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
-        {mappableRows.map((row, i) => (
+        {mappableRows.map((row, i) => {
+          // Find this row's index in the original rows array to get its rank
+          const origIndex = rows.indexOf(row)
+          const rank = ranks?.[origIndex] ?? (i + 1)
+          return (
           <Marker
             key={row.restaurantId}
             position={[row.lat!, row.lng!]}
-            icon={createIcon(i)}
+            icon={createIcon(rank - 1)}
           >
             <Popup>
               <div className="text-sm font-medium">{row.restaurantName}</div>
@@ -82,7 +86,8 @@ export default function LeaderboardMapInner({ rows }: { rows: LeaderboardRow[] }
               )}
             </Popup>
           </Marker>
-        ))}
+          )
+        })}
       </MapContainer>
     </div>
   )

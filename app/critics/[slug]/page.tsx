@@ -10,6 +10,7 @@ import { ShareProfileButton } from '@/components/ShareProfileButton'
 import { CrownJewelCard } from '@/components/CrownJewelCard'
 import { TrophyCaseGrid } from '@/components/TrophyCaseGrid'
 import { ProfileAvatarUpload } from '@/components/ProfileAvatarUpload'
+import { ProfileCityEdit } from '@/components/ProfileCityEdit'
 import { Trophy, LayoutGrid, Calendar, Award, Star } from 'lucide-react'
 import { calculateUserPoints, getUserTier } from '@/lib/user-points'
 
@@ -154,9 +155,13 @@ export default async function CriticProfilePage({ params }: Props) {
                 </div>
                 <ShareProfileButton />
               </div>
-              <p className="text-sm text-gray-500 mt-0.5">
-                {user.city && user.state ? `${user.city}, ${user.state}` : 'Food Critic'}
-              </p>
+              {isOwner ? (
+                <ProfileCityEdit city={user.city ?? null} state={user.state ?? null} />
+              ) : (
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {user.city && user.state ? `${user.city}, ${user.state}` : 'Food Critic'}
+                </p>
+              )}
 
               {/* Expertise badges */}
               {expertCategories.length > 0 && (
