@@ -39,6 +39,8 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
   const [cityFilters, setCityFilters] = useState<string[]>([])
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  // Cache city options so adding a city filter doesn't remove other cities from the dropdown
+  const [cachedCityOptions, setCachedCityOptions] = useState<Array<{ city: string; state: string }>>([])
 
   // Sync internal state when props change (e.g. navbar search navigates to new query)
   useEffect(() => {
@@ -47,6 +49,7 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
     setStateFilter(null)
     setCityFilters([])
     setCategoryFilter(null)
+    setCachedCityOptions([])
   }, [initialQuery, initialResults])
 
   const activeFilterCount = [stateFilter, categoryFilter].filter(Boolean).length + cityFilters.length
@@ -60,20 +63,27 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
     return Array.from(all).sort()
   }, [results])
 
-  const availableCities = useCallback(() => {
-    if (!results) return []
-    const citiesFromRestaurants = results.restaurants
-      .filter(r => !stateFilter || r.state === stateFilter)
+  // Compute city options from results (used when no city filters are active)
+  const deriveCityOptions = useCallback((res: FullSearchResults, state: string | null) => {
+    const citiesFromRestaurants = res.restaurants
+      .filter(r => !state || r.state === state)
       .map(r => `${r.city}|${r.state}`)
-    const citiesFromSearch = results.cities
-      .filter(c => !stateFilter || c.state === stateFilter)
+    const citiesFromSearch = res.cities
+      .filter(c => !state || c.state === state)
       .map(c => `${c.city}|${c.state}`)
     const all = new Set([...citiesFromRestaurants, ...citiesFromSearch])
     return Array.from(all).sort().map(key => {
-      const [city, state] = key.split('|')
-      return { city, state }
+      const [city, st] = key.split('|')
+      return { city, state: st }
     })
-  }, [results, stateFilter])
+  }, [])
+
+  // Use cached city options when city filters are active, fresh from results otherwise
+  const availableCities = useCallback(() => {
+    if (cityFilters.length > 0 && cachedCityOptions.length > 0) return cachedCityOptions
+    if (!results) return []
+    return deriveCityOptions(results, stateFilter)
+  }, [results, stateFilter, cityFilters, cachedCityOptions, deriveCityOptions])
 
   const availableCategories = useCallback(() => {
     if (!results) return []
@@ -113,6 +123,7 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
     setStateFilter(null)
     setCityFilters([])
     setCategoryFilter(null)
+    setCachedCityOptions([])
     timerRef.current = setTimeout(() => {
       fetchResults(value, null, [], null)
     }, 400)
@@ -130,12 +141,17 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
   // Filter changes trigger re-fetch
   function handleStateChange(value: string | null) {
     setStateFilter(value)
-    setCityFilters([]) // Reset cities when state changes
+    setCityFilters([])
+    setCachedCityOptions([]) // Clear cache when state changes
     fetchResults(query, value, [], categoryFilter)
   }
 
   function handleAddCity(city: string) {
     if (!city || cityFilters.includes(city)) return
+    // Cache city options before the first city filter narrows results
+    if (cityFilters.length === 0 && results) {
+      setCachedCityOptions(deriveCityOptions(results, stateFilter))
+    }
     const next = [...cityFilters, city]
     setCityFilters(next)
     fetchResults(query, stateFilter, next, categoryFilter)
@@ -144,6 +160,7 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
   function handleRemoveCity(city: string) {
     const next = cityFilters.filter(c => c !== city)
     setCityFilters(next)
+    if (next.length === 0) setCachedCityOptions([]) // Clear cache when all cities removed
     fetchResults(query, stateFilter, next, categoryFilter)
   }
 
@@ -156,6 +173,7 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
     setStateFilter(null)
     setCityFilters([])
     setCategoryFilter(null)
+    setCachedCityOptions([]) // Clear cache
     fetchResults(query, null, [], null)
   }
 
