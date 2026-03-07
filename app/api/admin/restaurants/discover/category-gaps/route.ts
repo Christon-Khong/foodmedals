@@ -15,13 +15,17 @@ export async function GET() {
     orderBy: { sortOrder: 'asc' },
   })
 
-  // Get all distinct city+state pairs from active restaurants
+  // Get major cities only — those with 10+ active restaurants are likely
+  // metro centers rather than suburbs (which Google Places already covers
+  // when searching the parent city)
   const cityRows = await prisma.$queryRaw<
-    Array<{ city: string; state: string }>
+    Array<{ city: string; state: string; restaurant_count: bigint }>
   >`
-    SELECT DISTINCT city, state
+    SELECT city, state, COUNT(*) as restaurant_count
     FROM restaurants
     WHERE status = 'active'
+    GROUP BY city, state
+    HAVING COUNT(*) >= 10
     ORDER BY state, city
   `
 
@@ -42,7 +46,7 @@ export async function GET() {
 
   const totalCities = cityRows.length
 
-  // For each category, find which cities are missing coverage
+  // For each category, find which major cities are missing coverage
   const result = categories
     .map(cat => {
       const missingCities = cityRows
