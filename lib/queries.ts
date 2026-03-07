@@ -1616,7 +1616,19 @@ export const getUserProfile = cache(async (slug: string) => {
     orderBy: [{ foodCategory: { sortOrder: 'asc' } }, { medalType: 'asc' }],
   })
 
-  return { user, medals, year }
+  // All-time medals (lightweight) for cumulative tier points
+  const allTimeMedals = await prisma.medal.findMany({
+    where: { userId: user.id },
+    select: {
+      medalType: true,
+      goldMedalComment: {
+        where: { active: true },
+        select: { photoUrl: true },
+      },
+    },
+  })
+
+  return { user, medals, year, allTimeMedals }
 })
 
 // ─── Restaurant Highlights (Gold Medal Comments) ────────────────────────────

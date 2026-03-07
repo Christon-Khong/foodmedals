@@ -262,7 +262,7 @@ function CategoryCard({ catMedals, isOwner, isAdmin, onOpenComment, onHideCommen
 function PointsProgressBar({ points }: { points: number }) {
   const nextTier = getNextUserTier(points)
   // Find current and next tier thresholds for the progress bar
-  const maxTierPts = USER_TIERS[0].min // Oracle threshold
+  const maxTierPts = USER_TIERS[0].min // Eternal Flame threshold
   const pct = Math.min(100, Math.round((points / maxTierPts) * 100))
 
   return (
@@ -286,7 +286,7 @@ function PointsProgressBar({ points }: { points: number }) {
       )}
       {!nextTier && points > 0 && (
         <p className="text-xs text-amber-700 font-medium mt-2">
-          You&apos;ve reached Oracle — the highest rank!
+          You&apos;ve reached Eternal Flame — the highest rank!
         </p>
       )}
     </div>

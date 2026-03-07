@@ -48,7 +48,7 @@ export default async function CriticProfilePage({ params }: Props) {
   ])
   if (!profile) notFound()
 
-  const { user, medals, year } = profile
+  const { user, medals, year, allTimeMedals } = profile
   const isOwner = session?.user?.id === user.id
 
   // Group medals by category
@@ -70,8 +70,8 @@ export default async function CriticProfilePage({ params }: Props) {
     .filter(m => m.length === 3)
     .map(m => m[0].foodCategory.name)
 
-  // Points-based achievement tier
-  const userPoints = calculateUserPoints(medals)
+  // Points-based achievement tier (all-time cumulative)
+  const userPoints = calculateUserPoints(allTimeMedals)
   const achievementTier = getUserTier(userPoints.total)
 
   // Owner engagement: fetch all categories + trending to compute unranked
