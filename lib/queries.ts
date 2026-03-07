@@ -1751,7 +1751,7 @@ export type HighlightRow = {
   userSlug:     string | null
   userAvatar:   string | null
   upvoteCount:  number
-  userCategoryCount: number
+  userPoints: number
 }
 
 export async function getRestaurantHighlights(
@@ -1784,7 +1784,7 @@ export async function getRestaurantHighlights(
         user_slug:     string | null
         avatar_url:    string | null
         upvote_count:  bigint
-        user_category_count: bigint
+        user_points:   bigint
       }>
     >`
       SELECT
@@ -1803,9 +1803,20 @@ export async function getRestaurantHighlights(
         u.slug   AS user_slug,
         u.avatar_url,
         COUNT(cu.id) AS upvote_count,
-        (SELECT COUNT(DISTINCT m2.food_category_id)
-         FROM medals m2 WHERE m2.user_id = gmc.user_id AND m2.year = gmc.year
-        ) AS user_category_count
+        (SELECT COALESCE(
+          SUM(CASE m2.medal_type
+            WHEN 'gold'   THEN 3
+            WHEN 'silver' THEN 2
+            WHEN 'bronze' THEN 1
+            ELSE 0
+          END)
+          + (SELECT COUNT(*) FROM gold_medal_comments g2
+             WHERE g2.user_id = gmc.user_id AND g2.active = true)
+          + (SELECT COUNT(*) FROM gold_medal_comments g3
+             WHERE g3.user_id = gmc.user_id AND g3.active = true AND g3.photo_url IS NOT NULL),
+          0)
+         FROM medals m2 WHERE m2.user_id = gmc.user_id
+        ) AS user_points
       FROM gold_medal_comments gmc
       JOIN users u             ON u.id  = gmc.user_id
       JOIN food_categories fc  ON fc.id = gmc.food_category_id
@@ -1846,7 +1857,7 @@ export async function getRestaurantHighlights(
       userSlug:     r.user_slug,
       userAvatar:   r.avatar_url,
       upvoteCount:  Number(r.upvote_count),
-      userCategoryCount: Number(r.user_category_count),
+      userPoints:   Number(r.user_points),
     })),
   }
 }
