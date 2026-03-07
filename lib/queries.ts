@@ -876,7 +876,7 @@ function resolveCityPattern(term: string): string | null {
 // ─── Shared search engine (used by navbar, hero, and search page) ─────────
 
 type QuickResult = {
-  restaurants: Array<{ slug: string; name: string; city: string; state: string }>
+  restaurants: Array<{ slug: string; name: string; city: string; state: string; medalType?: 'gold' | 'silver' | 'bronze' }>
   categories: Array<{ slug: string; name: string; iconEmoji: string; iconUrl: string | null }>
 }
 
@@ -941,18 +941,22 @@ export async function searchAll(query: string): Promise<QuickResult> {
     LIMIT 10
   `
 
+  type SearchRestResult = { slug: string; name: string; city: string; state: string; medalType?: 'gold' | 'silver' | 'bronze' }
   const seenSlugs = new Set(directRestaurants.map(r => r.slug))
-  const allRestaurants = directRestaurants.map(r => ({
+  const allRestaurants: SearchRestResult[] = directRestaurants.map(r => ({
     slug: r.slug, name: r.name, city: r.city, state: r.state,
   }))
+
+  // Track detected location and category for medal lookup
+  let detectedState: string | null = null
+  let detectedCity: string | null = null
+  let detectedCategorySlugs: string[] = []
 
   // 3. Multi-word: split and try category+location and name+location combos
   if (isMultiWord) {
     // Cache fuzzy category lookups per term to avoid redundant DB queries
     const fuzzyCatCache = new Map<string, Array<{ slug: string; name: string; iconEmoji: string; iconUrl: string | null }>>()
 
-    // Track detected location for post-filtering
-    let detectedState: string | null = null
     let detectedCityTerm: string | null = null
 
     for (let i = 1; i < words.length; i++) {
@@ -994,7 +998,7 @@ export async function searchAll(query: string): Promise<QuickResult> {
           matchedCats = fuzzyCats.map(c => ({ slug: c.slug, name: c.name, iconEmoji: c.icon_emoji, iconUrl: c.icon_url }))
           fuzzyCatCache.set(cacheKey, matchedCats)
         }
-        if (matchedCats.length > 0) {
+        if (matchedCats.length > 0 && (stateCode || cityPattern)) {
           const catSlugs = matchedCats.map(c => c.slug)
           let catLocResults: Array<{ slug: string; name: string; city: string; state: string }>
 
@@ -1010,7 +1014,7 @@ export async function searchAll(query: string): Promise<QuickResult> {
               ORDER BY r.name ASC
               LIMIT 10
             `
-          } else if (cityPattern) {
+          } else {
             catLocResults = await prisma.$queryRaw`
               SELECT DISTINCT r.slug, r.name, r.city, r.state
               FROM restaurants r
@@ -1022,8 +1026,14 @@ export async function searchAll(query: string): Promise<QuickResult> {
               ORDER BY r.name ASC
               LIMIT 10
             `
-          } else {
-            catLocResults = []
+          }
+          if (catLocResults.length > 0) {
+            // Track for medal lookup
+            if (detectedCategorySlugs.length === 0) detectedCategorySlugs = catSlugs
+            // Only set detectedCity when we matched a city (not a state)
+            if (cityPattern && !stateCode && !detectedCity) {
+              detectedCity = catLocResults[0]?.city ?? null
+            }
           }
           for (const r of catLocResults) {
             if (!seenSlugs.has(r.slug)) {
@@ -1116,6 +1126,59 @@ export async function searchAll(query: string): Promise<QuickResult> {
         seenSlugs.add(r.slug)
         allRestaurants.push(r)
       }
+    }
+  }
+
+  // 5. Medal placement: when we detected a category+location, look up leaderboard
+  //    and tag top 3 restaurants with gold/silver/bronze
+  const medalTypes = ['gold', 'silver', 'bronze'] as const
+  // Prefer the primary sorted category (step 1) over inner-loop matches for accuracy
+  const medalCategorySlug = detectedCategorySlugs.length > 0 && mappedCategories.length > 0
+    ? mappedCategories[0].slug  // best-matched from the sorted top-level query
+    : detectedCategorySlugs[0] ?? null
+  if (medalCategorySlug && (detectedState || detectedCity)) {
+    const year = new Date().getFullYear()
+    const catRows = await prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM food_categories WHERE slug = ${medalCategorySlug} AND status = 'active' LIMIT 1
+    `
+    if (catRows.length > 0) {
+      const leaderboard = await getLeaderboard(
+        catRows[0].id,
+        year,
+        detectedCity ?? undefined,
+        detectedState ?? undefined,
+      )
+      // Map top 3 leaderboard positions to restaurant slugs
+      const medalMap = new Map<string, 'gold' | 'silver' | 'bronze'>()
+      const podiumEntries: SearchRestResult[] = []
+      for (let i = 0; i < Math.min(3, leaderboard.length); i++) {
+        if (leaderboard[i].totalScore > 0) {
+          const row = leaderboard[i]
+          medalMap.set(row.restaurantSlug, medalTypes[i])
+          // Ensure podium restaurants appear in results even if not name-matched
+          if (!seenSlugs.has(row.restaurantSlug)) {
+            seenSlugs.add(row.restaurantSlug)
+            podiumEntries.push({
+              slug: row.restaurantSlug,
+              name: row.restaurantName,
+              city: row.city ?? '',
+              state: row.state ?? '',
+              medalType: medalTypes[i],
+            })
+          }
+        }
+      }
+      // Tag existing restaurants and inject podium entries at the front
+      for (const r of allRestaurants) {
+        const medal = medalMap.get(r.slug)
+        if (medal) r.medalType = medal
+      }
+      allRestaurants.unshift(...podiumEntries)
+      allRestaurants.sort((a, b) => {
+        const aIdx = a.medalType ? medalTypes.indexOf(a.medalType) : 99
+        const bIdx = b.medalType ? medalTypes.indexOf(b.medalType) : 99
+        return aIdx - bIdx
+      })
     }
   }
 

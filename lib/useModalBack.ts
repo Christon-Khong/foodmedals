@@ -10,15 +10,22 @@ import { useEffect, useRef } from 'react'
  * the popstate event fires and we call onClose instead of navigating.
  * When the modal closes normally (e.g. X button), we pop the extra entry.
  */
-export function useModalBack(isOpen: boolean, onClose: () => void) {
+export function useModalBack(
+  isOpen: boolean,
+  onClose: () => void,
+  navigatingRef?: React.RefObject<boolean>,
+) {
   const pushed = useRef(false)
 
   useEffect(() => {
     if (!isOpen) {
-      // Modal just closed normally — remove the history entry we pushed
       if (pushed.current) {
         pushed.current = false
-        window.history.back()
+        // Skip history.back() when navigating to a new page — the router
+        // already pushed a new history entry and back() would revert it.
+        if (!navigatingRef?.current) {
+          window.history.back()
+        }
       }
       return
     }
@@ -37,5 +44,5 @@ export function useModalBack(isOpen: boolean, onClose: () => void) {
     return () => {
       window.removeEventListener('popstate', handlePopState)
     }
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, navigatingRef])
 }

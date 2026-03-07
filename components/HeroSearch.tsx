@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Search, X } from 'lucide-react'
 import { CategoryIcon } from '@/components/CategoryIcon'
 
@@ -10,6 +11,7 @@ type Restaurant = {
   name: string
   city: string
   state: string
+  medalType?: 'gold' | 'silver' | 'bronze'
 }
 
 type Category = {
@@ -147,6 +149,9 @@ export function HeroSearch() {
                   onClick={() => navigate(`/restaurants/${r.slug}`)}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 transition-colors text-left"
                 >
+                  {r.medalType && (
+                    <Image src={`/medals/${r.medalType}.webp`} alt={r.medalType} width={20} height={20} className="flex-shrink-0" />
+                  )}
                   <span className="font-medium truncate flex-1">{r.name}</span>
                   <span className="text-xs text-gray-400 flex-shrink-0">{r.city}, {r.state}</span>
                 </button>

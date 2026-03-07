@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Search, X } from 'lucide-react'
 import { CategoryIcon } from '@/components/CategoryIcon'
 import { useModalBack } from '@/lib/useModalBack'
@@ -11,6 +12,7 @@ type Restaurant = {
   name: string
   city: string
   state: string
+  medalType?: 'gold' | 'silver' | 'bronze'
 }
 
 type Category = {
@@ -36,6 +38,7 @@ export function NavbarSearch() {
   const inputRef = useRef<HTMLInputElement>(null)
   const mobileInputRef = useRef<HTMLInputElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null)
+  const navigatingRef = useRef(false)
 
   const close = useCallback(() => {
     setOpen(false)
@@ -44,7 +47,7 @@ export function NavbarSearch() {
     setResults(null)
   }, [])
 
-  useModalBack(mobileOpen, close)
+  useModalBack(mobileOpen, close, navigatingRef)
 
   // Close on click outside
   useEffect(() => {
@@ -90,6 +93,7 @@ export function NavbarSearch() {
   }
 
   function navigate(href: string) {
+    if (mobileOpen) navigatingRef.current = true
     close()
     router.push(href)
   }
@@ -97,8 +101,7 @@ export function NavbarSearch() {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Escape') close()
     if (e.key === 'Enter' && query.trim().length >= 2) {
-      close()
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`)
     }
   }
 
@@ -133,6 +136,9 @@ export function NavbarSearch() {
               onClick={() => navigate(`/restaurants/${r.slug}`)}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-amber-50 transition-colors text-left"
             >
+              {r.medalType && (
+                <Image src={`/medals/${r.medalType}.webp`} alt={r.medalType} width={18} height={18} className="flex-shrink-0" />
+              )}
               <span className="truncate flex-1">{r.name}</span>
               <span className="text-xs text-gray-400 flex-shrink-0">{r.city}, {r.state}</span>
             </button>
@@ -224,6 +230,9 @@ export function NavbarSearch() {
                       onClick={() => navigate(`/restaurants/${r.slug}`)}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-amber-50 transition-colors text-left"
                     >
+                      {r.medalType && (
+                        <Image src={`/medals/${r.medalType}.webp`} alt={r.medalType} width={20} height={20} className="flex-shrink-0" />
+                      )}
                       <span className="truncate flex-1">{r.name}</span>
                       <span className="text-xs text-gray-400 flex-shrink-0">{r.city}, {r.state}</span>
                     </button>
