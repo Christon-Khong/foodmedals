@@ -458,6 +458,7 @@ export function LeaderboardWithLocation({
         nearMe={mode === 'nearme'}
         userMedals={userMedals}
         isLoggedIn={isLoggedIn}
+        votingDisabled={year < new Date().getFullYear()}
         onMedalChange={handleMedalChange}
         categorySlug={categorySlug}
         goldMedalId={goldMedalId}

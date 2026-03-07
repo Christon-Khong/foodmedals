@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { isAdminEmail } from '@/lib/adminAuth'
-import { getCategoryBySlug, getLeaderboard, getCitiesForCategory, getStatesForCategory } from '@/lib/queries'
+import { getCategoryBySlug, getLeaderboard, getCitiesForCategory, getStatesForCategory, getMedalYearsForCategory } from '@/lib/queries'
 import { Navbar } from '@/components/Navbar'
 import { HeroImage } from '@/components/HeroImage'
 import { LeaderboardWithLocation } from '@/components/LeaderboardWithLocation'
@@ -76,10 +76,11 @@ export default async function CategoryLeaderboardPage({
   const isLoggedIn = !!session?.user
 
   // When city/state params are present, fetch filtered data so initial render matches
-  const [initialRows, cities, states, pendingRestaurants] = await Promise.all([
+  const [initialRows, cities, states, medalYears, pendingRestaurants] = await Promise.all([
     getLeaderboard(category.id, year, city, state),
     getCitiesForCategory(category.id),
     getStatesForCategory(category.id),
+    getMedalYearsForCategory(category.id),
     prisma.restaurant.findMany({
       where: {
         status: 'pending_review',
@@ -165,22 +166,29 @@ export default async function CategoryLeaderboardPage({
             </p>
           )}
 
-          {/* Year selector */}
-          <div className="flex items-center justify-center gap-2 mt-4">
-            {[currentYear - 1, currentYear].map(y => (
-              <Link
-                key={y}
-                href={yearHref(y)}
-                className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${
-                  y === year
-                    ? 'bg-yellow-400 border-yellow-400 text-gray-900 font-semibold'
-                    : 'border-gray-200 text-gray-500 hover:border-yellow-300 hover:text-gray-800'
-                }`}
-              >
-                {y}
-              </Link>
-            ))}
-          </div>
+          {/* Year selector — show years that have medal data + current year */}
+          {(() => {
+            const yearTabs = Array.from(new Set([...medalYears, currentYear])).sort((a, b) => a - b)
+            // Only show tabs if there's more than one year to choose from
+            if (yearTabs.length <= 1) return null
+            return (
+              <div className="flex items-center justify-center gap-2 mt-4">
+                {yearTabs.map(y => (
+                  <Link
+                    key={y}
+                    href={yearHref(y)}
+                    className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${
+                      y === year
+                        ? 'bg-yellow-400 border-yellow-400 text-gray-900 font-semibold'
+                        : 'border-gray-200 text-gray-500 hover:border-yellow-300 hover:text-gray-800'
+                    }`}
+                  >
+                    {y}
+                  </Link>
+                ))}
+              </div>
+            )
+          })()}
         </div>
       </div>
 
@@ -201,7 +209,8 @@ export default async function CategoryLeaderboardPage({
         defaultNearMe={!state && !city}
       />
 
-      {/* ── CTA ─────────────────────────────────────────────────────────── */}
+      {/* ── CTA — only for current year ────────────────────────────────── */}
+      {year === currentYear && (
       <div className="bg-gradient-to-b from-amber-50 to-white border-t border-amber-100">
         <div className="max-w-3xl mx-auto px-4 py-12 text-center">
           <div className="mb-3 flex justify-center">
@@ -221,6 +230,7 @@ export default async function CategoryLeaderboardPage({
           </Link>
         </div>
       </div>
+      )}
     </main>
   )
 }

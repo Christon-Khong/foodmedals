@@ -30,6 +30,18 @@ export async function getHomepageStats() {
   return { totalMedals, totalRestaurants, totalCategories }
 }
 
+// ─── Medal Years ────────────────────────────────────────────────────────────
+
+/** Returns distinct years that have medal data for a category, sorted descending. */
+export async function getMedalYearsForCategory(foodCategoryId: string): Promise<number[]> {
+  const rows = await prisma.$queryRaw<Array<{ year: number }>>`
+    SELECT DISTINCT year FROM medals
+    WHERE food_category_id = ${foodCategoryId}
+    ORDER BY year DESC
+  `
+  return rows.map(r => r.year)
+}
+
 // ─── Annual Awards ───────────────────────────────────────────────────────────
 
 export type AnnualAwardRow = {

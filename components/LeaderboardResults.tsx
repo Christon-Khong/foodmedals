@@ -17,6 +17,7 @@ type Props = {
   nearMe?: boolean
   userMedals?: UserMedals
   isLoggedIn?: boolean
+  votingDisabled?: boolean
   onMedalChange?: (restaurantId: string, medalType: MedalType) => void
   categorySlug?: string
   goldMedalId?: string | null
@@ -73,6 +74,7 @@ function MedalCell({
   count,
   isActive,
   isLoggedIn,
+  votingDisabled,
   categorySlug,
   onClick,
 }: {
@@ -80,6 +82,7 @@ function MedalCell({
   count: number
   isActive: boolean
   isLoggedIn: boolean
+  votingDisabled?: boolean
   categorySlug?: string
   onClick?: () => void
 }) {
@@ -87,7 +90,7 @@ function MedalCell({
     <div className={`flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 ${
       isActive
         ? `${MEDAL_ACTIVE_BG[medalType]} scale-105`
-        : isLoggedIn
+        : isLoggedIn && !votingDisabled
           ? 'hover:bg-amber-50 hover:scale-105 cursor-pointer'
           : ''
     }`}>
@@ -99,6 +102,15 @@ function MedalCell({
       </span>
     </div>
   )
+
+  // Past years: read-only display, no interaction
+  if (votingDisabled) {
+    return (
+      <td className="px-1 py-2 text-center">
+        <div className="inline-flex">{content}</div>
+      </td>
+    )
+  }
 
   if (isLoggedIn) {
     return (
@@ -158,6 +170,7 @@ export function LeaderboardResults({
   nearMe,
   userMedals = { gold: null, silver: null, bronze: null },
   isLoggedIn = false,
+  votingDisabled = false,
   onMedalChange,
   categorySlug,
   goldMedalId,
@@ -297,6 +310,7 @@ export function LeaderboardResults({
                           count={mt === 'gold' ? row.goldCount : mt === 'silver' ? row.silverCount : row.bronzeCount}
                           isActive={userMedals[mt] === row.restaurantId}
                           isLoggedIn={isLoggedIn}
+                          votingDisabled={votingDisabled}
                           categorySlug={categorySlug}
                           onClick={() => onMedalChange?.(row.restaurantId, mt)}
                         />
