@@ -64,7 +64,14 @@ export function Navbar() {
               <NavbarAuraStyle tier={tier} />
               <div className="flex items-center gap-3 py-2 mb-1">
                 <NavbarAvatar avatarUrl={avatarUrl} displayName={displayName} tier={tier} size={32} />
-                <span className="text-sm font-semibold text-gray-900 truncate">{displayName}</span>
+                <div className="min-w-0">
+                  <span className="text-sm font-semibold text-gray-900 truncate block">{displayName}</span>
+                  {tier && (
+                    <span className={`inline-flex items-center text-[10px] font-bold bg-gradient-to-r ${tier.color} px-2 py-0.5 rounded-full border mt-0.5`}>
+                      {tier.label}
+                    </span>
+                  )}
+                </div>
               </div>
               <Link href={session.user?.slug ? `/critics/${session.user.slug}` : '/my-medals'} onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">My Profile</Link>
               {session.user?.isAdmin && (
