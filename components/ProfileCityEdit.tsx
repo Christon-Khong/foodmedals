@@ -67,7 +67,7 @@ export function ProfileCityEdit({ city, state }: Props) {
         value={cityVal}
         onChange={e => setCityVal(e.target.value)}
         placeholder="City"
-        className="w-28 sm:w-36 px-2 py-1 text-sm rounded-lg border border-gray-300 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-200 bg-white"
+        className="w-28 sm:w-36 px-2 py-1 text-sm text-gray-900 rounded-lg border border-gray-300 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-200 bg-white"
         autoFocus
         onKeyDown={e => {
           if (e.key === 'Enter') save()
@@ -77,7 +77,7 @@ export function ProfileCityEdit({ city, state }: Props) {
       <select
         value={stateVal}
         onChange={e => setStateVal(e.target.value)}
-        className="px-2 py-1 text-sm rounded-lg border border-gray-300 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-200 bg-white"
+        className="px-2 py-1 text-sm text-gray-900 rounded-lg border border-gray-300 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-200 bg-white"
       >
         <option value="">State</option>
         {STATE_OPTIONS.map(([code, name]) => (
