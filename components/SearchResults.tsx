@@ -104,12 +104,17 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
     }
   }, [])
 
-  // Debounced query search
+  // Debounced query search — clear location filters when query text changes
   function handleQueryChange(value: string) {
     setQuery(value)
     if (timerRef.current) clearTimeout(timerRef.current)
+    // Clear all filters when the search text changes so stale location filters
+    // don't persist across different search queries
+    setStateFilter(null)
+    setCityFilters([])
+    setCategoryFilter(null)
     timerRef.current = setTimeout(() => {
-      fetchResults(value, stateFilter, cityFilters, categoryFilter)
+      fetchResults(value, null, [], null)
     }, 400)
   }
 

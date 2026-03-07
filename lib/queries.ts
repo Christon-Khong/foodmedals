@@ -1570,13 +1570,14 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
         `)
       }
 
-      // Name + location restaurants
+      // Name + location restaurants (also respect user's active city filter)
       if (stateCode) {
         locationPromises.push(prisma.$queryRaw<
           Array<{ slug: string; name: string; city: string; state: string }>
         >`
           SELECT slug, name, city, state FROM restaurants
           WHERE status = 'active' AND state = ${stateCode}
+            ${cityFilter}
             AND (name ILIKE ${'%' + termA + '%'} OR similarity(name, ${termA}) > 0.2)
           ORDER BY similarity(name, ${termA}) DESC
           LIMIT 10
@@ -1587,6 +1588,7 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
         >`
           SELECT slug, name, city, state FROM restaurants
           WHERE status = 'active' AND city ILIKE ${cityPattern}
+            ${cityFilter}
             AND (name ILIKE ${'%' + termA + '%'} OR similarity(name, ${termA}) > 0.2)
           ORDER BY similarity(name, ${termA}) DESC
           LIMIT 10
@@ -1635,6 +1637,7 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
   }
 
   // If category matched but no restaurants yet, pull some from those categories
+  // Apply user's state/city filters so the fallback respects active filters
   if (allRestaurants.length === 0 && mappedCategories.length > 0) {
     const catSlugs = mappedCategories.map(c => c.slug)
     const catRestaurants = await prisma.$queryRaw<
@@ -1645,6 +1648,7 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
       JOIN restaurant_categories rc ON rc.restaurant_id = r.id AND rc.verified = true
       JOIN food_categories fc ON fc.id = rc.food_category_id
       WHERE r.status = 'active' AND fc.slug = ANY(${catSlugs})
+        ${stateFilter} ${cityFilter}
       ORDER BY r.name ASC LIMIT 20
     `
     for (const r of catRestaurants) {
