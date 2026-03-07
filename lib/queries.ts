@@ -108,11 +108,23 @@ export async function getLeaderboard(
   city?: string,
   state?: string,
 ): Promise<LeaderboardRow[]> {
-  const locationClause = city && state
-    ? Prisma.sql`AND r.city = ${city} AND r.state = ${state}`
-    : state
-      ? Prisma.sql`AND r.state = ${state}`
+  // Support comma-separated values for multi-select filters
+  const stateNames = state ? state.split(',').map(s => s.trim()).filter(Boolean) : []
+  const cityNames = city ? city.split(',').map(c => c.trim()).filter(Boolean) : []
+
+  const stateClause = stateNames.length === 1
+    ? Prisma.sql`AND r.state = ${stateNames[0]}`
+    : stateNames.length > 1
+      ? Prisma.sql`AND r.state IN (${Prisma.join(stateNames)})`
       : Prisma.empty
+
+  const cityClause = cityNames.length === 1
+    ? Prisma.sql`AND r.city = ${cityNames[0]}`
+    : cityNames.length > 1
+      ? Prisma.sql`AND r.city IN (${Prisma.join(cityNames)})`
+      : Prisma.empty
+
+  const locationClause = Prisma.sql`${stateClause} ${cityClause}`
 
   const rows = await prisma.$queryRaw<
     Array<{

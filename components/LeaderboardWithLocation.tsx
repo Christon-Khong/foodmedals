@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
+import { X } from 'lucide-react'
 import { NearMeToggle } from '@/components/NearMeToggle'
-import { StateFilter } from '@/components/StateFilter'
-import { CityFilter } from '@/components/CityFilter'
 import { LeaderboardResults } from '@/components/LeaderboardResults'
 import dynamic from 'next/dynamic'
 
@@ -59,25 +58,26 @@ export function LeaderboardWithLocation({
   isLoggedIn: isLoggedInProp,
   defaultNearMe = true,
 }: Props) {
-  const [mode, setMode]         = useState<Mode>(initialCity && initialState ? 'city' : 'all')
+  const [mode, setMode]         = useState<Mode>(initialState ? 'city' : 'all')
   const [rows, setRows]         = useState<LeaderboardRow[]>(initialRows)
   const [loading, setLoading]   = useState(false)
-  const [selectedCity, setSelectedCity]   = useState<string | null>(initialCity ?? null)
-  const [selectedState, setSelectedState] = useState<string | null>(initialState ?? null)
-  const [stateFilter, setStateFilter]     = useState<string | null>(initialState ?? null)
+  const [stateFilters, setStateFilters] = useState<string[]>(initialState ? [initialState] : [])
+  const [cityFilters, setCityFilters]   = useState<string[]>(
+    initialCity && initialState ? [`${initialCity}|${initialState}`] : []
+  )
   const [nearMeCoords, setNearMeCoords]   = useState<{ lat: number; lng: number } | null>(null)
   const [nearMeAutoTriggered, setNearMeAutoTriggered] = useState(false)
 
-  // Filter cities to only those in the selected state
+  // Filter cities to only those in selected states
   const filteredCities = useMemo(
-    () => stateFilter ? cities.filter(c => c.state === stateFilter) : cities,
-    [cities, stateFilter],
+    () => stateFilters.length > 0 ? cities.filter(c => stateFilters.includes(c.state)) : cities,
+    [cities, stateFilters],
   )
 
-  // Filter nominations by state
+  // Filter nominations by selected states
   const filteredNominations = useMemo(
-    () => stateFilter ? nominations.filter(n => n.state === stateFilter) : nominations,
-    [nominations, stateFilter],
+    () => stateFilters.length > 0 ? nominations.filter(n => stateFilters.includes(n.state)) : nominations,
+    [nominations, stateFilters],
   )
 
   // Medal state
@@ -137,8 +137,8 @@ export function LeaderboardWithLocation({
       setNearMeCoords({ lat, lng })
       setNearMeAutoTriggered(true)
       setMode('nearme')
-      setSelectedCity(null)
-      setSelectedState(null)
+      setStateFilters([])
+      setCityFilters([])
       setLoading(true)
       const qs = new URLSearchParams({
         year: String(year),
@@ -340,8 +340,8 @@ export function LeaderboardWithLocation({
 
   const handleLocationChange = useCallback((lat: number, lng: number, radius: number) => {
     setMode('nearme')
-    setSelectedCity(null)
-    setSelectedState(null)
+    setStateFilters([])
+    setCityFilters([])
     setNearMeCoords({ lat, lng })
     try {
       sessionStorage.setItem('fm-geo-lat', String(lat))
@@ -353,9 +353,8 @@ export function LeaderboardWithLocation({
 
   const handleNearMeClear = useCallback(() => {
     setMode('all')
-    setStateFilter(null)
-    setSelectedCity(null)
-    setSelectedState(null)
+    setStateFilters([])
+    setCityFilters([])
     setNearMeCoords(null)
     setNearMeAutoTriggered(false)
     if (initialCity || initialState) {
@@ -366,49 +365,99 @@ export function LeaderboardWithLocation({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRows, initialCity, initialState])
 
-  const handleStateChange = useCallback((state: string | null) => {
-    setStateFilter(state)
-    setSelectedCity(null)
-    setSelectedState(null)
-    if (!state) {
+  // Multi-select state handlers
+  const handleAddState = useCallback((state: string) => {
+    if (!state || stateFilters.includes(state)) return
+    const next = [...stateFilters, state]
+    setStateFilters(next)
+    setMode('city')
+    const params: Record<string, string> = { state: next.join(',') }
+    if (cityFilters.length > 0) {
+      params.city = cityFilters.map(cf => cf.split('|')[0]).join(',')
+    }
+    fetchLeaderboard(params)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stateFilters, cityFilters, categorySlug, year])
+
+  const handleRemoveState = useCallback((state: string) => {
+    const nextStates = stateFilters.filter(s => s !== state)
+    // Also remove cities belonging to the removed state
+    const nextCities = cityFilters.filter(cf => cf.split('|')[1] !== state)
+    setStateFilters(nextStates)
+    setCityFilters(nextCities)
+
+    if (nextStates.length === 0) {
       setMode('all')
-      // If page was loaded with URL params, initialRows is filtered — fetch fresh "all" data
       if (initialCity || initialState) {
         fetchLeaderboard({})
       } else {
         setRows(initialRows)
       }
     } else {
-      setMode('city')
-      fetchLeaderboard({ state })
+      const params: Record<string, string> = { state: nextStates.join(',') }
+      if (nextCities.length > 0) {
+        params.city = nextCities.map(cf => cf.split('|')[0]).join(',')
+      }
+      fetchLeaderboard(params)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug, year, initialRows, initialCity, initialState])
+  }, [stateFilters, cityFilters, initialRows, initialCity, initialState, categorySlug, year])
 
-  const handleCityChange = useCallback((city: string | null, state: string | null) => {
-    setSelectedCity(city)
-    setSelectedState(state)
-    if (!city || !state) {
-      // City cleared — fall back to state filter if active
-      if (stateFilter) {
-        setMode('city')
-        fetchLeaderboard({ state: stateFilter })
+  const handleAddCity = useCallback((cityStateKey: string) => {
+    if (!cityStateKey || cityFilters.includes(cityStateKey)) return
+    const [, state] = cityStateKey.split('|')
+    const nextCities = [...cityFilters, cityStateKey]
+    setCityFilters(nextCities)
+
+    // Auto-add state if not already selected
+    let nextStates = stateFilters
+    if (!stateFilters.includes(state)) {
+      nextStates = [...stateFilters, state]
+      setStateFilters(nextStates)
+    }
+
+    setMode('city')
+    const params: Record<string, string> = {
+      state: nextStates.join(','),
+      city: nextCities.map(cf => cf.split('|')[0]).join(','),
+    }
+    fetchLeaderboard(params)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stateFilters, cityFilters, categorySlug, year])
+
+  const handleRemoveCity = useCallback((cityStateKey: string) => {
+    const nextCities = cityFilters.filter(cf => cf !== cityStateKey)
+    setCityFilters(nextCities)
+
+    if (nextCities.length === 0 && stateFilters.length > 0) {
+      // Cities cleared, fall back to state filter
+      fetchLeaderboard({ state: stateFilters.join(',') })
+    } else if (nextCities.length === 0 && stateFilters.length === 0) {
+      setMode('all')
+      if (initialCity || initialState) {
+        fetchLeaderboard({})
       } else {
-        setMode('all')
-        if (initialCity || initialState) {
-          fetchLeaderboard({})
-        } else {
-          setRows(initialRows)
-        }
+        setRows(initialRows)
       }
     } else {
-      // Auto-sync state filter to match the selected city's state
-      setStateFilter(state)
-      setMode('city')
-      fetchLeaderboard({ city, state })
+      const params: Record<string, string> = { state: stateFilters.join(',') }
+      params.city = nextCities.map(cf => cf.split('|')[0]).join(',')
+      fetchLeaderboard(params)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug, year, initialRows, stateFilter, initialCity, initialState])
+  }, [stateFilters, cityFilters, initialRows, initialCity, initialState, categorySlug, year])
+
+  const clearAllFilters = useCallback(() => {
+    setStateFilters([])
+    setCityFilters([])
+    setMode('all')
+    if (initialCity || initialState) {
+      fetchLeaderboard({})
+    } else {
+      setRows(initialRows)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialRows, initialCity, initialState])
 
   return (
     <div className="max-w-3xl mx-auto px-4">
@@ -424,29 +473,84 @@ export function LeaderboardWithLocation({
           defaultRadius={25}
         />
         {mode !== 'nearme' && (
-          <>
-            <StateFilter
-              states={states}
-              selectedState={stateFilter}
-              onStateChange={handleStateChange}
-            />
-            <CityFilter
-              cities={filteredCities}
-              selectedCity={selectedCity}
-              selectedState={selectedState}
-              onCityChange={handleCityChange}
-            />
-          </>
-        )}
-        {mode === 'city' && selectedCity && selectedState && (
-          <span className="text-sm text-gray-500">
-            {selectedCity}, {selectedState}
-          </span>
-        )}
-        {mode === 'city' && stateFilter && !selectedCity && (
-          <span className="text-sm text-gray-500">
-            {stateFilter}
-          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {/* State chips */}
+            {stateFilters.map(st => (
+              <span
+                key={st}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-amber-100 text-amber-800 text-sm font-medium"
+              >
+                {st}
+                <button
+                  onClick={() => handleRemoveState(st)}
+                  className="hover:text-amber-950 transition-colors"
+                  aria-label={`Remove ${st}`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            {/* State dropdown */}
+            <select
+              value=""
+              onChange={e => { if (e.target.value) handleAddState(e.target.value) }}
+              className="px-3 py-2 rounded-full border border-gray-300 bg-white text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-300 cursor-pointer"
+            >
+              <option value="">{stateFilters.length > 0 ? 'Add state...' : 'All states'}</option>
+              {states
+                .filter(s => !stateFilters.includes(s.state))
+                .map(s => (
+                  <option key={s.state} value={s.state}>
+                    {s.state} ({s.count})
+                  </option>
+                ))}
+            </select>
+
+            {/* City chips */}
+            {cityFilters.map(cf => {
+              const [cityName, state] = cf.split('|')
+              return (
+                <span
+                  key={cf}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-amber-100 text-amber-800 text-sm font-medium"
+                >
+                  {cityName}, {state}
+                  <button
+                    onClick={() => handleRemoveCity(cf)}
+                    className="hover:text-amber-950 transition-colors"
+                    aria-label={`Remove ${cityName}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )
+            })}
+            {/* City dropdown */}
+            <select
+              value=""
+              onChange={e => { if (e.target.value) handleAddCity(e.target.value) }}
+              className="px-3 py-2 rounded-full border border-gray-300 bg-white text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-300 cursor-pointer"
+            >
+              <option value="">{cityFilters.length > 0 ? 'Add city...' : 'All cities'}</option>
+              {filteredCities
+                .filter(c => !cityFilters.includes(`${c.city}|${c.state}`))
+                .map(c => (
+                  <option key={`${c.city}|${c.state}`} value={`${c.city}|${c.state}`}>
+                    {c.city}, {c.state}
+                  </option>
+                ))}
+            </select>
+
+            {/* Clear all filters */}
+            {(stateFilters.length > 0 || cityFilters.length > 0) && (
+              <button
+                onClick={clearAllFilters}
+                className="text-xs text-amber-600 hover:text-amber-800 font-medium px-2 py-1"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -476,7 +580,7 @@ export function LeaderboardWithLocation({
         }}
       />
 
-      {/* Nominations — filtered by state */}
+      {/* Nominations — filtered by states */}
       <NominationsSection
         nominations={filteredNominations}
         isAdmin={isAdmin}
@@ -486,10 +590,13 @@ export function LeaderboardWithLocation({
           // Refetch leaderboard so newly approved restaurant appears in standings
           if (mode === 'nearme' && nearMeCoords) {
             fetchLeaderboard({ lat: String(nearMeCoords.lat), lng: String(nearMeCoords.lng), radius: '25' })
-          } else if (selectedCity && selectedState) {
-            fetchLeaderboard({ city: selectedCity, state: selectedState })
-          } else if (stateFilter) {
-            fetchLeaderboard({ state: stateFilter })
+          } else if (cityFilters.length > 0) {
+            fetchLeaderboard({
+              state: stateFilters.join(','),
+              city: cityFilters.map(cf => cf.split('|')[0]).join(','),
+            })
+          } else if (stateFilters.length > 0) {
+            fetchLeaderboard({ state: stateFilters.join(',') })
           } else {
             fetchLeaderboard({})
           }
