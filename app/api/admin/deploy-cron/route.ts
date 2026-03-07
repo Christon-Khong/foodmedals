@@ -37,7 +37,11 @@ async function updateGitHubFile(
     },
   )
   if (!putRes.ok) {
-    return { ok: false, error: `GitHub write failed for ${filePath}: ${await putRes.text()}` }
+    const body = await putRes.text()
+    const hint = filePath.includes('.github/workflows') && putRes.status === 404
+      ? ' (GitHub tokens need the "workflow" scope to modify workflow files)'
+      : ''
+    return { ok: false, error: `GitHub write failed for ${filePath}: ${body}${hint}` }
   }
   return { ok: true }
 }
@@ -49,7 +53,7 @@ export async function POST(req: NextRequest) {
   const token = process.env.GITHUB_TOKEN
   if (!token) {
     return NextResponse.json(
-      { error: 'GITHUB_TOKEN not configured. Add a GitHub token with Contents write permission to Vercel env vars.' },
+      { error: 'GITHUB_TOKEN not configured. Add a GitHub classic token with "repo" and "workflow" scopes to Vercel env vars.' },
       { status: 500 },
     )
   }
