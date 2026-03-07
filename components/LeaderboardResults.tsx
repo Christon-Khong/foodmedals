@@ -187,8 +187,8 @@ export function LeaderboardResults({
         <Podium rows={podiumRows} ranks={ranks} userMedals={userMedals} />
       </div>
 
-      {/* Full standings table */}
-      {rows.length > 0 && (
+      {/* Full standings table — only show when there are medals for this year */}
+      {medalled.length > 0 && rows.length > 0 && (
         <div className="pb-16">
           <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 pt-4 border-t border-amber-200">
             Full Standings — {year}
