@@ -127,30 +127,56 @@ export function LeaderboardWithLocation({
       .catch(() => {})
   }, [categorySlug, year])
 
-  // Auto-trigger Near Me on mount when defaultNearMe is true
+  // Auto-trigger Near Me on mount when defaultNearMe is true.
+  // Uses cached coords from sessionStorage to avoid the jarring "double load"
+  // where the page first shows full results, then switches to near-me.
   useEffect(() => {
     if (!defaultNearMe || mode !== 'all') return
+
+    function applyNearMe(lat: number, lng: number) {
+      setNearMeCoords({ lat, lng })
+      setNearMeAutoTriggered(true)
+      setMode('nearme')
+      setSelectedCity(null)
+      setSelectedState(null)
+      setLoading(true)
+      const qs = new URLSearchParams({
+        year: String(year),
+        lat: String(lat),
+        lng: String(lng),
+        radius: '25',
+      })
+      fetch(`/api/categories/${categorySlug}/leaderboard?${qs}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => { if (data) setRows(data.rows) })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    }
+
+    // Check for cached coordinates first (instant, no browser prompt delay)
+    try {
+      const cachedLat = sessionStorage.getItem('fm-geo-lat')
+      const cachedLng = sessionStorage.getItem('fm-geo-lng')
+      if (cachedLat && cachedLng) {
+        const lat = parseFloat(cachedLat)
+        const lng = parseFloat(cachedLng)
+        if (!isNaN(lat) && !isNaN(lng)) {
+          applyNearMe(lat, lng)
+          return
+        }
+      }
+    } catch {}
+
+    // No cached coords — fall back to browser geolocation API
     if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords
-        setNearMeCoords({ lat, lng })
-        setNearMeAutoTriggered(true)
-        setMode('nearme')
-        setSelectedCity(null)
-        setSelectedState(null)
-        setLoading(true)
-        const qs = new URLSearchParams({
-          year: String(year),
-          lat: String(lat),
-          lng: String(lng),
-          radius: '25',
-        })
-        fetch(`/api/categories/${categorySlug}/leaderboard?${qs}`)
-          .then(res => res.ok ? res.json() : null)
-          .then(data => { if (data) setRows(data.rows) })
-          .catch(() => {})
-          .finally(() => setLoading(false))
+        try {
+          sessionStorage.setItem('fm-geo-lat', String(lat))
+          sessionStorage.setItem('fm-geo-lng', String(lng))
+        } catch {}
+        applyNearMe(lat, lng)
       },
       () => {
         // Geolocation denied — stay on 'all' mode
@@ -317,6 +343,10 @@ export function LeaderboardWithLocation({
     setSelectedCity(null)
     setSelectedState(null)
     setNearMeCoords({ lat, lng })
+    try {
+      sessionStorage.setItem('fm-geo-lat', String(lat))
+      sessionStorage.setItem('fm-geo-lng', String(lng))
+    } catch {}
     fetchLeaderboard({ lat: String(lat), lng: String(lng), radius: String(radius) })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug, year])

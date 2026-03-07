@@ -36,12 +36,22 @@ export async function generateMetadata({
       title: `Best ${category.name} in ${city}, ${state} — ${year} | FoodMedals`,
       description: `Community-voted best ${category.name} in ${city}, ${state}. See who holds Gold, Silver & Bronze for ${year}.`,
       alternates: { canonical: `https://foodmedals.com/categories/${slug}` },
+      openGraph: {
+        title: `Best ${category.name} in ${city}, ${state} — ${year} | FoodMedals`,
+        description: `Community-voted best ${category.name} in ${city}, ${state}. See who holds Gold, Silver & Bronze for ${year}.`,
+        url: `https://foodmedals.com/categories/${slug}`,
+      },
     }
   }
   return {
     title: `Best ${category.name} — ${year} Rankings | FoodMedals`,
     description: `Community-voted ${category.name} rankings. See who holds Gold, Silver & Bronze for ${year}.`,
     alternates: { canonical: `https://foodmedals.com/categories/${slug}` },
+    openGraph: {
+      title: `Best ${category.name} — ${year} Rankings | FoodMedals`,
+      description: `Community-voted ${category.name} rankings. See who holds Gold, Silver & Bronze for ${year}.`,
+      url: `https://foodmedals.com/categories/${slug}`,
+    },
   }
 }
 

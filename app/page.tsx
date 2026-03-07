@@ -55,6 +55,20 @@ export default async function HomePage() {
           description: 'Community-powered restaurant rankings. Award Gold, Silver & Bronze medals to the best food in Utah.',
         }) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'FoodMedals',
+          url: 'https://foodmedals.com',
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: { '@type': 'EntryPoint', urlTemplate: 'https://foodmedals.com/search?q={search_term_string}' },
+            'query-input': 'required name=search_term_string',
+          },
+        }) }}
+      />
       <Navbar />
 
       {/* ── Hero with background video ────────────────────────────────────── */}

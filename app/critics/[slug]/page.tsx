@@ -23,6 +23,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${profile.user.displayName} — Food Critic | FoodMedals`,
     description: `${profile.user.displayName}'s food rankings and medal picks on FoodMedals.`,
+    alternates: { canonical: `https://foodmedals.com/critics/${slug}` },
+    openGraph: {
+      title: `${profile.user.displayName} — Food Critic | FoodMedals`,
+      description: `${profile.user.displayName}'s food rankings and medal picks on FoodMedals.`,
+      url: `https://foodmedals.com/critics/${slug}`,
+    },
   }
 }
 

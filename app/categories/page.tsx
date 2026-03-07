@@ -15,6 +15,11 @@ export const metadata: Metadata = {
   title: 'Food Categories — FoodMedals',
   description: 'Browse all food categories and see community-voted rankings for Utah restaurants.',
   alternates: { canonical: 'https://foodmedals.com/categories' },
+  openGraph: {
+    title: 'Food Categories — FoodMedals',
+    description: 'Browse all food categories and see community-voted rankings for Utah restaurants.',
+    url: 'https://foodmedals.com/categories',
+  },
 }
 
 async function getPendingCategorySuggestions(userId?: string) {

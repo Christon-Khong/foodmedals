@@ -38,6 +38,11 @@ export async function generateMetadata({
     title: `${r.name} — Medals & Rankings | FoodMedals`,
     description: `See all medals ${r.name} in ${r.city}, ${r.state} has earned across food categories on FoodMedals.`,
     alternates: { canonical: `https://foodmedals.com/restaurants/${slug}` },
+    openGraph: {
+      title: `${r.name} — Medals & Rankings | FoodMedals`,
+      description: `See all medals ${r.name} in ${r.city}, ${r.state} has earned across food categories on FoodMedals.`,
+      url: `https://foodmedals.com/restaurants/${slug}`,
+    },
   }
 }
 
@@ -111,7 +116,17 @@ export default async function RestaurantPage({
     voted: userVotedCategoryIds.includes(s.categoryId),
   }))
 
-  // JSON-LD
+  // JSON-LD Breadcrumb
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://foodmedals.com' },
+      { '@type': 'ListItem', position: 2, name: restaurant.name, item: `https://foodmedals.com/restaurants/${slug}` },
+    ],
+  }
+
+  // JSON-LD Restaurant
   const totalMedals = thisYearTrophies.reduce(
     (sum, t) => sum + t.goldCount + t.silverCount + t.bronzeCount, 0
   )
@@ -149,6 +164,10 @@ export default async function RestaurantPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       <Navbar />
       <HeroImage />

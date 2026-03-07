@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
 
       <main className="flex-1 max-w-3xl mx-auto px-4 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-        <p className="text-sm text-gray-400 mb-10">Last updated: March 5, 2026</p>
+        <p className="text-sm text-gray-400 mb-10">Last updated: March 7, 2026</p>
 
         <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed">
 
@@ -43,6 +43,10 @@ export default function PrivacyPolicyPage() {
               <li><strong>Restaurant Suggestions:</strong> When you suggest a restaurant, we collect the restaurant name, address, city, state, ZIP code, and any optional description you provide.</li>
               <li><strong>Category Suggestions:</strong> When you suggest a new food category, we collect the category name, emoji, and any optional description you provide.</li>
               <li><strong>Votes:</strong> When you vote on community nominations (restaurants or categories), we record your vote.</li>
+              <li><strong>Comments & Highlights:</strong> When you add a comment on your Gold Medal pick (a &ldquo;highlight&rdquo;), we store the comment text and any photo you upload. Highlights are publicly visible on the restaurant&rsquo;s page alongside your display name.</li>
+              <li><strong>Photo Uploads:</strong> When you upload a photo with a Gold Medal comment, the image is stored in our cloud storage (Supabase). You may remove a photo at any time by editing or deleting your comment.</li>
+              <li><strong>Upvotes:</strong> When you upvote another user&rsquo;s comment or highlight, we record your upvote.</li>
+              <li><strong>Reports:</strong> When you report a restaurant&rsquo;s address as incorrect or report a restaurant as permanently closed, we store your report along with your user ID to prevent duplicate reports.</li>
               <li><strong>Achievement Data:</strong> We track how many categories you have ranked to determine your achievement tier (e.g., Taste Tester, Local Legend, Oracle). Your tier is displayed on your public profile.</li>
             </ul>
 
@@ -61,7 +65,7 @@ export default function PrivacyPolicyPage() {
 
             <h3 className="font-semibold text-gray-800 mt-4 mb-2">2.3 Information Collected Automatically</h3>
             <ul className="list-disc pl-5 space-y-1.5">
-              <li><strong>Browser Geolocation:</strong> When you use the &ldquo;Near Me&rdquo; feature, your browser may ask for permission to share your location. This location data is used <em>client-side only</em> to filter results by distance and is <strong>not transmitted to or stored on our servers</strong>.</li>
+              <li><strong>Browser Geolocation:</strong> When you use the &ldquo;Near Me&rdquo; feature, your browser may ask for permission to share your location. This location data is used <em>client-side only</em> to filter results by distance and is <strong>not transmitted to or stored on our servers</strong>. Your approximate location may be cached in your browser&rsquo;s session storage to improve page load performance; this data is automatically cleared when you close the browser tab.</li>
               <li><strong>Log Data:</strong> Our hosting provider (Vercel) may automatically collect standard server log information such as your IP address, browser type, pages visited, and timestamps. This data is used for operational and security purposes.</li>
               <li><strong>Cookies:</strong> We use a single session cookie to keep you signed in. This is a functional cookie required for authentication and is not used for tracking or advertising purposes. We do not use any third-party analytics, advertising, or tracking cookies.</li>
             </ul>
@@ -74,7 +78,9 @@ export default function PrivacyPolicyPage() {
               <li>Create and manage your account</li>
               <li>Display your public profile, medal picks, rankings, and achievement tier</li>
               <li>Generate community leaderboards and restaurant scores</li>
-              <li>Process restaurant and category suggestions and community votes</li>
+              <li>Display comments, highlights, and photos on restaurant pages</li>
+              <li>Process restaurant and category suggestions, community votes, and upvotes</li>
+              <li>Process address and closure reports to maintain data accuracy</li>
               <li>Geocode restaurant addresses to enable map and &ldquo;Near Me&rdquo; features</li>
               <li>Maintain the security and integrity of the Service</li>
               <li>Respond to your requests or inquiries</li>
@@ -85,8 +91,8 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-3">4. Public Information</h2>
             <p>
               Certain information you provide is publicly visible on the Service, including your display name,
-              city, state, profile picture, medal picks, Crown Jewel selections, and achievement tier. Your
-              email address is <strong> never</strong> displayed publicly.
+              city, state, profile picture, medal picks, Crown Jewel selections, achievement tier, and any
+              comments or photos you add to your Gold Medal picks. Your email address is <strong>never</strong> displayed publicly.
             </p>
           </section>
 
@@ -95,7 +101,7 @@ export default function PrivacyPolicyPage() {
             <p>We use the following third-party services to operate the Service:</p>
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
               <li><strong>Vercel:</strong> Hosts our website and may process server logs. <Link href="https://vercel.com/legal/privacy-policy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Vercel Privacy Policy</Link></li>
-              <li><strong>Supabase:</strong> Hosts our database where account and application data is stored. <Link href="https://supabase.com/privacy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Supabase Privacy Policy</Link></li>
+              <li><strong>Supabase:</strong> Hosts our database and file storage (for photo uploads) where account and application data is stored. <Link href="https://supabase.com/privacy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Supabase Privacy Policy</Link></li>
               <li><strong>Google OAuth:</strong> Provides sign-in functionality. <Link href="https://policies.google.com/privacy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Google Privacy Policy</Link></li>
               <li><strong>Facebook Login:</strong> Provides sign-in functionality. <Link href="https://www.facebook.com/privacy/policy/" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">Facebook Privacy Policy</Link></li>
               <li><strong>X (Twitter) OAuth:</strong> Provides sign-in functionality. <Link href="https://twitter.com/en/privacy" className="text-yellow-700 hover:underline" target="_blank" rel="noopener noreferrer">X Privacy Policy</Link></li>
@@ -125,10 +131,10 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-3">7. Data Retention</h2>
             <p>
-              We retain your account information for as long as your account remains active. If you wish to
-              delete your account and associated data, please contact us using the information provided below.
-              We will delete your personal data within 30 days of a verified request, except where retention
-              is required by law.
+              We retain your account information for as long as your account remains active. This includes your
+              medal picks, comments, photos, votes, upvotes, and reports. If you wish to delete your account
+              and associated data, please contact us using the information provided below. We will delete your
+              personal data within 30 days of a verified request, except where retention is required by law.
             </p>
           </section>
 

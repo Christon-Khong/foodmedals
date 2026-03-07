@@ -11,7 +11,12 @@ type Props = {
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const { q } = await searchParams
   return {
-    title: q ? `Search: ${q} — FoodMedals` : 'Search — FoodMedals',
+    title: q ? `Search: ${q} — FoodMedals` : 'Search Restaurants & Categories — FoodMedals',
+    description: q
+      ? `Search results for "${q}" on FoodMedals. Find restaurants, food categories, and community rankings.`
+      : 'Search for restaurants and food categories on FoodMedals. Find community-voted rankings near you.',
+    robots: q ? { index: false, follow: true } : { index: true, follow: true },
+    alternates: { canonical: 'https://foodmedals.com/search' },
   }
 }
 

@@ -9,10 +9,14 @@ import { CategoryIcon } from '@/components/CategoryIcon'
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: 'Hall of Fame — FoodMedals',
-  description: 'See every past Gold Medal winner per food category. The definitive archive of community food rankings.',
+  title: 'Hall of Fame — Past Gold Medal Winners | FoodMedals',
+  description: 'See every past Gold Medal winner per food category. The definitive archive of community-voted restaurant rankings in Utah.',
   alternates: { canonical: 'https://foodmedals.com/hall-of-fame' },
-  robots: { index: false, follow: false },
+  openGraph: {
+    title: 'Hall of Fame — Past Gold Medal Winners | FoodMedals',
+    description: 'See every past Gold Medal winner per food category. The definitive archive of community-voted restaurant rankings.',
+    url: 'https://foodmedals.com/hall-of-fame',
+  },
 }
 
 export default async function HallOfFamePage() {

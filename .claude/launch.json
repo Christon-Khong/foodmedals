@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "npx", "next", "dev"],
+      "runtimeExecutable": "next",
+      "runtimeArgs": ["dev"],
       "port": 3000,
       "autoPort": true
     }

@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow:     '/',
-        disallow:  ['/admin', '/api/', '/my-medals', '/suggest/'],
+        disallow:  ['/admin', '/api/', '/my-medals', '/suggest/', '/auth/'],
       },
     ],
     sitemap: 'https://foodmedals.com/sitemap.xml',
