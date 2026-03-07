@@ -260,3 +260,30 @@ h1, h2, h3, h4, h5, h6 {
   animation: aura-glow 3.1s ease-in-out infinite;
 }
 
+/* ── Confetti burst animation ──────────────────────────────────────────── */
+@keyframes confetti-burst {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--confetti-tx), var(--confetti-ty)) rotate(var(--confetti-rotate));
+    opacity: 0;
+  }
+}
+
+/* ── Podium entrance animations ────────────────────────────────────────── */
+@keyframes podium-rise {
+  from { height: 0; }
+}
+
+@keyframes podium-fade-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes podium-pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+

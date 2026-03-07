@@ -1,7 +1,6 @@
 'use client'
 
-import { motion, useInView, animate } from 'framer-motion'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { LeaderboardRow } from '@/lib/queries'
@@ -44,23 +43,42 @@ const MEDAL_CONFIG = {
   },
 } as const
 
-// ─── Count-up animation ───────────────────────────────────────────────────────
+// ─── Count-up animation (native IntersectionObserver + rAF) ──────────────────
 
 function CountUp({ target, delay = 0 }: { target: number; delay?: number }) {
   const ref = useRef<HTMLSpanElement>(null)
-  const isInView = useInView(ref, { once: true })
+  const hasAnimated = useRef(false)
 
   useEffect(() => {
-    if (!isInView || !ref.current) return
-    const node = ref.current
-    const controls = animate(0, target, {
-      duration: 1.4,
-      delay,
-      ease: 'easeOut',
-      onUpdate(v) { node.textContent = Math.round(v).toString() },
-    })
-    return () => controls.stop()
-  }, [isInView, target, delay])
+    const el = ref.current
+    if (!el || hasAnimated.current) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting || hasAnimated.current) return
+        hasAnimated.current = true
+        observer.disconnect()
+
+        const delayMs = delay * 1000
+        const timeout = setTimeout(() => {
+          const duration = 1400
+          const start = performance.now()
+          const tick = (now: number) => {
+            const progress = Math.min((now - start) / duration, 1)
+            const eased = 1 - Math.pow(1 - progress, 3)
+            el.textContent = Math.round(eased * target).toString()
+            if (progress < 1) requestAnimationFrame(tick)
+          }
+          requestAnimationFrame(tick)
+        }, delayMs)
+
+        return () => clearTimeout(timeout)
+      },
+      { rootMargin: '-50px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [target, delay])
 
   return <span ref={ref}>0</span>
 }
@@ -79,15 +97,17 @@ type BlockProps = {
 
 function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
   const cfg = MEDAL_CONFIG[place]
+  const infoDelayS = delay + 0.35
+  const pickDelayS = delay + 0.9
 
   return (
     <div className="flex flex-col items-center">
       {/* ── Info card above the block ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: delay + 0.35, duration: 0.5, ease: 'easeOut' }}
+      <div
         className="text-center mb-3 px-1 w-[4.5rem] sm:w-36"
+        style={{
+          animation: `podium-fade-in 0.5s ease-out ${infoDelayS}s both`,
+        }}
       >
         {/* medal image with aura glow */}
         <style>{`
@@ -147,26 +167,25 @@ function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
 
         {/* Your Pick badge */}
         {isUserPick && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: delay + 0.9, duration: 0.3, ease: 'easeOut' }}
+          <div
             className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-400 text-[10px] font-bold text-gray-900 shadow-sm"
+            style={{
+              animation: `podium-pop 0.3s ease-out ${pickDelayS}s both`,
+            }}
           >
             <span>★</span> Your Pick
-          </motion.div>
+          </div>
         )}
-      </motion.div>
+      </div>
 
       {/* ── The podium block itself ── */}
-      <motion.div
-        initial={{ height: 0 }}
-        animate={{ height: cfg.blockHeight }}
-        transition={{ delay, duration: 0.65, ease: [0.34, 1.2, 0.64, 1] }}
+      <div
         className="w-[3.75rem] sm:w-28 rounded-t-lg relative overflow-hidden"
         style={{
+          height: cfg.blockHeight,
           background:  cfg.gradient,
           boxShadow:   `3px 6px 0 ${cfg.shadowColor}`,
+          animation: `podium-rise 0.65s cubic-bezier(0.34, 1.2, 0.64, 1) ${delay}s both`,
         }}
       >
         {/* shine strip across top */}
@@ -181,7 +200,7 @@ function PodiumColumn({ row, place, delay, isUserPick }: BlockProps) {
         >
           {place}
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
