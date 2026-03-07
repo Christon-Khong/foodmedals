@@ -358,9 +358,13 @@ export function LeaderboardWithLocation({
     setSelectedState(null)
     setNearMeCoords(null)
     setNearMeAutoTriggered(false)
-    setRows(initialRows)
+    if (initialCity || initialState) {
+      fetchLeaderboard({})
+    } else {
+      setRows(initialRows)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialRows])
+  }, [initialRows, initialCity, initialState])
 
   const handleStateChange = useCallback((state: string | null) => {
     setStateFilter(state)
@@ -368,13 +372,18 @@ export function LeaderboardWithLocation({
     setSelectedState(null)
     if (!state) {
       setMode('all')
-      setRows(initialRows)
+      // If page was loaded with URL params, initialRows is filtered — fetch fresh "all" data
+      if (initialCity || initialState) {
+        fetchLeaderboard({})
+      } else {
+        setRows(initialRows)
+      }
     } else {
       setMode('city')
       fetchLeaderboard({ state })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug, year, initialRows])
+  }, [categorySlug, year, initialRows, initialCity, initialState])
 
   const handleCityChange = useCallback((city: string | null, state: string | null) => {
     setSelectedCity(city)
@@ -386,14 +395,20 @@ export function LeaderboardWithLocation({
         fetchLeaderboard({ state: stateFilter })
       } else {
         setMode('all')
-        setRows(initialRows)
+        if (initialCity || initialState) {
+          fetchLeaderboard({})
+        } else {
+          setRows(initialRows)
+        }
       }
     } else {
+      // Auto-sync state filter to match the selected city's state
+      setStateFilter(state)
       setMode('city')
       fetchLeaderboard({ city, state })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug, year, initialRows, stateFilter])
+  }, [categorySlug, year, initialRows, stateFilter, initialCity, initialState])
 
   return (
     <div className="max-w-3xl mx-auto px-4">
