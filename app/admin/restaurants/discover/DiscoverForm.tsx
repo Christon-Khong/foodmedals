@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { Loader2, CheckSquare, Square, AlertTriangle, ExternalLink, Trash2, FolderOpen, Clock, Settings, Save, Check, Rocket } from 'lucide-react'
 import { SearchQueue } from './SearchQueue'
 import { CityGaps } from './CityGaps'
+import { CategoryGaps } from './CategoryGaps'
 
 /* ---------- Types ---------- */
 type DiscoveredRestaurant = {
@@ -1270,6 +1271,22 @@ export function DiscoverForm() {
         )
         setQueueRefreshKey(k => k + 1)
         // Scroll to the search queue section
+        document.querySelector('[data-queue]')?.scrollIntoView({ behavior: 'smooth' })
+      }} />
+
+      {/* ═══════ Category Gaps ═══════ */}
+      <CategoryGaps onRunCategory={async (slug, cities, rpc) => {
+        // Create one queue item per missing city, all with the same categorySlug
+        await Promise.all(
+          cities.map(({ city, state }) =>
+            fetch('/api/admin/restaurants/discover/queue', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ city, state, resultsPerCategory: rpc, categorySlug: slug, priority: true }),
+            })
+          )
+        )
+        setQueueRefreshKey(k => k + 1)
         document.querySelector('[data-queue]')?.scrollIntoView({ behavior: 'smooth' })
       }} />
     </div>
