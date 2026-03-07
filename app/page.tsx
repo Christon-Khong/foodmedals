@@ -27,12 +27,6 @@ export const metadata: Metadata = {
   },
 }
 
-// Categories to feature in the rotating hero text (curated for variety)
-const HERO_CATEGORY_SLUGS = [
-  'burgers', 'tacos', 'pizza', 'wings', 'fries', 'burritos',
-  'ramen', 'nachos', 'milkshakes', 'pulled-pork', 'fried-chicken-sandwich', 'pad-thai',
-]
-
 export default async function HomePage() {
   const currentYear = new Date().getFullYear()
   const [categories, session, trending, stats] = await Promise.all([
@@ -43,11 +37,8 @@ export default async function HomePage() {
   ])
   const isLoggedIn = !!session?.user
 
-  // Build the rotating category list from actual DB categories
-  const heroCategories = HERO_CATEGORY_SLUGS
-    .map(slug => categories.find(c => c.slug === slug))
-    .filter(Boolean)
-    .map(c => ({ name: c!.name, slug: c!.slug }))
+  // Rotating hero categories — uses all active categories in their DB sort order
+  const heroCategories = categories.map(c => ({ name: c.name, slug: c.slug }))
 
   return (
     <div className="min-h-screen bg-amber-50">
