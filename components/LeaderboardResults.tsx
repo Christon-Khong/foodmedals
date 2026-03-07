@@ -167,6 +167,7 @@ export function LeaderboardResults({
 }: Props) {
   if (loading && rows.length === 0) return <Skeleton />
 
+  const currentYear = new Date().getFullYear()
   const medalled = rows.filter(r => r.totalScore > 0)
   const ranks = computeRanks(medalled)
 
@@ -175,6 +176,10 @@ export function LeaderboardResults({
 
   // Full ranks for all rows (including zero-score ones)
   const fullRanks = computeRanks(rows)
+
+  // Show standings table for the current year even with 0 medals (so users
+  // can discover restaurants), but hide it for past years when nobody voted.
+  const showStandings = rows.length > 0 && (medalled.length > 0 || year === currentYear)
 
   return (
     <div className={loading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
@@ -188,7 +193,7 @@ export function LeaderboardResults({
       </div>
 
       {/* Full standings table */}
-      {rows.length > 0 && (
+      {showStandings && (
         <div className="pb-16">
           <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 pt-4 border-t border-amber-200">
             Full Standings — {year}
