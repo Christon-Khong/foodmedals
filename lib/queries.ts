@@ -914,9 +914,12 @@ function resolveCityPattern(term: string): string | null {
 
 // ─── Shared search engine (used by navbar, hero, and search page) ─────────
 
+type QuickCombo = { categorySlug: string; categoryName: string; iconEmoji: string; iconUrl: string | null; city: string; state: string }
+
 type QuickResult = {
   restaurants: Array<{ slug: string; name: string; city: string; state: string; medalType?: 'gold' | 'silver' | 'bronze' }>
   categories: Array<{ slug: string; name: string; iconEmoji: string; iconUrl: string | null }>
+  combos: QuickCombo[]
 }
 
 /**
@@ -925,7 +928,7 @@ type QuickResult = {
  */
 export async function searchAll(query: string): Promise<QuickResult> {
   const q = query.trim()
-  if (q.length < 2) return { restaurants: [], categories: [] }
+  if (q.length < 2) return { restaurants: [], categories: [], combos: [] }
 
   const words = q.split(/\s+/)
   const isMultiWord = words.length > 1
@@ -990,6 +993,7 @@ export async function searchAll(query: string): Promise<QuickResult> {
   let detectedState: string | null = null
   let detectedCity: string | null = null
   let detectedCategorySlugs: string[] = []
+  const combos: QuickCombo[] = []
 
   // 3. Multi-word: split and try category+location and name+location combos
   if (isMultiWord) {
@@ -1069,9 +1073,12 @@ export async function searchAll(query: string): Promise<QuickResult> {
           if (catLocResults.length > 0) {
             // Track for medal lookup
             if (detectedCategorySlugs.length === 0) detectedCategorySlugs = catSlugs
-            // Only set detectedCity when we matched a city (not a state)
+            // Set detectedCity AND detectedState together from results
             if (cityPattern && !stateCode && !detectedCity) {
               detectedCity = catLocResults[0]?.city ?? null
+              if (!detectedState && catLocResults[0]?.state) {
+                detectedState = catLocResults[0].state
+              }
             }
           }
           for (const r of catLocResults) {
@@ -1144,11 +1151,76 @@ export async function searchAll(query: string): Promise<QuickResult> {
         }
       }
     }
+
+    // Build category + location combo suggestions
+    const comboKeys = new Set<string>()
+    for (let i = 1; i < words.length; i++) {
+      const partA = words.slice(0, i).join(' ')
+      const partB = words.slice(i).join(' ')
+
+      for (const [cp, lp] of [[partA, partB], [partB, partA]]) {
+        const matchedCats = fuzzyCatCache.get(cp.toLowerCase()) || []
+        if (matchedCats.length === 0) continue
+
+        // Category × city combos: find cities matching the location part
+        // Use catLocResults approach — query actual cities in the DB that have restaurants in these categories
+        const lpLower = lp.toLowerCase()
+        const stCode = resolveStateCode(lp)
+
+        if (stCode) {
+          // Category × state combo
+          for (const cat of matchedCats) {
+            const key = `${cat.slug}||${stCode}`
+            if (!comboKeys.has(key)) {
+              comboKeys.add(key)
+              combos.push({
+                categorySlug: cat.slug, categoryName: cat.name,
+                iconEmoji: cat.iconEmoji, iconUrl: cat.iconUrl,
+                city: '', state: stCode,
+              })
+            }
+          }
+        } else if (lpLower.length >= 3) {
+          // Category × city combo: find matching cities from existing restaurants
+          const matchingCities = await prisma.$queryRaw<
+            Array<{ city: string; state: string }>
+          >`
+            SELECT DISTINCT r.city, r.state
+            FROM restaurants r
+            JOIN restaurant_categories rc ON rc.restaurant_id = r.id AND rc.verified = true
+            JOIN food_categories fc ON fc.id = rc.food_category_id
+            WHERE r.status = 'active'
+              AND fc.slug = ANY(${matchedCats.map(c => c.slug)})
+              AND r.city ILIKE ${'%' + lp + '%'}
+            LIMIT 5
+          `
+          for (const cat of matchedCats) {
+            for (const loc of matchingCities) {
+              const key = `${cat.slug}|${loc.city}|${loc.state}`
+              if (!comboKeys.has(key)) {
+                comboKeys.add(key)
+                combos.push({
+                  categorySlug: cat.slug, categoryName: cat.name,
+                  iconEmoji: cat.iconEmoji, iconUrl: cat.iconUrl,
+                  city: loc.city, state: loc.state,
+                })
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   // 4. If still no restaurants and we have categories, show restaurants from those categories
+  //    When a location was detected, filter by location instead of returning global results
   if (allRestaurants.length === 0 && mappedCategories.length > 0) {
     const catSlugs = mappedCategories.map(c => c.slug)
+    const locFilter = detectedState
+      ? (detectedCity
+          ? Prisma.sql`AND r.city = ${detectedCity} AND r.state = ${detectedState}`
+          : Prisma.sql`AND r.state = ${detectedState}`)
+      : Prisma.empty
     const catRestaurants = await prisma.$queryRaw<
       Array<{ slug: string; name: string; city: string; state: string }>
     >`
@@ -1157,6 +1229,7 @@ export async function searchAll(query: string): Promise<QuickResult> {
       JOIN restaurant_categories rc ON rc.restaurant_id = r.id AND rc.verified = true
       JOIN food_categories fc ON fc.id = rc.food_category_id
       WHERE r.status = 'active' AND fc.slug = ANY(${catSlugs})
+        ${locFilter}
       ORDER BY r.name ASC
       LIMIT 8
     `
@@ -1224,6 +1297,7 @@ export async function searchAll(query: string): Promise<QuickResult> {
   return {
     restaurants: allRestaurants.slice(0, 10),
     categories: mappedCategories,
+    combos: combos.slice(0, 5),
   }
 }
 
@@ -1261,7 +1335,13 @@ export async function searchFull(query: string, filters?: SearchFilters): Promis
 
   // Build optional restaurant filter SQL fragments
   const stateFilter = filters?.state ? Prisma.sql`AND r.state = ${filters.state}` : Prisma.empty
-  const cityFilter = filters?.city ? Prisma.sql`AND LOWER(r.city) = LOWER(${filters.city})` : Prisma.empty
+  // Support comma-separated city values for multi-select
+  const cityNames = filters?.city ? filters.city.split(',').map(c => c.trim()).filter(Boolean) : []
+  const cityFilter = cityNames.length === 1
+    ? Prisma.sql`AND LOWER(r.city) = LOWER(${cityNames[0]})`
+    : cityNames.length > 1
+      ? Prisma.sql`AND LOWER(r.city) IN (${Prisma.join(cityNames.map(c => c.toLowerCase()))})`
+      : Prisma.empty
   const catFilterJoin = filters?.categorySlug
     ? Prisma.sql`JOIN restaurant_categories frc ON frc.restaurant_id = r.id AND frc.verified = true
                  JOIN food_categories ffc ON ffc.id = frc.food_category_id AND ffc.slug = ${filters.categorySlug}`

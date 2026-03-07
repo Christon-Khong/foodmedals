@@ -3,7 +3,7 @@ import { searchAll, searchFull } from '@/lib/queries'
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? ''
-  if (q.length < 2 || q.length > 100) return NextResponse.json({ restaurants: [], categories: [] })
+  if (q.length < 2 || q.length > 100) return NextResponse.json({ restaurants: [], categories: [], combos: [] })
 
   const full = req.nextUrl.searchParams.get('full') === '1'
 

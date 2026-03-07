@@ -36,7 +36,7 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
 
   // Filters
   const [stateFilter, setStateFilter] = useState<string | null>(null)
-  const [cityFilter, setCityFilter] = useState<string | null>(null)
+  const [cityFilters, setCityFilters] = useState<string[]>([])
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
@@ -45,11 +45,11 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
     setQuery(initialQuery)
     setResults(initialResults)
     setStateFilter(null)
-    setCityFilter(null)
+    setCityFilters([])
     setCategoryFilter(null)
   }, [initialQuery, initialResults])
 
-  const activeFilterCount = [stateFilter, cityFilter, categoryFilter].filter(Boolean).length
+  const activeFilterCount = [stateFilter, categoryFilter].filter(Boolean).length + cityFilters.length
 
   // Derive available filter options from results
   const availableStates = useCallback(() => {
@@ -81,7 +81,7 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
   }, [results])
 
   // Fetch results from API
-  const fetchResults = useCallback(async (q: string, state?: string | null, city?: string | null, category?: string | null) => {
+  const fetchResults = useCallback(async (q: string, state?: string | null, cities?: string[], category?: string | null) => {
     if (q.trim().length < 2) {
       setResults(null)
       return
@@ -90,7 +90,7 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
     try {
       const params = new URLSearchParams({ q: q.trim(), full: '1' })
       if (state) params.set('state', state)
-      if (city) params.set('city', city)
+      if (cities && cities.length > 0) params.set('city', cities.join(','))
       if (category) params.set('category', category)
       const res = await fetch(`/api/search?${params}`)
       if (res.ok) {
@@ -109,7 +109,7 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
     setQuery(value)
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
-      fetchResults(value, stateFilter, cityFilter, categoryFilter)
+      fetchResults(value, stateFilter, cityFilters, categoryFilter)
     }, 400)
   }
 
@@ -125,25 +125,33 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
   // Filter changes trigger re-fetch
   function handleStateChange(value: string | null) {
     setStateFilter(value)
-    setCityFilter(null) // Reset city when state changes
-    fetchResults(query, value, null, categoryFilter)
+    setCityFilters([]) // Reset cities when state changes
+    fetchResults(query, value, [], categoryFilter)
   }
 
-  function handleCityChange(value: string | null) {
-    setCityFilter(value)
-    fetchResults(query, stateFilter, value, categoryFilter)
+  function handleAddCity(city: string) {
+    if (!city || cityFilters.includes(city)) return
+    const next = [...cityFilters, city]
+    setCityFilters(next)
+    fetchResults(query, stateFilter, next, categoryFilter)
+  }
+
+  function handleRemoveCity(city: string) {
+    const next = cityFilters.filter(c => c !== city)
+    setCityFilters(next)
+    fetchResults(query, stateFilter, next, categoryFilter)
   }
 
   function handleCategoryChange(slug: string | null) {
     setCategoryFilter(slug)
-    fetchResults(query, stateFilter, cityFilter, slug)
+    fetchResults(query, stateFilter, cityFilters, slug)
   }
 
   function clearFilters() {
     setStateFilter(null)
-    setCityFilter(null)
+    setCityFilters([])
     setCategoryFilter(null)
-    fetchResults(query, null, null, null)
+    fetchResults(query, null, [], null)
   }
 
   const isEmpty = results && !results.combos.length && !results.categories.length
@@ -210,17 +218,36 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
               ))}
             </select>
 
-            {/* City filter */}
-            <select
-              value={cityFilter ?? ''}
-              onChange={e => handleCityChange(e.target.value || null)}
-              className="px-3 py-2 rounded-full border border-gray-300 bg-white text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-300 cursor-pointer"
-            >
-              <option value="">All cities</option>
-              {availableCities().map(c => (
-                <option key={`${c.city}-${c.state}`} value={c.city}>{c.city}, {c.state}</option>
+            {/* City filter — multi-select with chips */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {cityFilters.map(city => (
+                <span
+                  key={city}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-amber-100 text-amber-800 text-sm font-medium"
+                >
+                  {city}
+                  <button
+                    onClick={() => handleRemoveCity(city)}
+                    className="hover:text-amber-950 transition-colors"
+                    aria-label={`Remove ${city}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
               ))}
-            </select>
+              <select
+                value=""
+                onChange={e => { if (e.target.value) handleAddCity(e.target.value) }}
+                className="px-3 py-2 rounded-full border border-gray-300 bg-white text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-300 cursor-pointer"
+              >
+                <option value="">{cityFilters.length > 0 ? 'Add city...' : 'All cities'}</option>
+                {availableCities()
+                  .filter(c => !cityFilters.includes(c.city))
+                  .map(c => (
+                    <option key={`${c.city}-${c.state}`} value={c.city}>{c.city}, {c.state}</option>
+                  ))}
+              </select>
+            </div>
 
             {/* Category filter */}
             {availableCategories().length > 0 && (
@@ -281,7 +308,7 @@ export function SearchResults({ initialQuery, initialResults }: Props) {
                 onClick={() => {
                   setQuery(results.suggestion!)
                   clearFilters()
-                  fetchResults(results.suggestion!, null, null, null)
+                  fetchResults(results.suggestion!, null, [], null)
                   router.push(`/search?q=${encodeURIComponent(results.suggestion!)}`)
                 }}
                 className="text-amber-600 hover:text-amber-800 font-medium underline underline-offset-2"
