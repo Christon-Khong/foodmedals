@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Pencil, Check, X } from 'lucide-react'
-import { STATE_NAMES } from '@/lib/queries'
+import { STATE_NAMES } from '@/lib/states'
 
 type Props = {
   city: string | null
