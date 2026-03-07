@@ -5,11 +5,12 @@ import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import { useState } from 'react'
 import { NavbarSearch } from '@/components/NavbarSearch'
-import { NavbarProfile } from '@/components/NavbarProfile'
+import { NavbarProfile, useNavbarProfile, NavbarAuraStyle, NavbarAvatar } from '@/components/NavbarProfile'
 
 export function Navbar() {
   const { data: session } = useSession()
   const [open, setOpen] = useState(false)
+  const { avatarUrl, displayName, tier } = useNavbarProfile()
 
   return (
     <nav className="bg-white border-b border-amber-100 sticky top-0 z-20">
@@ -60,15 +61,10 @@ export function Navbar() {
           <Link href="/suggest/vote" onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">Nominations</Link>
           {session ? (
             <>
+              <NavbarAuraStyle tier={tier} />
               <div className="flex items-center gap-3 py-2 mb-1">
-                {session.user?.image ? (
-                  <Image src={session.user.image} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-semibold">
-                    {(session.user?.name?.[0] ?? '?').toUpperCase()}
-                  </div>
-                )}
-                <span className="text-sm font-semibold text-gray-900 truncate">{session.user?.name ?? 'User'}</span>
+                <NavbarAvatar avatarUrl={avatarUrl} displayName={displayName} tier={tier} size={32} />
+                <span className="text-sm font-semibold text-gray-900 truncate">{displayName}</span>
               </div>
               <Link href={session.user?.slug ? `/critics/${session.user.slug}` : '/my-medals'} onClick={() => setOpen(false)} className="py-2 text-sm text-gray-700">My Profile</Link>
               {session.user?.isAdmin && (

@@ -20,13 +20,11 @@ type NavbarData = {
   tier: TierData | null
 }
 
-export function NavbarProfile() {
+/** Shared hook — fetches avatar + tier once for both desktop and mobile */
+export function useNavbarProfile() {
   const { data: session } = useSession()
-  const [open, setOpen] = useState(false)
   const [data, setData] = useState<NavbarData | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
-  // Fetch tier data on mount
   useEffect(() => {
     if (!session?.user) return
     fetch('/api/profile/navbar')
@@ -34,6 +32,76 @@ export function NavbarProfile() {
       .then(d => d && setData(d))
       .catch(() => {})
   }, [session?.user])
+
+  const avatarUrl = data?.avatarUrl ?? session?.user?.image ?? null
+  const displayName = data?.displayName ?? session?.user?.name ?? 'User'
+  const tier = data?.tier ?? null
+
+  return { avatarUrl, displayName, tier }
+}
+
+/** Aura style tag — inject once, used by both desktop and mobile */
+export function NavbarAuraStyle({ tier }: { tier: TierData | null }) {
+  if (!tier?.animated || !tier.glow || !tier.glowDim) return null
+  return (
+    <style>{`
+      @keyframes navbar-aura-pulse {
+        0%, 100% { box-shadow: ${tier.glowDim}; }
+        50% { box-shadow: ${tier.glow}; }
+      }
+      .navbar-aura { animation: navbar-aura-pulse 3s ease-in-out infinite; }
+    `}</style>
+  )
+}
+
+/** Renders an avatar with tier aura at a given size */
+export function NavbarAvatar({
+  avatarUrl,
+  displayName,
+  tier,
+  size = 32,
+}: {
+  avatarUrl: string | null
+  displayName: string
+  tier: TierData | null
+  size?: number
+}) {
+  const initial = (displayName[0] ?? '?').toUpperCase()
+  const auraStyle = tier?.glow
+    ? tier.animated
+      ? undefined
+      : { boxShadow: tier.glow }
+    : undefined
+  const sizeClass = size === 32 ? 'w-8 h-8' : size === 40 ? 'w-10 h-10' : `w-[${size}px] h-[${size}px]`
+
+  return (
+    <div
+      className={`${sizeClass} rounded-full overflow-hidden ${tier?.animated ? 'navbar-aura' : ''}`}
+      style={auraStyle}
+    >
+      {avatarUrl ? (
+        <Image
+          src={avatarUrl}
+          alt={displayName}
+          width={size}
+          height={size}
+          className={`${sizeClass} rounded-full object-cover`}
+        />
+      ) : (
+        <div className={`${sizeClass} rounded-full bg-amber-100 text-amber-700 flex items-center justify-center ${size <= 32 ? 'text-sm' : 'text-base'} font-semibold`}>
+          {initial}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Desktop profile avatar + dropdown */
+export function NavbarProfile() {
+  const { data: session } = useSession()
+  const { avatarUrl, displayName, tier } = useNavbarProfile()
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   // Close on click outside
   useEffect(() => {
@@ -60,29 +128,10 @@ export function NavbarProfile() {
   if (!session?.user) return null
 
   const user = session.user
-  const avatarUrl = data?.avatarUrl ?? user.image
-  const displayName = data?.displayName ?? user.name ?? 'User'
-  const tier = data?.tier ?? null
-  const initial = (displayName[0] ?? '?').toUpperCase()
-
-  const auraStyle = tier?.glow
-    ? tier.animated
-      ? undefined // handled by CSS animation
-      : { boxShadow: tier.glow }
-    : undefined
 
   return (
     <div ref={containerRef} className="relative">
-      {/* Inject aura animation if tier is animated */}
-      {tier?.animated && tier.glow && tier.glowDim && (
-        <style>{`
-          @keyframes navbar-aura-pulse {
-            0%, 100% { box-shadow: ${tier.glowDim}; }
-            50% { box-shadow: ${tier.glow}; }
-          }
-          .navbar-aura { animation: navbar-aura-pulse 3s ease-in-out infinite; }
-        `}</style>
-      )}
+      <NavbarAuraStyle tier={tier} />
 
       {/* Avatar button */}
       <button
@@ -90,24 +139,7 @@ export function NavbarProfile() {
         className="flex items-center focus:outline-none"
         aria-label="Profile menu"
       >
-        <div
-          className={`w-8 h-8 rounded-full overflow-hidden ${tier?.animated ? 'navbar-aura' : ''}`}
-          style={auraStyle}
-        >
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={displayName}
-              width={32}
-              height={32}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-semibold">
-              {initial}
-            </div>
-          )}
-        </div>
+        <NavbarAvatar avatarUrl={avatarUrl} displayName={displayName} tier={tier} size={32} />
       </button>
 
       {/* Dropdown */}
@@ -115,23 +147,8 @@ export function NavbarProfile() {
         <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl border border-amber-100 shadow-lg z-50 overflow-hidden">
           {/* Header */}
           <div className="px-4 py-3 flex items-center gap-3">
-            <div
-              className={`w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ${tier?.animated ? 'navbar-aura' : ''}`}
-              style={auraStyle}
-            >
-              {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt={displayName}
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-base font-semibold">
-                  {initial}
-                </div>
-              )}
+            <div className="flex-shrink-0">
+              <NavbarAvatar avatarUrl={avatarUrl} displayName={displayName} tier={tier} size={40} />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
