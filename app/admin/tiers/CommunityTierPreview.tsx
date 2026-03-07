@@ -42,8 +42,8 @@ export function CommunityTierPreview({ savedMaxScore }: Props) {
   return (
     <div>
       {/* Max Score Control */}
-      <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 mb-6">
-        <div className="flex items-center justify-between mb-3">
+      <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 sm:p-5 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <label className="text-sm font-semibold text-gray-300">
             Max Community Score (top tier threshold)
           </label>
@@ -114,22 +114,22 @@ export function CommunityTierPreview({ savedMaxScore }: Props) {
           return (
             <div
               key={tier.label}
-              className={`bg-gray-900 rounded-2xl border border-gray-800 p-5 flex items-center gap-5 ${tier.cardAura}`}
+              className={`bg-gray-900 rounded-2xl border border-gray-800 p-4 sm:p-5 flex items-center gap-3 sm:gap-5 ${tier.cardAura}`}
             >
               {/* Rank number */}
-              <div className="text-2xl font-bold text-gray-700 w-6 text-right shrink-0">
+              <div className="text-xl sm:text-2xl font-bold text-gray-700 w-5 sm:w-6 text-right shrink-0">
                 {tiers.length - i}
               </div>
 
               {/* Score badge preview */}
               <div className="shrink-0 flex flex-col items-center gap-1">
-                <span className={`font-extrabold ${tier.color} text-2xl leading-none rounded-md px-2 py-1 ${tier.aura}`}>
+                <span className={`font-extrabold ${tier.color} text-xl sm:text-2xl leading-none rounded-md px-2 py-1 ${tier.aura}`}>
                   {exampleScore}
                 </span>
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${tier.color} leading-none`}>
+                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${tier.color} leading-none`}>
                   {tier.label}
                 </span>
-                <div className="w-16 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                <div className="w-12 sm:w-16 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full bg-gradient-to-r ${tier.gradient}`}
                     style={{ width: `${pct}%` }}
@@ -139,19 +139,19 @@ export function CommunityTierPreview({ savedMaxScore }: Props) {
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-1">
-                  <span className={`font-bold text-sm ${tier.color}`}>{tier.label}</span>
+                <div className="flex items-center gap-2 sm:gap-3 mb-1 flex-wrap">
+                  <span className={`font-bold text-xs sm:text-sm ${tier.color}`}>{tier.label}</span>
                   {tier.aura && (
                     <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide">
                       Animated
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-400">
-                  Requires <span className="text-white font-semibold">{tier.threshold}+</span> community score points
-                  <span className="text-gray-600 ml-1">({tier.pct}% of max)</span>
+                <p className="text-xs sm:text-sm text-gray-400">
+                  Requires <span className="text-white font-semibold">{tier.threshold}+</span> score
+                  <span className="text-gray-600 ml-1 hidden sm:inline">({tier.pct}% of max)</span>
                 </p>
-                <p className="text-xs text-gray-600 mt-0.5">
+                <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 hidden sm:block">
                   {tier.aura ? 'Pulsing score glow + card aura' : tier.gradient.includes('gray') ? 'No glow effect' : 'Gradient bar only'}
                 </p>
               </div>
